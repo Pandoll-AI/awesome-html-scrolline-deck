@@ -222,6 +222,7 @@ export function createHarness(opts) {
           : undefined,
       overlay: stage.overlayFor(`${move.id}-${beat.id}`),
       tokens: concept.tokens ?? {},
+      colors: opts.colors ?? {},
       ease: (name) => concept.eases?.[name] ?? name,
       initial(targets, vars) {
         initials.push([targets, { ...vars }]);

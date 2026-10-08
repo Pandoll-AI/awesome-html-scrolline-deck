@@ -150,4 +150,16 @@ describe('move testing harness', () => {
       /^data:image\/svg\+xml/,
     );
   });
+
+  it('injects colors into the move context', () => {
+    const h = createHarness({
+      beats: [{ id: 'a', type: 'text', data: {} }],
+      colors: { bg: 'rgb(1, 2, 3)', accent: '#f0c' },
+    });
+    harnesses.push(h);
+    expect(h.runMove(enter, { role: 'enter', beat: 'a' }).ctx.colors).toEqual({
+      bg: 'rgb(1, 2, 3)',
+      accent: '#f0c',
+    });
+  });
 });

@@ -100,10 +100,11 @@ function defaultRef(b, role, concept, isLast = false) {
         ? { move: 'engine:fade-out' }
         : null;
 }
-function resolve(registry, ref) {
+function resolve(registry, ref, concept) {
   if (!ref) return null;
   const move = registry.get(ref.move);
-  return { move, params: resolveParams(move.params, ref.params ?? {}), at: ref.at ?? 0 };
+  const preset = concept.moves?.params?.[move.id] ?? {};
+  return { move, params: resolveParams(move.params, { ...preset, ...(ref.params ?? {}) }), at: ref.at ?? 0 };
 }
 function timing(move, params, data) {
   const x = move.timing(params, data) ?? {};
@@ -128,7 +129,7 @@ export function plan(deck, env) {
     let t = s;
     const entry = { id: b.id, type: b.type, start: s, stop: s, end: s, spans: [] };
     if (linkIn) {
-      const r = resolve(env.registry, linkIn);
+      const r = resolve(env.registry, linkIn, env.concept);
       const l = timing(r.move, r.params, { from: prev.data, to: b });
       add(entry, 'link', r, s, s + l.duration);
       prev.entry.end = s + l.duration;
@@ -142,7 +143,7 @@ export function plan(deck, env) {
     const sequence = b.type === 'sequence' ? env.sequences?.[b.use] : null;
     const enter = sequence
       ? { move: { id: `seq:${b.use}`, timing: () => sequence.timing(b.data) }, params: {}, at: 0 }
-      : resolve(env.registry, defaultRef(b, 'enter', env.concept));
+      : resolve(env.registry, defaultRef(b, 'enter', env.concept), env.concept);
     if (enter) {
       const e = timing(enter.move, enter.params, b);
       const es = Math.max(s, t + enter.at);
@@ -157,7 +158,7 @@ export function plan(deck, env) {
       );
       entry.stop = es + e.duration;
     } else entry.stop = t;
-    const camera = resolve(env.registry, b.camera);
+    const camera = resolve(env.registry, b.camera, env.concept);
     if (camera) {
       const c = timing(camera.move, camera.params, b);
       add(entry, 'camera', camera, s, s + c.duration);
@@ -168,7 +169,7 @@ export function plan(deck, env) {
     let holdEnd = entry.stop + (b.hold ?? T.hold);
     for (let k = 0; k < (b.steps ?? []).length; k += 1) {
       const step = b.steps[k];
-      const r = resolve(env.registry, step);
+      const r = resolve(env.registry, step, env.concept);
       const d = timing(r.move, r.params, b);
       add(entry, 'step', r, holdEnd, holdEnd + d.duration);
       stops.push({
@@ -181,7 +182,11 @@ export function plan(deck, env) {
     }
     entry.end = holdEnd;
     if (!b.link) {
-      const exit = resolve(env.registry, defaultRef(b, 'exit', env.concept, i === deck.beats.length - 1));
+      const exit = resolve(
+        env.registry,
+        defaultRef(b, 'exit', env.concept, i === deck.beats.length - 1),
+        env.concept,
+      );
       if (exit) {
         const x = timing(exit.move, exit.params, b);
         add(entry, 'exit', exit, holdEnd, holdEnd + x.duration);
@@ -189,7 +194,7 @@ export function plan(deck, env) {
       }
     }
     for (const ref of b.ambient ?? []) {
-      const r = resolve(env.registry, ref);
+      const r = resolve(env.registry, ref, env.concept);
       const a = r.move.timing(r.params, b);
       add(entry, 'ambient', r, s, a.duration === 'fill' ? (b.link ? null : entry.end) : s + a.duration);
     }
@@ -253,6 +258,15 @@ function maskUrl(beat, text, options = {}) {
     align: options.align ?? 'center',
   });
 }
+const COLOR_NAMES = ['bg', 'fg', 'fg-muted', 'accent', 'accent-2', 'rule', 'scrim'];
+function colorsFor(root) {
+  const style = globalThis.getComputedStyle?.(root);
+  return Object.fromEntries(
+    COLOR_NAMES.map((name) => [name, style?.getPropertyValue(`--sl-${name}`).trim()]).filter(
+      ([, value]) => value,
+    ),
+  );
+}
 /** C6 builder; boot owns the asynchronous font-ready rebuild boundary. */
 export function build(map, env) {
   const { stage, deck, gsap } = env;
@@ -288,6 +302,7 @@ export function build(map, env) {
       part: (name) => view.parts[name] ?? [],
       span: { start: m.start, stop: m.stop, end: m.end },
       media: view.media ?? {},
+      colors: colorsFor(view.root),
     };
     beats.push(beat);
     byId.set(beat.id, beat);
@@ -365,6 +380,7 @@ export function build(map, env) {
             : undefined,
         overlay,
         tokens: env.concept.tokens ?? {},
+        colors: beat.colors,
         ease: (n) => env.concept.eases?.[n] ?? n,
         initial: (nodes, vars) => initial.push([nodes, vars]),
         rng: createRng(hashSeed(`${deck.id}:${beat.id}:${s.role}:${move.id}`)),

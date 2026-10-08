@@ -6,11 +6,11 @@ vi.mock('./handoff.js', async (importOriginal) => {
 import simple from './__fixtures__/decks/simple.json';
 import linked from './__fixtures__/decks/link.json';
 import rich from './__fixtures__/decks/steps-camera-ambient.json';
-import { plan } from './timeline.js';
-import { build } from './timeline.js';
+import { build, plan } from './timeline.js';
 import { createRegistry } from './registry.js';
 import { gsap } from 'gsap';
 import { anchorOf } from './handoff.js';
+import { SchemaError } from './util/schema.js';
 
 const move = (id, role, duration = 1, stops = []) => ({
   id,
@@ -133,6 +133,126 @@ describe('plan', () => {
     const map = plan(deck, { ...env, sequences: { atlas: sequence } });
     expect(map.beats[0].spans).toEqual([{ role: 'enter', move: 'seq:atlas', start: 0, end: 1, params: {} }]);
     expect(map.stops.map((stop) => stop.name)).toEqual(['atlas/inside', 'atlas']);
+  });
+
+  it('resolves concept presets before beat params for both plan and build', () => {
+    const calls = [];
+    const preset = {
+      ...move('preset', 'enter'),
+      params: {
+        duration: { type: 'number', default: 1, doc: 'duration' },
+        amount: { type: 'number', default: 2, doc: 'amount' },
+      },
+      build: (_tl, _ctx, params) => calls.push(params),
+    };
+    const r = createRegistry([preset]);
+    const deck = {
+      id: 'presets',
+      lang: 'en',
+      beats: [{ id: 'a', type: 'text', text: 'Preset', enter: { move: 'preset' } }],
+    };
+    const presetConcept = {
+      ...concept,
+      moves: { params: { preset: { duration: 0.25, amount: 4 } } },
+    };
+    const presetOnly = plan(deck, { ...env, registry: r, concept: presetConcept });
+    expect(presetOnly.beats[0].spans[0].params).toEqual({ duration: 0.25, amount: 4 });
+    const overrideDeck = {
+      ...deck,
+      beats: [{ ...deck.beats[0], enter: { move: 'preset', params: { amount: 9 } } }],
+    };
+    const map = plan(overrideDeck, { ...env, registry: r, concept: presetConcept });
+    expect(map.beats[0].spans[0].params).toEqual({ duration: 0.25, amount: 9 });
+    const root = document.createElement('div');
+    const stage = {
+      root,
+      viewport: {},
+      placeBeat: (node) => root.append(node),
+      overlayFor: () => document.createElement('div'),
+    };
+    build(map, {
+      stage,
+      deck: overrideDeck,
+      registry: r,
+      concept: presetConcept,
+      beatTypes: {
+        text: {
+          primary: 'block',
+          render: () => {
+            const node = document.createElement('section');
+            const part = document.createElement('span');
+            part.dataset.part = 'block';
+            node.append(part);
+            return { root: node, parts: { block: [part] } };
+          },
+        },
+      },
+      gsap,
+      measureFn: () => ({ x: 0, y: 0, w: 1, h: 1 }),
+    });
+    expect(calls).toEqual([{ duration: 0.25, amount: 9 }]);
+  });
+
+  it('rejects unknown keys in a concept move preset', () => {
+    const deck = {
+      id: 'bad-preset',
+      lang: 'en',
+      beats: [{ id: 'a', type: 'text', enter: { move: 'enter' } }],
+    };
+    const badConcept = { ...concept, moves: { params: { enter: { unknown: true } } } };
+    expect(() => plan(deck, { ...env, concept: badConcept })).toThrow(SchemaError);
+  });
+
+  it('reads computed colors for each beat after tone is applied', () => {
+    const calls = [];
+    const colorMove = { ...move('colors', 'enter'), build: (_tl, ctx) => calls.push(ctx.colors) };
+    const r = createRegistry([colorMove, move('exit', 'exit')]);
+    const deck = {
+      id: 'colors',
+      lang: 'en',
+      beats: [
+        { id: 'light', type: 'text', text: 'Light', enter: { move: 'colors' } },
+        { id: 'dark', type: 'text', text: 'Dark', tone: 2, enter: { move: 'colors' } },
+      ],
+    };
+    const map = plan(deck, { ...env, registry: r });
+    const root = document.createElement('div');
+    document.body.append(root);
+    const stage = {
+      root,
+      viewport: {},
+      placeBeat: (node) => {
+        node.style.setProperty('--sl-bg', node.dataset.tone === '2' ? 'rgb(2, 2, 2)' : 'rgb(1, 1, 1)');
+        node.style.setProperty('--sl-accent', node.dataset.tone === '2' ? 'cyan' : 'orange');
+        root.append(node);
+      },
+      overlayFor: () => document.createElement('div'),
+    };
+    build(map, {
+      stage,
+      deck,
+      registry: r,
+      concept,
+      beatTypes: {
+        text: {
+          primary: 'block',
+          render: () => {
+            const node = document.createElement('section');
+            const part = document.createElement('span');
+            part.dataset.part = 'block';
+            node.append(part);
+            return { root: node, parts: { block: [part] } };
+          },
+        },
+      },
+      gsap,
+      measureFn: () => ({ x: 0, y: 0, w: 1, h: 1 }),
+    });
+    expect(calls).toEqual([
+      { bg: 'rgb(1, 1, 1)', accent: 'orange' },
+      { bg: 'rgb(2, 2, 2)', accent: 'cyan' },
+    ]);
+    root.remove();
   });
 
   it('build supplies v2 view, handoff, camera, overlay, and persist behavior', () => {
