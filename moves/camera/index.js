@@ -6,5 +6,7 @@ import arcFlight from './arc-flight.js';
 import atlasPullback from './atlas-pullback.js';
 import establishCrane from './establish-crane.js';
 import railSettle from './rail-settle.js';
+import zoomDive from './zoom-dive.js';
+import zoomSurface from './zoom-surface.js';
 
-export default [arcFlight, atlasPullback, establishCrane, railSettle];
+export default [arcFlight, atlasPullback, establishCrane, railSettle, zoomDive, zoomSurface];
