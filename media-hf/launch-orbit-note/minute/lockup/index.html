@@ -4,7 +4,7 @@
 <script type="module">
 import * as THREE from 'three';
 import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
-import { createMinute } from './scene.js';
+import { createMinute } from '../scene.js';
 RectAreaLightUniformsLib.init();
 const minute = createMinute({ THREE, canvas:document.querySelector('#three-layer'), width:1920, height:1080 });
 const state = { elev:90, yaw:0, halo:1, haloArc:0, scale:0.652, center:{x:0.5,y:0.42} };

@@ -11,11 +11,45 @@
 <script type="module">
 import * as THREE from 'three';
 import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
-import { createMinute, END_STATE } from './scene.js';
+import { createMinute, END_STATE } from '../scene.js';
 
 RectAreaLightUniformsLib.init();
 const canvas = document.querySelector('#three-layer');
 const matchFrame = document.querySelector('#match-frame');
+
+// L2 inherits the current L1 studio scene without mutating it.  Its exposed
+// electronics need a more credible low-saturation PCB finish, so apply that
+// one L2-specific material pass at render time, after the shared scene builds.
+const nativeRender = THREE.WebGLRenderer.prototype.render;
+let materialsTuned = false;
+THREE.WebGLRenderer.prototype.render = function renderL2(scene, camera) {
+  if (!materialsTuned) {
+    scene.traverse((node) => {
+      if (!node.isMesh) return;
+      const materials = Array.isArray(node.material) ? node.material : [node.material];
+      materials.forEach((material) => {
+        if (material?.map && material.normalMap) {
+          material.color.setHex(0x3a3b3a);
+          material.roughness = 0.58;
+          material.normalScale.set(1.45, 1.45);
+          material.sheen = 1;
+          material.sheenColor.setHex(0xe1ddd1);
+          material.sheenRoughness = 0.34;
+          material.needsUpdate = true;
+        }
+        if (material?.color?.getHex() === 0x183127) {
+          material.color.setHex(0x14261c);
+          material.metalness = 0.48;
+          material.roughness = 0.34;
+          material.envMapIntensity = 0.72;
+          material.needsUpdate = true;
+        }
+      });
+    });
+    materialsTuned = true;
+  }
+  return nativeRender.call(this, scene, camera);
+};
 const minute = createMinute({ THREE, canvas, width: 1920, height: 1080 });
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const smooth = (p) => { const q = clamp(p, 0, 1); return q * q * (3 - 2 * q); };

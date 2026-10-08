@@ -1,4 +1,5 @@
 // Shared, deterministic Minute product scene. MEDIA-L2 imports this module.
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 export const END_STATE = Object.freeze({ elev: 6, yaw: 300, halo: 1, haloArc: 1, explode: [0, 0, 0, 0, 0, 0] });
 
 const DEG = Math.PI / 180;
@@ -22,22 +23,48 @@ function roundedBox(THREE, w, h, d, r, material) {
   return mesh;
 }
 
+function makeContactShadow(THREE) {
+  const shadowCanvas = document.createElement('canvas');
+  shadowCanvas.width = shadowCanvas.height = 256;
+  const context = shadowCanvas.getContext('2d');
+  const gradient = context.createRadialGradient(128, 128, 18, 128, 128, 128);
+  gradient.addColorStop(0, 'rgba(0,0,0,0.30)');
+  gradient.addColorStop(0.52, 'rgba(0,0,0,0.12)');
+  gradient.addColorStop(1, 'rgba(0,0,0,0)');
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, 256, 256);
+  const texture = new THREE.CanvasTexture(shadowCanvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return new THREE.Mesh(
+    new THREE.PlaneGeometry(118, 86),
+    new THREE.MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false }),
+  );
+}
+
 export function createMinute({ THREE, canvas, width, height }) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, preserveDrawingBuffer: true });
   renderer.setSize(width, height, false);
   renderer.setPixelRatio(1);
   renderer.setClearColor(0x050506, 1);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.06;
+  // Keep the black stage, but expose the product for material read rather than
+  // treating it as a silhouette. ACES keeps the amber halo from clipping.
+  renderer.toneMappingExposure = 1.25;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x050506);
+  // The studio environment only informs material reflections. The black stage
+  // remains a deliberate background while the matte body gets a soft form read.
+  const pmremGenerator = new THREE.PMREMGenerator(renderer);
+  scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
+  scene.environmentIntensity = 0.28;
+  pmremGenerator.dispose();
   const camera = new THREE.PerspectiveCamera(28, width / height, 1, 1000);
   const product = new THREE.Group();
   scene.add(product);
 
-  const bodyMat = new THREE.MeshPhysicalMaterial({ color: 0x2b2c30, metalness: 1, roughness: 0.38, clearcoat: 0.08, clearcoatRoughness: 0.42 });
+  const bodyMat = new THREE.MeshPhysicalMaterial({ color: 0x303136, metalness: 0.88, roughness: 0.62, clearcoat: 0.14, clearcoatRoughness: 0.58 });
   const darkMat = new THREE.MeshStandardMaterial({ color: 0x15161a, metalness: 0.25, roughness: 0.65 });
   const rubberMat = new THREE.MeshStandardMaterial({ color: 0x0b0b0c, roughness: 0.82 });
   const boardMat = new THREE.MeshStandardMaterial({ color: 0x183127, metalness: 0.25, roughness: 0.42 });
@@ -55,7 +82,9 @@ export function createMinute({ THREE, canvas, width, height }) {
   const normal = textureLoader.load(new URL('./textures/fabric-normal.png', import.meta.url).href);
   normal.wrapS = normal.wrapT = THREE.RepeatWrapping;
   normal.repeat.set(7, 7);
-  const fabricMat = new THREE.MeshPhysicalMaterial({ color: 0x26272a, map: fabric, normalMap: normal, normalScale: new THREE.Vector2(0.55, 0.55), roughness: 0.82, metalness: 0.02, sheen: 0.22, sheenRoughness: 0.72 });
+  // The albedo is deliberately lifted: the tile carries the charcoal knit
+  // detail while the normal map catches the top key light at every angle.
+  const fabricMat = new THREE.MeshPhysicalMaterial({ color: 0x1f2125, map: fabric, normalMap: normal, normalScale: new THREE.Vector2(1.0, 1.0), roughness: 0.72, metalness: 0.0, sheen: 1, sheenColor: new THREE.Color(0xbcbcb8), sheenRoughness: 0.5 });
 
   // Six separated assemblies that read as one sealed product while explode=0.
   const layers = Array.from({ length: 6 }, () => new THREE.Group());
@@ -71,6 +100,19 @@ export function createMinute({ THREE, canvas, width, height }) {
   pad.rotation.x = Math.PI / 2;
   pad.position.z = -12.25;
   layers[5].add(pad);
+
+  // A nearly-black stage gives the product a quiet floor relationship without
+  // turning the background into a lit set. The two discs are a bounded,
+  // deterministic contact shadow and an intentionally faint reflected read.
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(700, 700), new THREE.MeshBasicMaterial({ color: 0x07080a }));
+  floor.position.z = -13.05;
+  scene.add(floor);
+  const reflection = new THREE.Mesh(new THREE.CircleGeometry(43, 96), new THREE.MeshBasicMaterial({ color: 0x28313b, transparent: true, opacity: 0.16, depthWrite: false }));
+  reflection.position.z = -13.0;
+  scene.add(reflection);
+  const contactShadow = makeContactShadow(THREE);
+  contactShadow.position.z = -12.94;
+  scene.add(contactShadow);
 
   const top = new THREE.Mesh(new THREE.CylinderGeometry(45.2, 45.2, 0.9, 192), fabricMat);
   top.rotation.x = Math.PI / 2;
@@ -132,16 +174,18 @@ export function createMinute({ THREE, canvas, width, height }) {
   button.rotation.x = Math.PI / 2;
   layers[5].add(button);
 
-  const rim = new THREE.RectAreaLight(0xdde8ff, 10.5, 95, 55);
-  rim.position.set(-115, 80, 118);
+  // Three-point studio lighting: warm 45° key, lifted rear rim and restrained
+  // fill separate the graphite silhouette while retaining a black stage.
+  const rim = new THREE.RectAreaLight(0xe8eef8, 19, 104, 62);
+  rim.position.set(-112, 74, 128);
   rim.lookAt(0, 0, 0);
   scene.add(rim);
-  const softbox = new THREE.RectAreaLight(0xffffff, 3.1, 150, 120);
-  softbox.position.set(15, -20, 160);
-  softbox.lookAt(0, 0, 0);
-  scene.add(softbox);
-  const fill = new THREE.DirectionalLight(0x8290a8, 0.95);
-  fill.position.set(110, -130, 45);
+  const key = new THREE.RectAreaLight(0xfff3e2, 5.5, 142, 108);
+  key.position.set(68, -118, 132);
+  key.lookAt(0, 0, 3);
+  scene.add(key);
+  const fill = new THREE.DirectionalLight(0xb9c6d5, 2.8);
+  fill.position.set(105, -145, 62);
   scene.add(fill);
 
   const closedZ = [0, 0, 0, 0, 0, 0];
@@ -152,8 +196,8 @@ export function createMinute({ THREE, canvas, width, height }) {
     product.rotation.z = s.yaw * DEG;
     product.scale.setScalar(s.scale || 1);
     layers.forEach((layer, i) => { layer.position.z = THREE.MathUtils.lerp(closedZ[i], explodeZ[i], ex[i] || 0); });
-    haloMat.emissiveIntensity = 0.02 + 2.0 * s.halo;
-    arcMat.emissiveIntensity = 0.02 + 4.0 * s.halo * s.haloArc;
+    haloMat.emissiveIntensity = 0.02 + 1.15 * s.halo;
+    arcMat.emissiveIntensity = 0.02 + 1.8 * s.halo * s.haloArc;
     arc.visible = s.haloArc > 0.001;
 
     const elev = s.elev * DEG;
