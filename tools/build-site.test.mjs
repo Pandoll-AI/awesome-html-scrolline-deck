@@ -147,6 +147,14 @@ describe('pages', () => {
     expect(html).not.toMatch(/\s(?:href|src)="\/(?!\/)/);
   });
 
+  it('home link is explicit and the moves search sits in the page head', () => {
+    const index = renderIndex(content, fakeDecks(), content.how.items.map(() => ({ kind: 'none' })), '/site');
+    expect(index).toContain('<a class="brand" href="./">');
+    const moves = renderMoves(content, catalog, lines, fakeDecks());
+    expect(moves.indexOf('class="search"')).toBeLessThan(moves.indexOf('class="filters"'));
+    expect(moves).toContain('<a class="brand" href="../">');
+  });
+
   it('no emoji in site copy', () => {
     const text = JSON.stringify(content) + JSON.stringify(lines);
     expect(text).not.toMatch(/\p{Extended_Pictographic}/u);
