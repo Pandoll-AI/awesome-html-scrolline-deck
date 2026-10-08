@@ -1,4 +1,5 @@
 /** Opens a line or rounded media window. Shared by canvas and launch. */
+import { partFree } from '../_shared/skip.js';
 import { seg } from '../_shared/timeline.js';
 
 const clipLine = (width) => `inset(50% ${50 - width * 50}% 50% ${50 - width * 50}%)`;
@@ -30,9 +31,9 @@ export default {
     return { duration: params.duration, stops: [] };
   },
   build(tl, ctx, params) {
-    const frame = ctx.beat.part('frame');
-    const media = ctx.beat.part('media');
-    const caption = ctx.beat.part('caption');
+    const frame = partFree(ctx, 'frame');
+    const media = partFree(ctx, 'media');
+    const caption = partFree(ctx, 'caption');
     const start =
       params.shape === 'line' ? clipLine(params.lineWidth) : clipBox(params.startInset, params.radius);
     ctx.initial(frame, { clipPath: start, autoAlpha: params.shape === 'box' ? 0 : 1 });

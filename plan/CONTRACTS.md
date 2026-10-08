@@ -704,6 +704,7 @@ Registry = { get(id): MoveDef /* 없으면 throw */, has(id): boolean, ids(): st
   6. reduce: `reduce: true`에서 `filter`에 blur 없음, 3D 속성 없음(camera 제외)
   7. link만: 끝 시각에 to part 보임·from 숨김, 운반 노드 최종 rect ≈ `handoff.to.rect`(±1px, harness 가짜 측정)
   8. **v2**: skipNodes에 든 요소의 inline style이 build 전후 같음(enter·step), `handoff()`가 있으면 순수(같은 입력 2회 deepEqual)
+  - **v2.2**: `moves/_shared/contract-check.js` `checkMove`가 1·2·8번을 실제로 돈다. timing·handoff는 schema 기본값을 채운 params로 부른다. 8번 기본 대상 = 그 beat primary 첫 요소(시나리오 `skip(h)`로 바꿈), 정지 0 시점의 x·y·scale·rotation·opacity·visibility가 build 전과 같아야 함. 대상 거르기는 `moves/_shared/skip.js` `partFree(ctx, part)`.
 
 ### engine/testing.js (harness)
 ```ts

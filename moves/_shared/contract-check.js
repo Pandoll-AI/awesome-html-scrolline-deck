@@ -1,5 +1,5 @@
 /** Move contract checker used from tests without importing Vitest. */
-import { createRegistry } from '../../engine/index.js';
+import { createRegistry, resolveParams } from '../../engine/index.js';
 import { carriedRect } from './link.js';
 const snapshot = (h, nodes) =>
   nodes.map((node) => ({
@@ -29,7 +29,8 @@ export function checkMove(move, scenario, createHarness) {
   };
   try {
     h = make();
-    const params = scenario.run.params ?? {};
+    // timing·handoff는 build와 같은 값(테스트 params + schema 기본값)으로 본다(C5 1·2번).
+    const params = resolveParams(move.params, scenario.run.params ?? {});
     const data =
       scenario.run.role === 'link'
         ? { from: h.beats.get(scenario.run.from).data, to: h.beats.get(scenario.run.beat).data }
@@ -39,6 +40,11 @@ export function checkMove(move, scenario, createHarness) {
     if (JSON.stringify(one) !== JSON.stringify(two)) failures.push('timing is not pure');
     if (move.role !== 'ambient' && !(one.duration > 0)) failures.push('timing duration must be positive');
     if (move.role !== 'ambient' && one.duration === 'fill') failures.push('fill is ambient only');
+    if (move.handoff && scenario.run.role === 'link') {
+      const a = move.handoff(params, data),
+        b = move.handoff(params, data);
+      if (JSON.stringify(a) !== JSON.stringify(b)) failures.push('handoff is not pure');
+    }
     const result = h.runMove(move, scenario.run);
     if (result.tl.duration() > result.timing.duration + 0.001)
       failures.push('timeline exceeds timing duration');
@@ -92,6 +98,25 @@ export function checkMove(move, scenario, createHarness) {
       }
     }
     h.destroy();
+    // C17 8번: enter·step에서 skipNodes(link가 넘긴 요소)는 build가 상태를 바꾸지 않는다(initial·들여오기 금지).
+    // step이 지나간 대상을 접는 tween은 허용(#48)이라 정지 0 시점의 값만 본다.
+    if (scenario.run.role === 'enter' || scenario.run.role === 'step') {
+      h = make();
+      const beat = h.beats.get(scenario.run.beat);
+      const skip = scenario.skip?.(h) ?? beat.part(beat.primary).slice(0, 1);
+      if (skip.length) {
+        const noop = { ...move, params: {}, timing: () => ({ duration: 1 }), build: () => {} };
+        const gsap = h.runMove(noop, { role: scenario.run.role, beat: scenario.run.beat }).ctx.gsap;
+        const props = (node) =>
+          ['x', 'y', 'scaleX', 'scaleY', 'rotation', 'opacity', 'visibility'].map((p) => String(gsap.getProperty(node, p)));
+        const before = skip.map(props);
+        h.runMove(move, { ...scenario.run, skipNodes: skip });
+        h.seek(0);
+        if (skip.some((node, i) => JSON.stringify(props(node)) !== JSON.stringify(before[i])))
+          failures.push('skipNodes changed by build');
+      }
+      h.destroy();
+    }
     h = make(true);
     const reduced = h.runMove(move, scenario.run);
     for (const t of [0, reduced.timing.duration / 2, reduced.timing.duration]) {

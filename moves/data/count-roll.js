@@ -1,8 +1,7 @@
 /** Rolls a numeric value to its final formatted value, then settles its supporting copy. */
 import { countTo, formatNumber } from '../_shared/count.js';
+import { partFree as part } from '../_shared/skip.js';
 import { px } from '../_shared/timeline.js';
-
-const part = (ctx, name) => (ctx.skipParts.includes(name) ? [] : ctx.beat.part(name));
 
 export default {
   id: 'count-roll',
@@ -32,7 +31,7 @@ export default {
     const digits = part(ctx, 'digits');
     const value = part(ctx, 'value');
     if (ctx.reduce) digits.forEach((node) => tl.set(node, { textContent: finalText }, 0));
-    else if (!ctx.skipParts.includes('value')) {
+    else if (value.length) {
       ctx.initial(value, { autoAlpha: 0 });
       ctx.initial(digits, { fontVariantNumeric: 'tabular-nums' });
       tl.to(value, { autoAlpha: 1, duration: d * 0.15, ease: ctx.ease('out') }, 0);
