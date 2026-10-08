@@ -24,6 +24,43 @@ function emit(name, detail) {
   if (target) target.dispatchEvent(new CustomEvent(name, { detail }));
 }
 
+/**
+ * C12 URL 파라미터의 시작 시각: `?stop=<name|label>`가 `?t=<u>`보다 우선, 범위는 [0, duration]. 없으면 null.
+ * @param {string} search  location.search
+ * @param {{ duration: number, stops: Array<{ name: string, label?: string, t: number }> }} map
+ */
+export function urlStart(search, map) {
+  const query = new URLSearchParams(search ?? '');
+  const stop = query.get('stop');
+  if (stop) {
+    const found = map.stops.find((item) => item.name === stop || item.label === stop);
+    if (found) return found.t;
+  }
+  const t = Number.parseFloat(query.get('t') ?? '');
+  return Number.isFinite(t) ? Math.max(0, Math.min(map.duration, t)) : null;
+}
+
+/** `?debug=1` HUD: 현재 t · 지난 정지점 · 화면 beat. 리허설·캡처 확인용, 매 프레임 갱신. */
+function debugHud(host, map, time) {
+  const hud = document.createElement('div');
+  hud.className = 'sl-debug';
+  hud.setAttribute('aria-hidden', 'true');
+  host.append(hud);
+  let frame = 0;
+  const tick = () => {
+    const t = time();
+    const stop = map.stops.filter((item) => item.t <= t + 1e-6).at(-1);
+    const beat = map.beats.find((item) => item.start <= t && t < item.end) ?? map.beats.at(-1);
+    hud.textContent = `t ${t.toFixed(2)} · stop ${stop?.name ?? '-'} · beat ${beat?.id ?? '-'}`;
+    frame = requestAnimationFrame(tick);
+  };
+  tick();
+  return () => {
+    cancelAnimationFrame(frame);
+    hud.remove();
+  };
+}
+
 function errorScreen(host, errors) {
   const box = document.createElement('section');
   box.className = 'sl-error';
@@ -250,6 +287,16 @@ export async function boot(opts) {
     stops: () => (driver ? driver.stops() : map.stops),
   };
   window.__deck = api;
+  let removeHud = () => {};
+  if (mode === 'live') {
+    const search = window.location?.search ?? '';
+    const start = urlStart(search, map);
+    if (start !== null) {
+      driver.seek(start, { immediate: true });
+      syncActive(start);
+    }
+    if (new URLSearchParams(search).get('debug') === '1') removeHud = debugHud(host, map, api.time);
+  }
   emit(EVENTS.ready, { map, mode });
 
   // Fonts can change measured rects once.  Do not delay readiness for it.
@@ -276,6 +323,7 @@ export async function boot(opts) {
       disposed = true;
       clearTimeout(resizeTimer);
       removeResize();
+      removeHud();
       driver?.detach?.();
       presenter?.destroy?.();
       a11y?.destroy?.();

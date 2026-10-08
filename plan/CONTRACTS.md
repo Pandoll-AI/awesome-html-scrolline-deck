@@ -542,7 +542,7 @@ Presenter = { next(), prev(), first(), last(), goto(name: string), blackout(on?:
   - 전체화면 토글: `f`
 - 메타·Ctrl·Alt 조합은 무시. 링크·버튼·input에 포커스가 있으면 Space·Enter 양보.
 - 다음 정지점 = 현재(진행 중 목표 우선) 시각보다 `0.01u` 이상 뒤의 첫 stop. 이동 시간(초) = `min(2.6, 0.9 + |Δy| / h × 0.35)`, easing = cubic inOut. reduce면 즉시 이동.
-- URL 파라미터: `?t=<u>`(시작 시각), `?stop=<name>`, `?motion=reduce`(강제 reduce), `?debug=1`(HUD: t·stop·beat).
+- URL 파라미터: `?t=<u>`(시작 시각), `?stop=<name>`, `?motion=reduce`(강제 reduce), `?debug=1`(HUD: t·stop·beat). **v2.2 구현**: live 모드에서 boot가 ready 직전에 `?stop`(name 또는 label, `?t`보다 우선) → `?t`(0..duration으로 자름) 순으로 `driver.seek(t, { immediate: true })`. `?debug=1` HUD = `div.sl-debug`(host 안, fixed, 매 프레임 `t 0.00 · stop <name> · beat <id>`), destroy 때 제거.
 
 - **v2 명시 (E2-7)**: `scrolline:active` 발생 주체 = **boot**(지금은 아무도 안 냄 — 수리). master tl `onUpdate`와 boot가 부르는 seek 뒤에 현재 t로 beat별 `[span.start, span.end)` 안팎을 이전 값과 비교해 enter/leave를 낸다(같은 t 재계산은 이벤트 없음). `persist` beat도 span 끝에 leave(화면에는 남되 inert). video clip activate/deactivate도 같은 지점에서(C13 v2). export 모드에서는 내지 않음. 정지점·키 규칙 변화 없음.
 

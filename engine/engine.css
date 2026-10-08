@@ -84,6 +84,18 @@
   white-space: nowrap;
   border: 0;
 }
+/* C12 ?debug=1 HUD(t · stop · beat). 무대 밖 고정, 클릭 통과. */
+.sl-debug {
+  position: fixed;
+  top: 8px;
+  right: 8px;
+  z-index: 100;
+  padding: 4px 8px;
+  color: var(--sl-fg);
+  background: var(--sl-scrim);
+  font: 12px/1.4 ui-monospace, monospace;
+  pointer-events: none;
+}
 .sl-blackout {
   position: absolute;
   inset: 0;

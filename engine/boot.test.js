@@ -102,6 +102,28 @@ describe('boot', () => {
     handle.destroy();
   });
 
+  // 문서 대조로 찾은 결함: C12 URL 파라미터 ?t·?stop·?debug=1이 구현돼 있지 않았다(?motion=reduce만).
+  it('starts at ?stop or ?t and shows the ?debug=1 HUD', async () => {
+    mocks.plan.mockReturnValue({
+      duration: 10,
+      stops: [{ name: 'two', label: 'stop:two', beat: 'b', t: 6 }],
+      beats: [{ id: 'b', start: 5, stop: 6, end: 10, spans: [] }],
+    });
+    window.history.replaceState(null, '', '/?t=99&debug=1');
+    let handle = await boot({ host: document.querySelector('#app'), deck, concept, moves, assetBase: '/' });
+    const driver = mocks.createDriver.mock.results[0].value;
+    expect(driver.seek).toHaveBeenCalledWith(10, { immediate: true });
+    expect(document.querySelector('.sl-debug').textContent).toMatch(/^t 1\.25 · stop - · beat b$/);
+    handle.destroy();
+    expect(document.querySelector('.sl-debug')).toBeNull();
+
+    window.history.replaceState(null, '', '/?stop=two&t=1');
+    handle = await boot({ host: document.querySelector('#app'), deck, concept, moves, assetBase: '/' });
+    expect(mocks.createDriver.mock.results[1].value.seek).toHaveBeenCalledWith(6, { immediate: true });
+    handle.destroy();
+    window.history.replaceState(null, '', '/');
+  });
+
   it('uses export wrapper instead of scroll integrations', async () => {
     const handle = await boot({
       host: document.querySelector('#app'),
