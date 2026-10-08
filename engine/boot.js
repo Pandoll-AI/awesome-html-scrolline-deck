@@ -233,7 +233,9 @@ export async function boot(opts) {
     version: VERSION,
     mode,
     map,
-    tl: built.tl,
+    get tl() {
+      return built.tl;
+    },
     time: () => driver?.time?.() ?? built.tl.time(),
     seek: (t) => {
       if (driver) driver.seek(t);

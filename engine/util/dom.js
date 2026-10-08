@@ -1,13 +1,21 @@
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
+/** `svg` 태그와 SVG 부모(foreignObject 제외) 안의 자식은 SVG 이름공간으로 만든다(HTML 이름공간이면 브라우저가 그리지 않음). */
+function inSvg(tag, parent) {
+  if (tag === 'svg') return true;
+  return parent?.namespaceURI === SVG_NS && parent.localName !== 'foreignObject';
+}
+
 /**
  * @param {string} tag
  * @param {string|null} [cls]
  * @param {Element|null} [parent]
  * @param {string|null} [text]
- * @returns {HTMLElement}
+ * @returns {HTMLElement|SVGElement}
  */
 export function el(tag, cls, parent, text) {
-  const node = document.createElement(tag);
-  if (cls) node.className = cls;
+  const node = inSvg(tag, parent) ? document.createElementNS(SVG_NS, tag) : document.createElement(tag);
+  if (cls) node.setAttribute('class', cls);
   if (text !== null && text !== undefined) node.textContent = text;
   if (parent) parent.append(node);
   return node;

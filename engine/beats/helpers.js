@@ -1,8 +1,12 @@
 /** Internal DOM helpers shared by C4 beat renderers. */
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
 export function node(rc, tag, cls, parent, text) {
   if (rc.el) return rc.el(tag, cls, parent, text);
-  const value = document.createElement(tag);
-  if (cls) value.className = cls;
+  // engine/util/dom.js el()과 같은 규칙: svg와 SVG 부모의 자식은 SVG 이름공간.
+  const svg = tag === 'svg' || (parent?.namespaceURI === SVG_NS && parent.localName !== 'foreignObject');
+  const value = svg ? document.createElementNS(SVG_NS, tag) : document.createElement(tag);
+  if (cls) value.setAttribute('class', cls);
   if (text != null) value.textContent = text;
   parent?.append(value);
   return value;

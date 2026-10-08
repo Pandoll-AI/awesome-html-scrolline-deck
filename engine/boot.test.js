@@ -90,6 +90,18 @@ describe('boot', () => {
     window.removeEventListener('scrolline:ready', ready);
   });
 
+  // 회귀(data 통합): 글꼴 rebuild 뒤에도 __deck.tl이 첫 build의 timeline을 가리켜 smoke seek이 옛 timeline을 돌렸다.
+  it('keeps window.__deck.tl on the current build after a rebuild', async () => {
+    const first = built();
+    const second = built();
+    mocks.build.mockResolvedValueOnce(first).mockResolvedValueOnce(second);
+    const handle = await boot({ host: document.querySelector('#app'), deck, concept, moves, assetBase: '/' });
+    expect(window.__deck.tl).toBe(first.tl);
+    await handle.rebuild('fonts');
+    expect(window.__deck.tl).toBe(second.tl);
+    handle.destroy();
+  });
+
   it('uses export wrapper instead of scroll integrations', async () => {
     const handle = await boot({
       host: document.querySelector('#app'),
