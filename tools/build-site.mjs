@@ -536,7 +536,7 @@ function page({ c, prefix, title, description, body, current }) {
 <body>
 <a class="skip" href="#main">${t({ ko: '본문으로', en: 'Skip to content' })}</a>
 <header class="bar"><div class="wrap">
-<a class="brand" href="${prefix}">${MARK}Scrolline</a>
+<a class="brand" href="${prefix || './'}">${MARK}Scrolline</a>
 <nav aria-label="Site">${nav
     .map(
       ([k, href]) =>
@@ -562,7 +562,7 @@ export function renderIndex(c, decks, how, outDir) {
     .map((d, i) => {
       const style = `--c-bg:${d.palette.bg};--c-fg:${d.palette.fg};--c-accent:${d.palette.accent}`;
       const label = `${d.name.en}: ${d.title.en}`;
-      const media = mediaHtml(d.preview, p, outDir, label, esc(d.title.ko), 1800 + i * 170);
+      const media = mediaHtml(d.preview, p, outDir, label, t(d.title), 1800 + i * 170);
       const open = d.built
         ? `<a class="open" href="decks/${d.id}/">${t(c.tile.open)} ${ARROW}</a>`
         : `<span class="open">${t(c.tile.open)}</span>`;
@@ -658,7 +658,8 @@ export function renderMoves(c, moves, lines, decks) {
   const body = `
 <section class="wrap page-head" aria-labelledby="h-moves">
 <h1 id="h-moves">${t(c.movesPage.title)} <span class="muted mono">${moves.length}</span></h1>
-<p>${t(c.movesPage.lead)}</p>
+<div class="head-row"><p>${t(c.movesPage.lead)}</p>
+<div class="search"><input type="search" placeholder="${esc(c.movesPage.filter.ko)}" data-ph-ko="${esc(c.movesPage.filter.ko)}" data-ph-en="${esc(c.movesPage.filter.en)}" aria-label="${esc(c.movesPage.filter.en)}"><p class="count mono"><span data-n>${moves.length}</span> / ${moves.length}</p></div></div>
 </section>
 <div class="filters"><div class="wrap">
 <div class="chips" role="group" aria-label="Family">
@@ -670,8 +671,6 @@ ${families
   )
   .join('\n')}
 </div>
-<input type="search" placeholder="${esc(c.movesPage.filter.ko)}" data-ph-ko="${esc(c.movesPage.filter.ko)}" data-ph-en="${esc(c.movesPage.filter.en)}" aria-label="${esc(c.movesPage.filter.en)}">
-<p class="count mono"><span data-n>${moves.length}</span> / ${moves.length}</p>
 </div></div>
 <div class="wrap">
 <ul class="moves">

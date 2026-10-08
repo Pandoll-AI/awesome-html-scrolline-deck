@@ -16,7 +16,7 @@
   --fs-s: 14px;
   --fs-m: 16px;
   --fs-l: 20px;
-  --fs-xl: 28px;
+  --fs-xl: clamp(24px, 2vw + 12px, 28px);
   --fs-2xl: clamp(28px, 3.1vw, 44px);
   --lh-tight: 1.18;
   --lh-text: 1.55;
@@ -524,6 +524,19 @@ footer a:hover {
   font-weight: 680;
   letter-spacing: -0.025em;
 }
+.page-head .head-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--sp-4) var(--sp-6);
+}
+.page-head .search {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  flex: 0 1 380px;
+}
 .page-head p {
   margin: 0;
   max-width: 40em;
@@ -539,15 +552,12 @@ footer a:hover {
   border-bottom: 1px solid var(--rule);
 }
 .filters .wrap {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--sp-3) var(--sp-4);
+  display: block;
 }
 .filters .chips {
   margin: 0;
 }
-.filters input {
+.search input {
   flex: 1 1 220px;
   max-width: 320px;
   background: var(--panel);
@@ -558,12 +568,13 @@ footer a:hover {
   font: inherit;
   font-size: var(--fs-s);
 }
-.filters input:focus {
+.search input:focus {
   outline: none;
   border-color: var(--fg-muted);
 }
 .count {
-  margin: 0 0 0 auto;
+  margin: 0;
+  white-space: nowrap;
   color: var(--fg-faint);
 }
 
@@ -687,4 +698,12 @@ footer a:hover {
 }
 .copy.done .ok {
   display: inline;
+}
+.filters .chips {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.filters .chip {
+  flex: none;
 }

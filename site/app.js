@@ -104,7 +104,7 @@
   if (list) {
     const rows = [...list.querySelectorAll('.move')];
     const chips = [...document.querySelectorAll('.filters [data-family]')];
-    const input = document.querySelector('.filters input');
+    const input = document.querySelector('.search input');
     const count = document.querySelector('.count [data-n]');
     const none = document.querySelector('.none');
     let family = (location.hash.match(/family=([a-z]+)/) || [])[1] || 'all';
