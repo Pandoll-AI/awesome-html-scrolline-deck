@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import registry from './index.js';
-import catalog from '../plan/moves.catalog.jsonl?raw';
+import { readFileSync } from 'node:fs';
+
+const catalog = readFileSync(new URL('../plan/moves.catalog.jsonl', import.meta.url), 'utf8');
 
 const catalogIds = catalog
   .split('\n')
