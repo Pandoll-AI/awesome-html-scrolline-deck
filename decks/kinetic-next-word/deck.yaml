@@ -21,7 +21,7 @@ beats:
     mode: loop
     mask: { type: text, text: "AI" }
     place: { slot: full }
-    enter: { move: mask-word-in, params: { duration: 1.4, stagger: 0.12 } }
+    enter: { move: mask-word-in, params: { duration: 1.4 } }
     repeat: intended
     steps:
       - { name: open, move: word-door, params: { split: 1, duration: 2.4 } }
@@ -213,7 +213,6 @@ beats:
     mode: loop
     mask: { type: text, text: "다음" }
     place: { slot: full }
-    enter: { move: mask-word-in, params: { duration: 1.4, stagger: 0.12 } }
+    enter: { move: mask-word-in, params: { duration: 1.4 } }
     repeat: intended
-    exit: { move: "engine:none" }
     exportHold: 3.0
