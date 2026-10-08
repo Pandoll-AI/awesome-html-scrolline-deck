@@ -34,7 +34,7 @@ beats:
     caption: "전기차 전환은 어디까지 왔나"
     place: { slot: full }
     enter: { move: video-scrub, params: { duration: 2.4 } }
-    link: { move: iris-to-dot, params: { focusX: 0.486, focusY: 0.39 } }
+    link: { move: iris-to-dot, params: { focusX: 0.486, focusY: 0.39, duration: 1.8 } }
     exportHold: 2.0
 
   - id: b-seed
@@ -54,11 +54,11 @@ beats:
         title: "2025년, 같은 점이 178개가 됐다"
         dek: "2,120만 대. 13년 사이 178배"
     source: s3
-    place: { slot: full }
-    enter: { move: dot-seed, params: { noteSide: right } }
+    place: { slot: center }
+    enter: { move: dot-seed, params: { noteSide: right, duration: 1.2 } }
     steps:
-      - { name: x178, move: dot-multiply, params: { cols: 18 } }
-    link: { move: dots-pour, params: { toIndex: -1 } }
+      - { name: x178, move: dot-multiply, params: { cols: 18, pitch: 54, duration: 2.6 } }
+    link: { move: dots-pour, params: { toIndex: -1, duration: 2.6 } }
     exportHold: 2.0
 
   - id: b-sales
@@ -89,12 +89,12 @@ beats:
         notes:
           - { index: 10, text: "2025년 25%" }
     source: [s3, s4]
-    place: { slot: full }
+    place: { slot: center }
     enter: { move: "engine:none" }
     steps:
-      - { name: steps, move: annotation-pin, params: { stagger: 0.08 } }
-      - { name: share, move: mark-morph }
-    link: { move: line-to-waffle, params: { cols: 10, cells: 100 } }
+      - { name: steps, move: annotation-pin, params: { shape: stairs, stagger: 0.16, duration: 1.8 } }
+      - { name: share, move: mark-morph, params: { duration: 2.6 } }
+    link: { move: line-to-waffle, params: { cols: 10, cells: 100, duration: 2.2 } }
     exportHold: 2.2
 
   - id: b-quarter
@@ -110,11 +110,11 @@ beats:
         title: "도로 위 승용차는 100대 중 5대뿐이다"
         dek: "판매 비중과 보유 비중의 간격. 부품·정비·충전 수요는 이 간격만큼 늦게 따라온다"
     source: [s4, s5]
-    place: { slot: full }
+    place: { slot: center }
     enter: { move: "engine:none" }
     steps:
-      - { name: stock, move: waffle-recount, params: { index: 1 } }
-    exit: { move: recede }
+      - { name: stock, move: waffle-recount, params: { index: 1, duration: 2 } }
+    exit: { move: "engine:fade-out" }
     repeat: intended   # enter engine:none(link가 그림) 2번째
     exportHold: 2.4
 
@@ -130,9 +130,9 @@ beats:
     dek: "세계 판매의 63%. 유럽 430만 대, 미국 153만 대"
     highlight: { index: 0 }
     source: s3
-    place: { slot: full }
-    enter: { move: aggregate-split }
-    link: { move: rank-reorder, params: { matchBy: label } }
+    place: { slot: center }
+    enter: { move: aggregate-split, params: { duration: 2.4 } }
+    link: { move: rank-reorder, params: { matchBy: label, duration: 2.4 } }
     exportHold: 2.0
 
   - id: b-share
@@ -151,11 +151,11 @@ beats:
         title: "한국은 11%, 세계 평균 25%의 절반에 못 미친다"
         dek: "태국 23%, 미국 10%, 일본 3%도 평균선 아래"
     source: s4
-    place: { slot: full }
+    place: { slot: center }
     enter: { move: "engine:none" }
     steps:
-      - { name: world, move: threshold-line, params: { refIndex: 5 } }
-    exit: { move: recede }
+      - { name: world, move: threshold-line, params: { refIndex: 5, focusIndex: 7, duration: 1.8 } }
+    exit: { move: "engine:fade-out" }
     repeat: intended   # 지나간 차트는 회색으로 물러난다 — 덱 공통 퇴장 문법(2번째)
     exportHold: 2.4
 
@@ -175,10 +175,10 @@ beats:
         notes:
           - { index: 5, series: "한국", text: "세계 평균과 14%p 차이" }
     source: s4
-    place: { slot: full }
-    enter: { move: line-draw }
+    place: { slot: center }
+    enter: { move: ink-in, params: { duration: 2.2 } }
     steps:
-      - { name: gap, move: annotation-pin }
+      - { name: gap, move: annotation-pin, params: { shape: gap, against: 1, offset: 44, duration: 1.4 } }
     repeat: intended   # 주석 고정은 시그니처 — 덱에서 2번째 annotation-pin
     exit: { move: "engine:fade-out" }
     exportHold: 2.2
@@ -186,6 +186,7 @@ beats:
   # ── 3막: 새 성장 축 ───────────────────────────────────
   - id: b-vietnam
     type: video
+    tone: 1
     src: assets/video/vietnam-street.mp4
     poster: assets/video/vietnam-street-poster.webp
     alt: "베트남 도시 큰길. 오토바이와 소형 전기차가 뒤섞여 흐르는 낮 장면"
@@ -194,8 +195,8 @@ beats:
     caption: "베트남, 신차 10대 중 4대가 전기차. 2023년엔 10대 중 1대였다"
     source: s4
     place: { slot: full }
-    enter: { move: mask-word-in }
-    link: { move: glyph-to-bar, params: { toIndex: 0 } }
+    enter: { move: mask-word-in, params: { duration: 1.6, captionIn: true } }
+    link: { move: glyph-to-bar, params: { toIndex: 0, duration: 2.4 } }
     exportHold: 2.4
 
   - id: b-growth
@@ -210,9 +211,9 @@ beats:
     dek: "2025년 전기차 판매 증가율(전년 대비)"
     highlight: { index: 0 }
     source: s3
-    place: { slot: full }
+    place: { slot: center }
     enter: { move: "engine:none" }
-    exit: { move: recede }
+    exit: { move: "engine:fade-out" }
     repeat: intended   # 공통 퇴장 문법(3번째)
     exportHold: 2.0
 
@@ -229,8 +230,8 @@ beats:
     notes:
       - { index: 0, text: "1분기 세계 판매 약 390만 대" }
     source: s1
-    place: { slot: full }
-    enter: { move: diverge-grow }
+    place: { slot: center }
+    enter: { move: diverge-grow, params: { duration: 2 } }
     exit: { move: "engine:fade-out" }
     repeat: intended   # 조용한 퇴장(2번째)
     exportHold: 2.2
@@ -250,10 +251,10 @@ beats:
         notes:
           - { index: 6, text: "전망 · IEA Global EV Outlook 2026" }
     source: [s4, s1]
-    place: { slot: full }
-    enter: { move: ink-in, params: { upto: 5 } }
+    place: { slot: center }
+    enter: { move: ink-in, params: { upto: 5, duration: 2 } }
     steps:
-      - { name: forecast, move: forecast-extend, params: { fromIndex: 5 } }
+      - { name: forecast, move: forecast-extend, params: { fromIndex: 5, duration: 1.8 } }
     exit: { move: "engine:fade-out" }
     repeat: intended   # 조용한 퇴장(3번째)
     exportHold: 2.4
@@ -281,7 +282,7 @@ beats:
     source: s1
     place: { slot: center }
     enter: { move: count-roll }
-    exit: { move: recede }
+    exit: { move: "engine:fade-out" }
     repeat: intended   # 공통 퇴장 문법(4번째)
     exportHold: 2.2
 

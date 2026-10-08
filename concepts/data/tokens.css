@@ -21,7 +21,7 @@
   --sl-weight-text: 500;
 
   --sl-size-xl: calc(var(--px) * 200 * 1px);
-  --sl-size-l: calc(var(--px) * 64 * 1px);
+  --sl-size-l: calc(var(--px) * 76 * 1px);
   --sl-size-m: calc(var(--px) * 32 * 1px);
   --sl-size-s: calc(var(--px) * 22 * 1px);
   --sl-size-caption: calc(var(--px) * 17 * 1px);
@@ -40,4 +40,10 @@
   --sl-fg: #f4f1ea;
   --sl-fg-muted: #cfc9bd;
   --sl-scrim: rgba(20, 20, 19, 0.55);
+}
+
+/* tone 1 = 종이 위 글리프 마스크 영상: 영상 밖이 종이라 글자는 다시 잉크색 */
+.sl-concept-data [data-tone="1"] {
+  --sl-fg: #141413;
+  --sl-fg-muted: #6e6a62;
 }

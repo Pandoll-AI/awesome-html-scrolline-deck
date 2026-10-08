@@ -32,7 +32,7 @@ describe('data-ev-shift deck', () => {
     const map = plan(deck, env);
     expect({ stops: map.stops.length, duration: Number(map.duration.toFixed(1)) }).toEqual({
       stops: 22,
-      duration: 52.6,
+      duration: 64.4,
     });
   });
 

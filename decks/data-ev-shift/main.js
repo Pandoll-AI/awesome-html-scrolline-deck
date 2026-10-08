@@ -3,6 +3,7 @@ import '../../engine/engine.css';
 import moves from '../../moves/index.js';
 import concept from '../../concepts/data/index.js';
 import '../../concepts/data/tokens.css';
+import '../../concepts/data/layout.css';
 import deck from './deck.yaml';
 
 boot({
