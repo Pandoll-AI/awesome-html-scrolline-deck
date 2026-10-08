@@ -5,6 +5,8 @@
 
 import { add, asset, node, root } from './helpers.js';
 
+const MONTH_MS = 30.4375 * 24 * 3600 * 1000;
+
 function timestamp(date, fallback) {
   const value = Date.parse(date);
   return Number.isFinite(value) ? value : fallback;
@@ -128,26 +130,43 @@ export default {
     const parts = {};
     const view = root('chronology', rc);
     const axis = data.axis ?? 'x';
-    const track = add(parts, 'track', node(rc, 'div', `sl-chronology sl-chronology--${axis}`, view));
     const dates = data.events.map((event, index) => timestamp(event.date, index));
     const lo = Math.min(...dates);
     const hi = Math.max(...dates);
-    if (data.ground) {
-      const ground = add(parts, 'ground', node(rc, 'div', 'sl-chronology__ground', track));
-      ground.dataset.depth = '0';
-      data.events.forEach((event) => {
-        add(parts, 'ghost', node(rc, 'span', 'sl-chronology__ghost', ground, String(event.date).slice(0, 4)));
-      });
+    const ratioOf = (index) =>
+      data.scale === 'time' && hi !== lo
+        ? (dates[index] - lo) / (hi - lo)
+        : index / Math.max(1, data.events.length - 1);
+    // 배치용 inline 변수: 트랙 길이(개월 수)와 「지금」 위치. engine.css가 time 레일 길이·출발점으로 쓴다.
+    view.style.setProperty('--sl-span', String(Math.max(1, Math.round((hi - lo) / MONTH_MS))));
+    if (typeof data.now === 'number') {
+      view.style.setProperty('--sl-now', `${data.now * 100}%`);
+      view.dataset.now = String(data.now);
     }
+    // ground = 트랙 뒤 전면 종이(시대 색)와 연도 유령 글자. 같은 해는 한 번만, 그해 첫 사건 자리에.
+    if (data.ground) {
+      const ground = add(parts, 'ground', node(rc, 'div', 'sl-chronology__ground', view));
+      ground.dataset.depth = '0';
+      // 해 경계(1월 1일, 첫해는 첫 사건) 자리에 둔다. 다음 해와 10개월 안으로 붙으면 앞의 것을 뺀다.
+      const years = [...new Set(data.events.map((event) => yearOf(event.date)).filter(Number.isFinite))];
+      const at = (year) => Math.max(lo, timestamp(`${year}-01-01`, lo));
+      years
+        .filter((year, i) => i === years.length - 1 || at(years[i + 1]) - at(year) >= 10 * MONTH_MS)
+        .forEach((year) => {
+          const ghost = add(parts, 'ghost', node(rc, 'span', 'sl-chronology__ghost', ground, String(year)));
+          ghost.style.setProperty('--sl-ratio', String(hi === lo ? 0 : (at(year) - lo) / (hi - lo)));
+        });
+    }
+    const track = add(parts, 'track', node(rc, 'div', `sl-chronology sl-chronology--${axis}`, view));
+    let majors = 0;
     data.events.forEach((event, index) => {
-      const ratio =
-        data.scale === 'time' && hi !== lo
-          ? (dates[index] - lo) / (hi - lo)
-          : index / Math.max(1, data.events.length - 1);
+      const ratio = ratioOf(index);
       const item = add(parts, 'event', node(rc, 'article', 'sl-chronology__event', track));
       item.style.setProperty(axis === 'x' ? '--sl-position-x' : '--sl-position-y', `${ratio * 100}%`);
       item.dataset.position = String(ratio);
       item.dataset.weight = event.weight ?? 'major';
+      // 주요 사건 제목이 겹치지 않게 높이 3단을 돌려 쓴다(전체 레일 화면).
+      if (item.dataset.weight === 'major') item.style.setProperty('--sl-lane', String(majors++ % 3));
       add(parts, 'dot', node(rc, 'span', 'sl-chronology__dot', item));
       add(parts, 'stem', node(rc, 'span', 'sl-chronology__stem', item));
       add(parts, 'date', node(rc, 'time', 'sl-chronology__date', item, event.date));
@@ -167,6 +186,7 @@ export default {
     if (data.counter && data.counter !== 'none') {
       const counter = add(parts, 'counter', node(rc, 'div', 'sl-chronology__counter', view));
       Array.from(dateDigits(data.events[0].date, data.counter)).forEach((digit, place) => {
+        if (data.counter === 'month' && place === 4) node(rc, 'span', 'sl-chronology__sep', counter, '.');
         const reel = add(parts, 'reel', node(rc, 'span', 'sl-chronology__reel', counter));
         reel.dataset.place = String(place);
         reel.dataset.digit = digit;
