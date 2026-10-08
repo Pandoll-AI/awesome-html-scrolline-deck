@@ -1,6 +1,7 @@
 /** Lift one rail event into a beat's primary subject. */
 import { transferVars } from '../../engine/index.js';
 import { eventPart } from '../_shared/event-part.js';
+import { RAIL_DETAIL } from '../_shared/rail-focus.js';
 import { finishLink, ghost } from '../_shared/link.js';
 
 export default {
@@ -44,7 +45,9 @@ export default {
       transformOrigin: '0 0',
     });
     ctx.initial(to.node, { autoAlpha: 0 });
-    ctx.initial(from.node, { autoAlpha: 1 });
+    // 레일 초점 상세(제목·썸네일)는 step이 드러낼 때까지 숨어 있다 — 처음부터 보이게 두면 초점이 깨진다.
+    const focused = RAIL_DETAIL.includes(from.part) && ctx.from.part('now').length > 0;
+    ctx.initial(from.node, { autoAlpha: focused ? 0 : 1 });
     if (stem) tl.to(stem, { scaleY: 1.6, duration: d * 0.3, ease: ctx.ease('in') }, 0);
     tl.to(sinking, { y: 32, autoAlpha: 0.08, duration: d * 0.35, ease: ctx.ease('in') }, d * 0.1);
     tl.to(carry, { y: -p.liftRise * ctx.viewport.h, duration: d * 0.3, ease: ctx.ease('in') }, 0);

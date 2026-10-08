@@ -209,7 +209,7 @@ BeatView = { root: HTMLElement, parts: Record<string, Element[]>, media?: { seq?
 > **v2 변경 요약 — move 라이브러리 설계자용(MOVES.md·moves/ 작업자는 이 상자만 읽어도 됨)**
 > 1. **anchor index**: `beat.anchor(part?, index = 0)`. 음수 index = 뒤에서(-1 = 마지막). `Handoff.index`는 양수로 정규화된 값. 「N번째 막대·사건」을 handoff 대상으로 쓸 수 있다(#7·#8).
 > 2. **link가 넘길 part 고르기**: MoveDef 선택 함수 `handoff(params, { from, to }) → { from?: { part?, index? }, to?: { part?, index? } }`(순수, link만). 생략하면 양쪽 primary·index 0. 엔진이 이것으로 `ctx.handoff`를 만든다.
-> 3. **skip 규칙**: `ctx.skipNodes: Element[]` 추가 — 이 요소들은 건드리지 않는다(enter·step 모두). `ctx.skipParts`는 통째로 넘어간 part 이름만(to.index를 지정한 link면 `[]`, 그 요소 하나만 skipNodes). move는 둘 다 지켜야 함.
+> 3. **skip 규칙**: `ctx.skipNodes: Element[]` 추가 — 이 요소들은 건드리지 않는다(enter·step 모두: `ctx.initial`·들여오기 tween 금지). **v2.2**: step이 그 요소를 「지나간 것」으로 접는 tween(step 구간 안, build 시점 inline style 불변)은 허용(#48). `ctx.skipParts`는 통째로 넘어간 part 이름만(to.index를 지정한 link면 `[]`, 그 요소 하나만 skipNodes). move는 둘 다 지켜야 함.
 > 4. **영상 핸들**: `ctx.beat.media = { seq?: FrameSeq, clip?: Clip }`. 스크럽 move는 `tl.to(proxy, { p: 1, onUpdate: () => ctx.beat.media.seq.setProgress(proxy.p) })`처럼 tween onUpdate에서만 부른다(C13). link에서 A의 영상은 `ctx.from.media`(#16·#20).
 > 5. **글자 마스크**: 렌더러는 `data-mask-text`만 표시, 마스크 적용은 move. `ctx.textMask(text, { rect?, align? }) → data URL`(글꼴 = 컨셉 display 글꼴·굵기, rect 기본 = `ctx.beat.anchor('media').rect`). 적용은 `ctx.initial(media, { maskImage: url, webkitMaskImage: url, maskRepeat: 'no-repeat', … })` 후 `maskSize`·`maskPosition` tween(#17).
 > 6. **overlay 수명**: `ctx.overlay`는 span 시작에 보이고 **그 move를 가진 beat가 끝날 때**(`beat.span.end`, persist beat면 끝까지) 숨는다. step·ambient가 만든 링·주석은 beat 끝까지 남는다(#19). 먼저 지우고 싶으면 move가 자기 tween으로 지운다. link span은 받는 beat(B) 소유라 B 끝까지.

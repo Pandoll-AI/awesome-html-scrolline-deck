@@ -1,4 +1,5 @@
 /** Draw an initial chronology rail. Used when a rail chapter first enters. */
+import { railFocus } from '../_shared/rail-focus.js';
 import { reelFrom } from '../_shared/reel.js';
 import { px } from '../_shared/timeline.js';
 
@@ -33,7 +34,8 @@ export default {
     const d = ctx.duration,
       track = visible(ctx, 'track'),
       now = ctx.beat.part('now')[0],
-      origin = now ? `${ctx.beat.anchor('now').rect.x}px center` : 'center';
+      origin = now ? `${ctx.beat.anchor('now').rect.x - ctx.beat.anchor('track').rect.x}px center` : 'center';
+    railFocus(ctx, ctx.beat, 0);
     ctx.initial(track, { scaleX: 0, transformOrigin: origin });
     tl.to(track, { scaleX: 1, duration: d * 0.45, ease: ctx.ease('out') }, 0);
     [...byDistance(ctx, 'tick'), ...byDistance(ctx, 'dot')].forEach(({ node }, i) => {
@@ -60,6 +62,9 @@ export default {
     tl.to(label, { autoAlpha: 1, letterSpacing: '0em', duration: d * 0.45, ease: ctx.ease('out') }, d * 0.55);
     tl.to(counter, { autoAlpha: 1, duration: d * 0.3, ease: ctx.ease('out') }, d * 0.7);
     const reel = counter[0] && reelFrom(counter[0]);
-    reel?.cols.forEach((col) => tl.set(col, { yPercent: -Number(col.dataset.digit ?? 0) * 10 }, 0));
+    reel?.cols.forEach((col) => {
+      ctx.initial(col, { y: 0, yPercent: -Number(col.dataset.digit ?? 0) * 10 });
+      tl.set(col, { yPercent: -Number(col.dataset.digit ?? 0) * 10 }, 0);
+    });
   },
 };

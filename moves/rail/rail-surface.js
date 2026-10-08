@@ -1,4 +1,5 @@
 /** Surface the remaining rail events after a handoff. Used by fast chronology enters. */
+import { railFocus } from '../_shared/rail-focus.js';
 import { px } from '../_shared/timeline.js';
 
 const usable = (ctx, name) =>
@@ -27,6 +28,7 @@ export default {
         distance: Math.abs(ctx.beat.anchor('event', index).rect.x - now),
       }))
       .sort((a, b) => a.distance - b.distance);
+    if (events.length) railFocus(ctx, ctx.beat, ctx.beat.part('event').indexOf(events[0].node));
     events.forEach(({ node }, index) => {
       ctx.initial(node, { y: px(ctx, 14), autoAlpha: 0 });
       tl.to(

@@ -1,7 +1,7 @@
 /** Link two chronology eras with a travelling boundary. Used by rail chapter transitions; signature rail move. */
-import { transferVars } from '../../engine/index.js';
 import { colorOf } from '../_shared/color.js';
 import { finishLink } from '../_shared/link.js';
+import { railFocus } from '../_shared/rail-focus.js';
 import { reelFrom, rollReel } from '../_shared/reel.js';
 import { px } from '../_shared/timeline.js';
 
@@ -9,6 +9,12 @@ const usable = (ctx, beat, name) =>
   ctx.skipParts.includes(name) && beat === ctx.beat
     ? []
     : beat.part(name).filter((node) => !(ctx.skipNodes ?? []).includes(node));
+const monthAt = (date) => {
+  const match = String(date).match(/^(\d{4})(?:-(\d{1,2}))?/);
+  return match ? Number(match[1]) * 12 + (Number(match[2] ?? 1) - 1) : 0;
+};
+const nowX = (ctx, beat) => (beat.part('now')[0] ? beat.anchor('now').point.x : ctx.viewport.w / 2);
+const dotX = (beat, index) => (beat.part('dot')[index] ? beat.anchor('dot', index).point.x : 0);
 const digits = (date, kind) =>
   String(date)
     .replace(/\D/g, '')
@@ -27,20 +33,35 @@ export default {
     labelTracking: { type: 'number', default: 0.12, min: 0, max: 0.3, doc: 'Incoming label tracking in em.' },
   },
   timing: (params) => ({ duration: params.duration, stops: [] }),
+  // 넘겨주는 것은 카운터(같은 자리에서 계속 구른다). 트랙은 둘 다 달리므로 착지 대상이 아님.
+  handoff(params, { from, to }) {
+    const counted = (data) => data?.counter && data.counter !== 'none';
+    return counted(from) && counted(to)
+      ? { from: { part: 'counter' }, to: { part: 'counter' } }
+      : { from: { part: 'track' }, to: { part: 'track' } };
+  },
   build(tl, ctx, params) {
     const d = ctx.duration,
       a = ctx.from,
       b = ctx.beat,
-      aTrack = usable(ctx, a, 'track'),
-      bTrack = usable(ctx, b, 'track'),
+      aTrack = a.part('track'),
+      bTrack = b.part('track'), // link 자신이 넘기는 트랙이라 skip 대상 아님
       aGround = usable(ctx, a, 'ground'),
       bGround = usable(ctx, b, 'ground');
-    const dx = ctx.handoff.to.rect.x - ctx.handoff.from.rect.x;
-    ctx.initial(bTrack, { x: dx, autoAlpha: 1 });
+    // 레일은 끊기지 않는다: A의 마지막 사건에서 B의 첫 사건까지 개월 수만큼 두 트랙이 함께 왼쪽으로 달린다.
+    const aEvents = a.data.events ?? [],
+      bEvents = b.data.events ?? [];
+    const months = Math.max(1, monthAt(bEvents[0]?.date) - monthAt(aEvents.at(-1)?.date));
+    const gap = months * (ctx.tokens.monthPx ?? 64) * ctx.viewport.px;
+    const aStart = nowX(ctx, a) - dotX(a, aEvents.length - 1),
+      bEnd = nowX(ctx, b) - dotX(b, 0);
+    railFocus(ctx, b, 0);
     ctx.initial(bGround, { clipPath: 'inset(0 0 0 100%)', autoAlpha: 1 });
     if (!ctx.reduce) {
-      tl.to(aTrack, { x: dx, duration: d * 0.75, ease: ctx.ease('travel') }, 0);
-      tl.to(bTrack, { x: 0, duration: d * 0.75, ease: ctx.ease('travel') }, 0);
+      const travel = { duration: d * 0.75, ease: ctx.ease('travel'), immediateRender: false };
+      tl.fromTo(aTrack, { x: aStart }, { x: aStart - gap, ...travel }, 0);
+      tl.fromTo(bTrack, { x: bEnd + gap }, { x: bEnd, ...travel }, 0);
+      tl.to(bTrack, { autoAlpha: 1, duration: d * 0.15, ease: ctx.ease('out') }, d * 0.15);
     } else {
       tl.to(aTrack, { autoAlpha: 0, duration: d * 0.12 }, d * 0.68);
     }
@@ -79,7 +100,10 @@ export default {
       const reel = reelFrom(aCounter),
         fromText = digits(a.data.events.at(-1)?.date, a.data.counter),
         toText = digits(b.data.events[0]?.date, b.data.counter);
-      reel.cols.forEach((col, i) => ctx.initial(col, { yPercent: -Number(fromText[i] ?? 0) * 10 }));
+      reel.cols.forEach((col, i) => {
+        ctx.initial(col, { y: 0, yPercent: -Number(col.dataset.digit ?? 0) * 10 });
+        tl.set(col, { yPercent: -Number(fromText[i] ?? 0) * 10 }, 0);
+      });
       if (ctx.reduce)
         reel.cols.forEach((col, i) => tl.set(col, { yPercent: -Number(toText[i] ?? 0) * 10 }, d * 0.75));
       else
@@ -92,20 +116,11 @@ export default {
     ctx.initial(title, { y: px(ctx, 18), autoAlpha: 0 });
     tl.to(stem, { scaleY: 1, duration: d * 0.18, ease: ctx.ease('arrive') }, d * 0.75);
     tl.to(title, { y: 0, autoAlpha: 1, duration: d * 0.18, ease: ctx.ease('out') }, d * 0.82);
-    tl.to(
-      ctx.handoff.from.node,
-      {
-        ...transferVars(ctx.handoff.from.rect, ctx.handoff.to.rect),
-        duration: d * 0.75,
-        ease: ctx.ease('travel'),
-      },
-      0,
-    );
     finishLink(tl, ctx, {
       at: d,
       cross: 0.1,
-      from: [ctx.handoff.from.node, ...(aCounter ? [aCounter] : [])],
-      to: [ctx.handoff.to.node, ...(bCounter ? [bCounter] : [])],
+      from: [...new Set([ctx.handoff.from.node, ...aTrack, ...(aCounter ? [aCounter] : [])])],
+      to: [...new Set([ctx.handoff.to.node, ...bTrack, ...(bCounter ? [bCounter] : [])])],
     });
   },
 };

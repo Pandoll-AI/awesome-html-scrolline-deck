@@ -39,7 +39,7 @@ export default {
     right.style.clipPath = `inset(0 0 0 ${Math.max(0, nowX)}px)`;
     ctx.initial([left, right], { x: 0 });
     ctx.initial([to.node], { autoAlpha: 0, clipPath: 'inset(0 50% 0 50%)' });
-    ctx.initial(from.node, { autoAlpha: 0 });
+    tl.set(from.node, { autoAlpha: 0 }, 0);
     tl.to(line, { autoAlpha: 1, duration: d * p.lineHold, ease: ctx.ease('out') }, 0);
     tl.to(left, { x: -nowX, duration: d * 0.55, ease: ctx.ease('inout') }, d * 0.2);
     tl.to(right, { x: ctx.viewport.w - nowX, duration: d * 0.55, ease: ctx.ease('inout') }, d * 0.2);
