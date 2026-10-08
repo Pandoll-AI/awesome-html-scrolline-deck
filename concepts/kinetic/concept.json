@@ -56,7 +56,8 @@
       "engine:fade-in",
       "engine:fade-out",
       "engine:crossfade",
-      "engine:none"
+      "engine:none",
+      "mask-word-in"
     ],
     "signature": [
       "word-door",

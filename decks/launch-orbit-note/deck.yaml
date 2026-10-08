@@ -131,7 +131,7 @@ beats:
         결정  시안 2종, 화요일 오전 전달 — 태오
         할 일  카피 확정, 월요일 15:00 — 지민
     place: { slot: center }
-    enter: { move: speech-type }
+    enter: { move: type-on }
     steps:
       - { name: summary, move: transcript-condense }
     exit: { move: "engine:fade-out" }
@@ -170,7 +170,7 @@ beats:
     mode: loop
     caption: "네 명이 둘러앉은 회의실에도, 둘이 마주 앉은 카페에도."
     place: { slot: full }
-    enter: { move: window-expand }
+    enter: { move: window-open }
     exit: { move: lights-out }
     repeat: intended   # 암전 2번째(마지막 공개 직전)
     exportHold: 2.4

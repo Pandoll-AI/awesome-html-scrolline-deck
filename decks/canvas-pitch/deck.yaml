@@ -54,7 +54,7 @@ beats:
     place: { world: { x: 0, y: 0, z: 80 } }
     camera: { move: establish-crane, params: { duration: 2.4, tilt: 10, startScale: 1.6 } }
     enter: { move: map-label-settle, params: { duration: 1.3 }, at: 1.0 }
-    exit: { move: region-recede }
+    exit: { move: recede }
     persist: true
     repeat: intended
     exportHold: 2.4
@@ -67,7 +67,7 @@ beats:
     size: l
     place: { world: { x: 1.5, y: 0.5, z: 80 } }
     camera: { move: arc-flight, params: { duration: 2.0 } }
-    enter: { move: focus-pull-in, at: 1.4 }
+    enter: { move: focus-pull, at: 1.4 }
     link: { move: headline-to-caption, params: { fromPart: block, toPart: caption } }
     repeat: intended
 
@@ -83,7 +83,7 @@ beats:
     enter: { move: "engine:none" }
     steps:
       - { name: arrival, move: frame-scrub, params: { duration: 2.6 } }
-    exit: { move: region-recede }
+    exit: { move: recede }
     persist: true
     repeat: intended
 
@@ -96,8 +96,8 @@ beats:
     size: l
     place: { world: { x: 3.0, y: 0.15, z: 80 } }
     camera: { move: arc-flight, params: { duration: 2.0 } }
-    enter: { move: focus-pull-in, at: 1.4 }
-    exit: { move: region-recede }
+    enter: { move: focus-pull, at: 1.4 }
+    exit: { move: recede }
     persist: true
     repeat: intended
 
@@ -110,7 +110,7 @@ beats:
     place: { world: { x: 3.0, y: 1.25, z: 80 } }
     camera: { move: arc-flight, params: { duration: 1.3, altitude: 0, bank: 0 } }
     enter: { move: divider-split, at: 0.8 }
-    exit: { move: region-recede }
+    exit: { move: recede }
     persist: true
     repeat: intended
 
@@ -127,7 +127,7 @@ beats:
     enter: { move: window-open, at: 1.4 }
     steps:
       - { name: full, move: window-takeover }
-    exit: { move: region-recede }
+    exit: { move: recede }
     persist: true
     repeat: intended
     exportHold: 4.0
@@ -142,7 +142,7 @@ beats:
     place: { world: { x: 4.8, y: 2.1, z: 80 } }
     camera: { move: arc-flight, params: { duration: 1.7 } }
     enter: { move: map-label-settle, at: 1.1 }
-    exit: { move: region-recede }
+    exit: { move: recede }
     persist: true
     repeat: intended
 
@@ -155,8 +155,8 @@ beats:
     label: "1차 시장: 수도권 식자재 유통사 180곳의 연간 태그 수요(표본 가정)"
     place: { world: { x: 4.4, y: 3.3, z: 80 } }
     camera: { move: arc-flight, params: { duration: 1.7 } }
-    enter: { move: count-up, at: 1.1 }
-    exit: { move: region-recede }
+    enter: { move: count-roll, at: 1.1 }
+    exit: { move: recede }
     persist: true
     repeat: intended
 
@@ -169,8 +169,8 @@ beats:
     label: "9월 한 달 동안 태그를 붙여 보낸 상자, 1월의 16배"
     place: { world: { x: 2.9, y: 3.4, z: 80 } }
     camera: { move: arc-flight, params: { duration: 1.9 } }
-    enter: { move: count-up, at: 1.3 }
-    exit: { move: region-recede }
+    enter: { move: count-roll, at: 1.3 }
+    exit: { move: recede }
     persist: true
     repeat: intended
 
@@ -187,7 +187,7 @@ beats:
     enter: { move: line-draw, at: 0.7 }
     steps:
       - { name: sep, move: point-focus, params: { index: 8 } }
-    exit: { move: region-recede }
+    exit: { move: recede }
     persist: true
     repeat: intended
 
@@ -202,7 +202,7 @@ beats:
     place: { world: { x: 1.4, y: 3.5, z: 80 } }
     camera: { move: arc-flight, params: { duration: 1.9 } }
     enter: { move: pin-drop, at: 1.3 }
-    exit: { move: region-recede }
+    exit: { move: recede }
     persist: true
     repeat: intended
 
@@ -213,8 +213,8 @@ beats:
     role: "식자재 유통사 · 가상 인용"
     place: { world: { x: 1.3, y: 2.3, z: 80 } }
     camera: { move: arc-flight, params: { duration: 1.3, altitude: 0, bank: 0 } }
-    enter: { move: focus-pull-in, at: 0.8 }
-    exit: { move: region-recede }
+    enter: { move: focus-pull, at: 0.8 }
+    exit: { move: recede }
     persist: true
     repeat: intended
 
@@ -226,8 +226,8 @@ beats:
     label: "시드 라운드 · 18개월 동안 수도권 유통사 180곳으로 넓힙니다"
     place: { world: { x: 0, y: 2.2, z: 80 } }
     camera: { move: arc-flight, params: { duration: 1.9 } }
-    enter: { move: focus-pull-in, at: 1.3 }
-    exit: { move: region-recede }
+    enter: { move: focus-pull, at: 1.3 }
+    exit: { move: recede }
     persist: true
     repeat: intended
     exportHold: 2.4

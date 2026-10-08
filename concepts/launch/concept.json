@@ -2,8 +2,16 @@
   "id": "launch",
   "name": "제품 런치",
   "axis": "z",
-  "camera": { "mode": "fixed", "perspective": 2000 },
-  "timing": { "unit": 0.6, "hold": 0.7, "overlap": 0.15, "tail": 1.0 },
+  "camera": {
+    "mode": "fixed",
+    "perspective": 2000
+  },
+  "timing": {
+    "unit": 0.6,
+    "hold": 0.7,
+    "overlap": 0.15,
+    "tail": 1.0
+  },
   "eases": {
     "in": "power3.in",
     "out": "expo.out",
@@ -12,7 +20,17 @@
     "settle": "power4.out",
     "dive": "expo.in"
   },
-  "beats": { "allow": ["text", "video", "photo", "number", "prompt", "compare", "quote"] },
+  "beats": {
+    "allow": [
+      "text",
+      "video",
+      "photo",
+      "number",
+      "prompt",
+      "compare",
+      "quote"
+    ]
+  },
   "moves": {
     "allow": [
       "lit-from-dark",
@@ -23,33 +41,61 @@
       "mask-word-in",
       "text-mask-dive",
       "line-mask-rise",
-      "speech-type",
+      "type-on",
       "transcript-condense",
-      "window-expand",
+      "window-open",
       "slow-push",
       "engine:fade-in",
       "engine:fade-out",
       "engine:crossfade",
       "engine:none"
     ],
-    "signature": ["lit-from-dark", "sticky-scrub-link", "number-slam"]
+    "signature": [
+      "lit-from-dark",
+      "sticky-scrub-link",
+      "number-slam"
+    ]
   },
   "defaults": {
     "enter": "line-mask-rise",
     "exit": "engine:fade-out",
     "byType": {
-      "video": { "enter": "lit-from-dark", "exit": "lights-out" },
-      "photo": { "enter": "lit-from-dark", "exit": "lights-out" },
-      "number": { "enter": "number-slam" },
-      "prompt": { "enter": "speech-type" },
-      "quote": { "enter": "line-mask-rise" }
+      "video": {
+        "enter": "lit-from-dark",
+        "exit": "lights-out"
+      },
+      "photo": {
+        "enter": "lit-from-dark",
+        "exit": "lights-out"
+      },
+      "number": {
+        "enter": "number-slam"
+      },
+      "prompt": {
+        "enter": "type-on"
+      },
+      "quote": {
+        "enter": "line-mask-rise"
+      }
     }
   },
   "slots": {
-    "center": { "x": 0.5, "y": 0.5 },
-    "left": { "x": 0.24, "y": 0.7 },
-    "right": { "x": 0.62, "y": 0.52 },
-    "lower-third": { "x": 0.24, "y": 0.78 }
+    "center": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "left": {
+      "x": 0.24,
+      "y": 0.7
+    },
+    "right": {
+      "x": 0.62,
+      "y": 0.52
+    },
+    "lower-third": {
+      "x": 0.24,
+      "y": 0.78
+    }
   },
   "tokens": {
     "darkFloor": 0.04,

@@ -2,8 +2,15 @@
   "id": "canvas",
   "name": "캔버스 플라이스루",
   "axis": "xyz",
-  "camera": { "mode": "world", "perspective": 1400 },
-  "timing": { "unit": 0.75, "hold": 0.8, "overlap": 0.25 },
+  "camera": {
+    "mode": "world",
+    "perspective": 1400
+  },
+  "timing": {
+    "unit": 0.75,
+    "hold": 0.8,
+    "overlap": 0.25
+  },
   "eases": {
     "in": "power2.in",
     "out": "power3.out",
@@ -12,31 +19,76 @@
     "flight": "power2.inOut",
     "settle": "power3.out"
   },
-  "beats": { "allow": ["text", "number", "chart", "compare", "quote", "video", "photo", "sequence"] },
+  "beats": {
+    "allow": [
+      "text",
+      "number",
+      "chart",
+      "compare",
+      "quote",
+      "video",
+      "photo",
+      "sequence"
+    ]
+  },
   "moves": {
     "allow": [
-      "arc-flight", "establish-crane", "atlas-pullback",
-      "focus-pull-in", "map-label-settle", "window-open", "frame-scrub", "window-takeover",
-      "headline-to-caption", "divider-split", "pin-drop", "count-up", "line-draw", "point-focus",
-      "region-recede",
-      "engine:fade-in", "engine:fade-out", "engine:crossfade", "engine:none"
+      "arc-flight",
+      "establish-crane",
+      "atlas-pullback",
+      "focus-pull",
+      "map-label-settle",
+      "window-open",
+      "frame-scrub",
+      "window-takeover",
+      "headline-to-caption",
+      "divider-split",
+      "pin-drop",
+      "count-roll",
+      "line-draw",
+      "point-focus",
+      "recede",
+      "engine:fade-in",
+      "engine:fade-out",
+      "engine:crossfade",
+      "engine:none"
     ],
-    "signature": ["arc-flight", "establish-crane", "atlas-pullback"]
+    "signature": [
+      "arc-flight",
+      "establish-crane",
+      "atlas-pullback"
+    ]
   },
   "defaults": {
-    "enter": "focus-pull-in",
-    "exit": "region-recede",
+    "enter": "focus-pull",
+    "exit": "recede",
     "byType": {
-      "video": { "enter": "window-open" },
-      "photo": { "enter": "window-open" },
-      "number": { "enter": "count-up" },
-      "chart": { "enter": "line-draw" },
-      "compare": { "enter": "divider-split" }
+      "video": {
+        "enter": "window-open"
+      },
+      "photo": {
+        "enter": "window-open"
+      },
+      "number": {
+        "enter": "count-roll"
+      },
+      "chart": {
+        "enter": "line-draw"
+      },
+      "compare": {
+        "enter": "divider-split"
+      }
     }
   },
   "slots": {
-    "center": { "x": 0.5, "y": 0.5 },
-    "lower-third": { "x": 0.08, "y": 0.78 }
+    "center": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "lower-third": {
+      "x": 0.08,
+      "y": 0.78
+    }
   },
   "tokens": {
     "blurMax": 8,

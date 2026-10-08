@@ -26,7 +26,7 @@ beats:
     emphasis: ["결제 버튼 하나"]
     place: { slot: center }
     enter: { move: focus-pull, params: { duration: 1.2 } }
-    exit: { move: focus-drop }
+    exit: { move: blur-drop }
     exportHold: 2.4
 
   # ── 1. 파고들기: 전체 → 지역 → 채널 → 여정 → 화면 → 사용 장면 → 버튼 ──
@@ -230,7 +230,7 @@ beats:
       - { move: depth-ladder, params: { rungs: ["3분기 매출", "지역", "수도권 채널", "앱 결제 여정", "결제 화면", "사용 장면", "결제 버튼"], level: 0, maxLevel: 6, appearAfter: 1.8 } }
     steps:
       - { name: regain, move: strike-swap, params: { to: 123.4, decimals: 1, suffix: "억 원", label: "앱에서 빠진 17.8억 원을 되찾았다면 3분기 매출은 123.4억 원. 작년보다 2.8% 많다." } }
-    exit: { move: focus-drop }
+    exit: { move: blur-drop }
     exportHold: 3.0
     repeat: intended
 
@@ -245,7 +245,7 @@ beats:
     emphasis: ["버튼 하나"]
     place: { slot: center }
     enter: { move: focus-pull }
-    exit: { move: focus-drop }
+    exit: { move: blur-drop }
     ambient:
       - { move: depth-ladder, params: { rungs: ["3분기 매출", "지역", "수도권 채널", "앱 결제 여정", "결제 화면", "사용 장면", "결제 버튼"], level: 0, maxLevel: 6, appearAfter: 0.65 } }
     repeat: intended

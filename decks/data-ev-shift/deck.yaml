@@ -34,7 +34,7 @@ beats:
     caption: "전기차 전환은 어디까지 왔나"
     place: { slot: full }
     enter: { move: video-scrub, params: { duration: 2.4 } }
-    link: { move: iris-to-dot, params: { focusX: 0.52, focusY: 0.46 } }
+    link: { move: iris-to-dot, params: { focusX: 0.486, focusY: 0.39 } }
     exportHold: 2.0
 
   - id: b-seed
@@ -114,7 +114,7 @@ beats:
     enter: { move: "engine:none" }
     steps:
       - { name: stock, move: waffle-recount, params: { index: 1 } }
-    exit: { move: chart-recede }
+    exit: { move: recede }
     repeat: intended   # enter engine:none(link가 그림) 2번째
     exportHold: 2.4
 
@@ -155,7 +155,7 @@ beats:
     enter: { move: "engine:none" }
     steps:
       - { name: world, move: threshold-line, params: { refIndex: 5 } }
-    exit: { move: chart-recede }
+    exit: { move: recede }
     repeat: intended   # 지나간 차트는 회색으로 물러난다 — 덱 공통 퇴장 문법(2번째)
     exportHold: 2.4
 
@@ -176,7 +176,7 @@ beats:
           - { index: 5, series: "한국", text: "세계 평균과 14%p 차이" }
     source: s4
     place: { slot: full }
-    enter: { move: line-draw-race }
+    enter: { move: line-draw }
     steps:
       - { name: gap, move: annotation-pin }
     repeat: intended   # 주석 고정은 시그니처 — 덱에서 2번째 annotation-pin
@@ -194,7 +194,7 @@ beats:
     caption: "베트남, 신차 10대 중 4대가 전기차. 2023년엔 10대 중 1대였다"
     source: s4
     place: { slot: full }
-    enter: { move: glyph-window }
+    enter: { move: mask-word-in }
     link: { move: glyph-to-bar, params: { toIndex: 0 } }
     exportHold: 2.4
 
@@ -212,7 +212,7 @@ beats:
     source: s3
     place: { slot: full }
     enter: { move: "engine:none" }
-    exit: { move: chart-recede }
+    exit: { move: recede }
     repeat: intended   # 공통 퇴장 문법(3번째)
     exportHold: 2.0
 
@@ -267,7 +267,7 @@ beats:
     verdict: "속도를 가르는 것은 가격과 정책이다"
     source: [s1, s2]
     place: { slot: center }
-    enter: { move: compare-ledger }
+    enter: { move: divider-split }
     exit: { move: "engine:fade-out" }
     repeat: intended   # 조용한 퇴장(4번째)
     exportHold: 2.4
@@ -280,8 +280,8 @@ beats:
     label: "2035년 전 세계 전기차 보유 대수 전망(최대 5억 1,000만 대). 2025년의 6배 이상. 현재 정책 기준, 이륜·삼륜 제외"
     source: s1
     place: { slot: center }
-    enter: { move: count-up }
-    exit: { move: chart-recede }
+    enter: { move: count-roll }
+    exit: { move: recede }
     repeat: intended   # 공통 퇴장 문법(4번째)
     exportHold: 2.2
 
@@ -292,7 +292,7 @@ beats:
     emphasis: ["도로 위 차가 바뀌는 속도"]
     size: l
     place: { slot: center }
-    enter: { move: headline-set }
+    enter: { move: line-mask-rise }
     exit: { move: "engine:fade-out" }
     repeat: intended   # 조용한 퇴장(5번째)
     exportHold: 2.6

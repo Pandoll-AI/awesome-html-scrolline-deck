@@ -480,6 +480,8 @@ validateSchema(schema, value, path) → Array<{ path: string, message: string }>
 ```
 - `signature`: 이 컨셉을 다른 컨셉과 구별하는 move(덱에서 1회 이상 써야 함, W5 다양성 게이트).
 - `tokens` = `ctx.tokens`(수치만, JS에서 읽음). 색·글꼴은 tokens.css.
+- **v2.1 변경 (#46 PRESETS)**: `concept.moves.params`(선택) = `{ "<moveId>": { "<param>": value } }` 컨셉별 param 프리셋. params 해석 순서 = beat `MoveRef.params` → `concept.moves.params[moveId]` → move schema 기본값. 합친 결과를 `resolveParams`로 검사(프리셋의 모르는 키도 SchemaError). 구현 위치 = `engine/timeline.js`(plan·build 둘 다 같은 값을 써야 timing 순수성 유지).
+- **v2.1 변경 (#47 COLORS)**: `ctx.colors` = `{ bg, fg, 'fg-muted', accent, 'accent-2', rule, scrim }` 계산된 색 문자열. build 직전 1회 `getComputedStyle(beat 루트)`에서 `--sl-<name>`을 읽어 beat마다 만든다(tone이 beat마다 다르므로). 값이 비면 키 생략. move는 색 tween 때 `ctx.colors`만 쓴다(`var(` 금지 유지). 구현 위치 = `engine/timeline.js` build(ctx 조립), 테스트 harness는 `colors` 주입 옵션.
 - `concepts/<id>/index.js`: `import concept from './concept.json' with { type: 'json' }; export default concept;`
 - `tokens.css`: `.sl-concept-<id>` 범위에 아래 CSS 변수만 정의(이름 고정, 추가는 계약 변경):
 

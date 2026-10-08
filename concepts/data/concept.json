@@ -2,8 +2,16 @@
   "id": "data",
   "name": "데이터 저널리즘",
   "axis": "free",
-  "camera": { "mode": "fixed", "perspective": 2400 },
-  "timing": { "unit": 0.6, "hold": 0.9, "overlap": 0.15, "tail": 1.0 },
+  "camera": {
+    "mode": "fixed",
+    "perspective": 2400
+  },
+  "timing": {
+    "unit": 0.6,
+    "hold": 0.9,
+    "overlap": 0.15,
+    "tail": 1.0
+  },
   "eases": {
     "in": "power2.in",
     "out": "power3.out",
@@ -11,7 +19,17 @@
     "scrub": "none",
     "settle": "power4.out"
   },
-  "beats": { "allow": ["text", "chart", "number", "compare", "video", "quote", "photo"] },
+  "beats": {
+    "allow": [
+      "text",
+      "chart",
+      "number",
+      "compare",
+      "video",
+      "quote",
+      "photo"
+    ]
+  },
   "moves": {
     "allow": [
       "iris-to-dot",
@@ -22,46 +40,81 @@
       "mark-morph",
       "line-to-waffle",
       "waffle-recount",
-      "chart-recede",
+      "recede",
       "aggregate-split",
       "rank-reorder",
       "threshold-line",
-      "line-draw-race",
-      "glyph-window",
+      "line-draw",
+      "mask-word-in",
       "glyph-to-bar",
       "baseline-grow",
       "diverge-grow",
       "ink-in",
       "forecast-extend",
-      "headline-set",
-      "compare-ledger",
+      "line-mask-rise",
+      "divider-split",
       "video-scrub",
-      "count-up",
+      "count-roll",
       "engine:fade-in",
       "engine:fade-out",
       "engine:crossfade",
       "engine:none"
     ],
-    "signature": ["dot-multiply", "mark-morph", "annotation-pin"]
+    "signature": [
+      "dot-multiply",
+      "mark-morph",
+      "annotation-pin"
+    ]
   },
   "defaults": {
-    "enter": "headline-set",
+    "enter": "line-mask-rise",
     "exit": "engine:fade-out",
     "byType": {
-      "chart": { "enter": "baseline-grow", "exit": "chart-recede" },
-      "number": { "enter": "count-up", "exit": "chart-recede" },
-      "compare": { "enter": "compare-ledger", "exit": "engine:fade-out" },
-      "video": { "enter": "glyph-window" },
-      "quote": { "enter": "headline-set" }
+      "chart": {
+        "enter": "baseline-grow",
+        "exit": "recede"
+      },
+      "number": {
+        "enter": "count-roll",
+        "exit": "recede"
+      },
+      "compare": {
+        "enter": "divider-split",
+        "exit": "engine:fade-out"
+      },
+      "video": {
+        "enter": "mask-word-in"
+      },
+      "quote": {
+        "enter": "line-mask-rise"
+      }
     }
   },
   "slots": {
-    "center": { "x": 0.5, "y": 0.5 },
-    "left": { "x": 0.3, "y": 0.52 },
-    "right": { "x": 0.66, "y": 0.52 },
-    "top": { "x": 0.5, "y": 0.22 },
-    "lower-third": { "x": 0.0625, "y": 0.8 },
-    "full": { "x": 0.5, "y": 0.5 }
+    "center": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "left": {
+      "x": 0.3,
+      "y": 0.52
+    },
+    "right": {
+      "x": 0.66,
+      "y": 0.52
+    },
+    "top": {
+      "x": 0.5,
+      "y": 0.22
+    },
+    "lower-third": {
+      "x": 0.0625,
+      "y": 0.8
+    },
+    "full": {
+      "x": 0.5,
+      "y": 0.5
+    }
   },
   "tokens": {
     "stagger": 0.04,
