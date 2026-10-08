@@ -169,7 +169,7 @@ beats:
     unit: "%"
     title: "한국은 2년 뒷걸음질 뒤 2025년 11%로 반등했다"
     dek: "2022년 9.6% → 2024년 7.4% → 2025년 11%. 처음으로 두 자릿수 비중"
-    highlight: { series: "한국" }
+    highlight: { series: "한국", index: 5 }
     states:
       - name: gap
         notes:
