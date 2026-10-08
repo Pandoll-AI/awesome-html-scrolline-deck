@@ -1,7 +1,7 @@
 /** A full frame arcs down into an event thumbnail. */
 import { transferVars } from '../../engine/index.js';
 import { eventPart } from '../_shared/event-part.js';
-import { finishLink, ghost } from '../_shared/link.js';
+import { finishLink, ghost, takeoff } from '../_shared/link.js';
 
 export default {
   id: 'rail-drop',
@@ -37,10 +37,7 @@ export default {
     });
     ctx.initial(to.node, { autoAlpha: 0 });
     ctx.initial(from.node, { autoAlpha: 1 });
-    // 비행하는 건 carry 하나뿐: 원본을 남겨 두면 풀화면 영상이 뒤에 겹쳐 있다가 끝에 툭 사라진다.
-    tl.set(from.node, { autoAlpha: 0 }, 0);
-    // 앞 beat가 시대 종이 배경을 화면 전체에 깔고 있으면 내려앉는 동안 다음 레일을 덮는다 → 비행 시작에 걷어 낸다.
-    if (ctx.from.root) tl.set(ctx.from.root, { autoAlpha: 0 }, 0);
+    takeoff(tl, ctx);
     tl.to(caption, { autoAlpha: 0, duration: d * 0.2, ease: ctx.ease('in') }, 0);
     tl.to(
       carry,

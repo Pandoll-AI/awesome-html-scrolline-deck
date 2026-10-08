@@ -2,6 +2,29 @@
 
 All notable changes to this project are listed here. Versions follow [Semantic Versioning](https://semver.org).
 
+## [2.0.0] — 2026-10-08
+
+First release of the rewrite. Everything below `2.0.0-alpha.0` still applies.
+
+### Added
+
+- **Transition check** (`node tools/transitions.mjs <deck>`): seeks through every link and step span of a deck and writes one strip per transition. Stop-only smoke checks miss defects that exist only while a beat hands over to the next one.
+- **`takeoff(tl, ctx)`** in `moves/_shared/link.js`: the shared start of every link. It hides the source node and the previous beat's root the moment the carried copy takes off.
+- **Hub page**: the gallery build gains `/all/`, which lists every deck with its stop sheet, every video asset and the move library.
+
+### Fixed
+
+- `rail-ai-decade` cover: `text-mask-dive` now really dives. The size and position of the mask are written together on every render, so a previous move's mask position no longer wins, and the zoom runs in log space for a steady pull. The focus moved from the counter of the 0 (blank paper) onto the stem of the 1.
+- `rail-drop` no longer leaves the full-frame source and the cover's paper over the next rail until the link ends, which made the rail pop in at once.
+- Full-screen ground layers sit 8 px behind their content, so a tilting camera can no longer depth-sort the ground over titles and rails.
+
+### Rules (CONTRACTS C7 v2.3)
+
+1. Links call `takeoff()` when the carried copy appears. While it flies, only the copy and the next beat underneath are visible.
+2. Moves that change `mask-size` or `mask-position` drive both together with `driveValue`, and a zoom focus must sit on a glyph stroke.
+3. Full-screen backgrounds stay behind content in depth.
+4. Run `tools/transitions.mjs` on every deck you change, not only `tools/smoke.mjs`.
+
 ## [2.0.0-alpha.0] — 2026-10-08
 
 A complete rewrite on the `v2` branch. Only the idea of a deck you present by scrolling carries over from 0.1.x. The code, structure, CLI and file formats are new, and 0.1.x decks do not load in v2.
@@ -25,4 +48,5 @@ A complete rewrite on the `v2` branch. Only the idea of a deck you present by sc
 
 - The 0.1.x scene templates, the enter/hold/exit scene model, the `scripts/cli.mjs` project generator and the G1–G10 gates.
 
+[2.0.0]: https://github.com/gongnyang/awesome-html-scrolline-deck/releases/tag/v2.0.0
 [2.0.0-alpha.0]: https://github.com/gongnyang/awesome-html-scrolline-deck/tree/v2

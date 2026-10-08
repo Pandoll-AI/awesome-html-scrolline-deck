@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /** Scrolline deck helper (CONTRACTS C3, C15, C16). */
 import fs from 'node:fs';
+import { printMediaNotice } from './lib/media-notice.mjs';
 import { register } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -55,7 +56,9 @@ export function moveRows(registry, filters = {}) {
 async function deckSequences(root, id) {
   const main = path.join(root, 'decks', id, 'main.js');
   if (!fs.existsSync(main)) return {};
-  const entries = [...fs.readFileSync(main, 'utf8').matchAll(/import\s+(\w+)\s+from\s+['"]\.\/sequences\/([\w-]+\.js)['"]/g)];
+  const entries = [
+    ...fs.readFileSync(main, 'utf8').matchAll(/import\s+(\w+)\s+from\s+['"]\.\/sequences\/([\w-]+\.js)['"]/g),
+  ];
   if (!entries.length) return {};
   register('./lib/yaml-hook.mjs', import.meta.url);
   const mods = await Promise.all(
@@ -77,6 +80,7 @@ export async function run(
     const concept = option(argv, '--concept');
     if (!id || !concept) throw new Error('new requires <deckId> --concept <id>');
     out(createDeck(id, concept, root));
+    printMediaNotice();
     return 0;
   }
   if (command === 'moves') {

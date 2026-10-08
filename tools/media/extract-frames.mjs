@@ -4,6 +4,7 @@ import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { printMediaNotice } from '../lib/media-notice.mjs';
 
 export function parseArgs(argv) {
   const [input, outDir, ...rest] = argv;
@@ -107,6 +108,7 @@ export function extract({ input, outDir, options }) {
   return 0;
 }
 function main() {
+  printMediaNotice();
   let parsed;
   try {
     parsed = parseArgs(process.argv.slice(2));

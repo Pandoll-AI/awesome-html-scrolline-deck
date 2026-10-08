@@ -4,6 +4,8 @@ How a deck shows video: scroll-scrubbed frame sequences, in-scene playing clips,
 
 Canonical contract: `plan/CONTRACTS.md` C4 (`video` beat), C5 (move context) and C13 (media). Design reasons: `plan/ARCHITECTURE.md` §6.
 
+> **Before you add video: get your own stock API key.** To search and download stock footage automatically, issue a free key from [Pexels](https://www.pexels.com/api/) (`PEXELS_API_KEY`) or [Pixabay](https://pixabay.com/api/docs/) (`PIXABAY_API_KEY`) and keep it in a root `.env` file or your shell environment. `.env` is git-ignored, and `npm run check` fails if a key lands in a tracked file. `npm run frames` and `npm run deck -- new` print this reminder while no key is set. Without a key you can still add footage you shot or downloaded yourself; record its source and license in `decks/<id>/assets/CREDITS.md`.
+
 ## Three ways to show video
 
 | Need | Use | Beat field | Driven by |

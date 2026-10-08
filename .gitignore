@@ -26,3 +26,10 @@ tools/runner.env
 tools/wait-runs.py
 tools/merge-moves.py
 tools/media-chain.sh
+
+# 비밀값
+.env
+.env.*
+*.key
+.vercel/
+decks/rail-ai-decade/assets/video/v1-attention/

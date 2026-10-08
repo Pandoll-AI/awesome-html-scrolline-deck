@@ -367,6 +367,8 @@
   inset: 0;
   overflow: hidden;
   background: var(--sl-bg);
+  /* C10 v2.3: 카메라가 기울면 같은 평면의 바탕이 3D 정렬에서 내용 앞에 올 수 있다 → 깊이로 뒤에 둔다 */
+  translate: 0 0 -8px;
 }
 .sl-chronology__ghost {
   position: absolute;

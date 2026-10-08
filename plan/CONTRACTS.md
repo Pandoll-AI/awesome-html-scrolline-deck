@@ -366,6 +366,12 @@ duration = max(all span ends, all stop labels) + T.tail
 
 ## C7. handoff 계약
 
+> **v2.3 변경 (10-08 사용자 반려 「들어간 뒤 그냥 빠진다」)**
+> 1. **이륙 규칙**: link move는 carry(복제본)를 띄우는 순간 `takeoff(tl, ctx)`(moves/_shared/link.js)로 원본 node와 앞 beat 루트를 숨긴다. 비행 중 보이는 것은 carry와 그 아래 드러나는 다음 beat뿐.
+> 2. **마스크 규칙**: mask-size·mask-position을 바꾸는 move는 `driveValue`로 둘을 매 render 함께 쓴다(앞 move가 남긴 값에 덮이지 않고 seek에도 같은 화면). 확대 초점(focus)은 글자 획 위여야 한다(획 밖이면 종이로 들어가 화면이 빈다).
+> 3. **깊이 규칙(C10)**: 화면 전체 바탕 part(chronology `ground` 등)는 엔진 CSS에서 `translate: 0 0 -8px`로 내용 뒤에 둔다. 카메라 기울기 중 3D 정렬에서 바탕이 내용을 덮는 것을 막는다.
+> 4. **전환 검사**: 정지점 smoke만으로는 전환 중 결함을 못 잡는다. `node tools/transitions.mjs <deck>`로 모든 link·step 구간을 촘촘히 찍은 시트를 확인한다.
+
 ```ts
 Handoff = {
   beat: string, part: string,

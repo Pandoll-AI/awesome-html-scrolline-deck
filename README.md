@@ -23,6 +23,9 @@ You write a `deck.yaml`. Scrolline lays every beat on one paused GSAP timeline, 
 - **Beats hand off instead of cutting.** A link move carries part of one beat (a bar, a dot, a date) into the place it holds in the next beat, so the audience follows one object rather than a slide change.
 - **Each concept has its own motion grammar.** A concept pack fixes the camera axis, timing and allowed moves, and names signature moves the deck must use. The six example decks move differently because their grammars differ.
 
+
+> Adding video? Issue your own Pexels or Pixabay API key first and keep it in `.env` (git-ignored, blocked by `npm run check`). See [docs/media.md](docs/media.md).
+
 ## Example decks
 
 Six decks, one per concept. Decks marked *sample* use a fictional company and say so on screen. The others use real data with a source list in `deck.yaml`.

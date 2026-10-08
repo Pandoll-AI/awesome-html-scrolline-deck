@@ -10,6 +10,7 @@ import { checkTests } from './check-tests.mjs';
 import { checkState } from './check-state.mjs';
 import { checkHat } from './check-hat.mjs';
 import { checkMoves } from './check-moves.mjs';
+import { checkSecrets } from './check-secrets.mjs';
 import { checkConcepts } from './check-concepts.mjs';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -39,15 +40,25 @@ fail += state.board.length + state.runs.length;
 
 const moves = checkMoves(root);
 for (const x of moves.violations) console.log(`  ${x.rule} ${x.file} '${x.token}' ${x.message}`);
-console.log(`${moves.violations.length ? 'FAIL' : 'ok  '} moves  파일 ${moves.files}, 위반 ${moves.violations.length}`);
+console.log(
+  `${moves.violations.length ? 'FAIL' : 'ok  '} moves  파일 ${moves.files}, 위반 ${moves.violations.length}`,
+);
 fail += moves.violations.length;
 
 const concepts = checkConcepts(root);
-for (const x of concepts.violations) console.log(`  ${x.rule} ${x.file}${x.line ? `:${x.line}` : ''} '${x.token}' ${x.message}`);
+for (const x of concepts.violations)
+  console.log(`  ${x.rule} ${x.file}${x.line ? `:${x.line}` : ''} '${x.token}' ${x.message}`);
 console.log(
   `${concepts.violations.length ? 'FAIL' : 'ok  '} concepts 컨셉 ${concepts.concepts}, layout ${concepts.layouts}, 위반 ${concepts.violations.length}`,
 );
 fail += concepts.violations.length;
+
+const secrets = checkSecrets(root);
+for (const x of secrets.violations) console.log(`  ${x.file}:${x.line} ${x.name}`);
+console.log(
+  `${secrets.violations.length ? 'FAIL' : 'ok  '} secrets 파일 ${secrets.files}, 위반 ${secrets.violations.length}`,
+);
+fail += secrets.violations.length;
 
 const hatAt = args.indexOf('--hat');
 if (hatAt >= 0) {

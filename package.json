@@ -1,7 +1,7 @@
 {
   "name": "scrolline-v2",
   "private": true,
-  "version": "2.0.0-alpha.0",
+  "version": "2.0.0",
   "description": "Scroll-driven continuous presentation decks: one stage, one master timeline, handoff moves, concept packs",
   "type": "module",
   "license": "MIT",
@@ -20,7 +20,8 @@
     "deck": "node tools/cli.mjs",
     "export": "node tools/export.mjs",
     "capture": "node tools/capture.mjs",
-    "frames": "node tools/media/extract-frames.mjs"
+    "frames": "node tools/media/extract-frames.mjs",
+    "transitions": "node tools/transitions.mjs"
   },
   "dependencies": {
     "gsap": "3.15.0",

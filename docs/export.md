@@ -173,3 +173,14 @@ Automated numbers do not judge whether a deck reads well. The review loop used f
 - [writing-a-deck.md](writing-a-deck.md) — `exportHold`, `export:` and stops
 - [media.md](media.md) — clips and sequences in export
 - [architecture.md](architecture.md) — why the timeline is deterministic
+
+## Transition check
+
+`tools/smoke.mjs` looks at stops. A deck can pass it and still break between stops, for example when a link leaves the full-frame source on screen and the next beat pops in at the end. `tools/transitions.mjs` seeks through every `link` and `step` span and writes one strip per transition:
+
+```bash
+npm run transitions -- rail-ai-decade            # dev server on :5190
+npm run transitions -- rail-ai-decade --url http://localhost:5195/decks/rail-ai-decade/index.html --samples 6
+```
+
+Output goes to `out/transitions/<deck>/`: `NN-<beat>-<move>.jpg` strips and `transitions.json`. Read the strips for every deck you change. The rules they enforce are in CONTRACTS C7 v2.3: links call `takeoff()`, mask zooms drive size and position together, and full-screen grounds sit behind content in depth.

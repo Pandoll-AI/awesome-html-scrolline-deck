@@ -25,6 +25,9 @@
 - **컷 대신 handoff**: link move가 앞 beat의 요소(막대·점·날짜)를 다음 beat에서 그 요소가 놓일 자리로 운반. 청중은 화면 전환이 아니라 물체 하나를 따라감
 - **컨셉별 움직임 문법**: 컨셉 팩이 카메라 축·timing·허용 move·signature move를 고정. 예제 덱 6종의 움직임이 서로 다른 근거
 
+
+> 영상을 넣기 전에: Pexels·Pixabay API 키를 직접 발급해 `.env`에 두는 것을 권장합니다(`.env`는 git 제외, `npm run check`가 키 커밋을 막음). 자세히: [docs/media.md](docs/media.md)
+
 ## 2. 예제 덱
 
 - 컨셉당 1편, 총 6편. 화면 언어는 한국어
