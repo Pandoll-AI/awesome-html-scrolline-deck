@@ -172,7 +172,7 @@ beats:
     mode: scrub
     caption: "질문을 쓰면, 답이 문장으로 흘러나온다"
     place: { slot: full }
-    enter: { move: video-scrub, params: { duration: 3.2, stops: [ { name: ask, at: 0.38 } ] } }
+    enter: { move: video-scrub, params: { stops: [{ name: ask, at: 0.38 }] } }
     link: { move: frame-to-figure, params: { duration: 1.4 } }
     exportHold: 1.6
 
