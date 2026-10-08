@@ -122,7 +122,7 @@ beats:
     type: video
     mode: scrub
     src: assets/video/replay-52.mp4
-    poster: assets/video/replay-52-poster.webp
+    poster: assets/video/replay-52/poster.webp
     frames: assets/video/replay-52/frames.json
     alt: "앱 5.2 결제 화면에서 배송 시간을 고르자 시간 목록이 펼쳐지고, 결제 버튼이 화면 아래로 밀려나 손가락이 두 번 스크롤한 뒤에야 버튼이 보이는 장면"
     caption: "배송 시간을 고르면 목록이 펼쳐지고, 결제 버튼은 화면 아래로 내려간다"
