@@ -17,13 +17,15 @@ const hs = [];
 afterEach(() => hs.splice(0).forEach((h) => h.destroy()));
 describe('port-aim', () => {
   it('meets the move contract', () => expect(checkMove(move, scenario, createHarness)).toEqual([]));
-  it('ends at the padded port radius and dims other parts', () => {
+  it('ends as a padded frame of the port shape and dims other parts', () => {
     const h = createHarness(scenario);
     hs.push(h);
     const r = h.runMove(move, scenario.run);
     h.seek(r.timing.duration);
-    const circle = r.ctx.overlay.querySelector('circle');
-    expect(Number(circle.getAttribute('r'))).toBeCloseTo(Math.hypot(300, 200) / 2 + 12);
-    expect(Number(r.ctx.gsap.getProperty(h.beats.get('p').part('caption')[0], 'opacity'))).toBeCloseTo(0.22);
+    const ring = r.ctx.overlay.querySelector('.sl-port-aim__ring');
+    expect(['x', 'y', 'width', 'height'].map((k) => Number(ring.getAttribute(k)))).toEqual([88, 88, 324, 224]);
+    expect(Number(r.ctx.gsap.getProperty(h.beats.get('p').part('hud')[0], 'opacity'))).toBeCloseTo(0.22);
+    // caption은 HUD라 0.6까지만 낮춘다(읽을 수 있게)
+    expect(Number(r.ctx.gsap.getProperty(h.beats.get('p').part('caption')[0], 'opacity'))).toBeCloseTo(0.6);
   });
 });

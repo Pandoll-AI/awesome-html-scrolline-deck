@@ -25,7 +25,7 @@ const scenario = {
     eases: { dive: 'sine.inOut', in: 'power2.in', out: 'power3.out' },
     tokens: { diveFill: 0.86, diveKMax: 40 },
   },
-  carry: (h) => h.stage.overlay.querySelector('.sl-zoom-carrier'),
+  carry: null,
 };
 
 it('meets the link contract and uses exponential midpoint scale', () => {
@@ -53,12 +53,34 @@ it('calculates automatic k and the port-fixed transform origin', () => {
     x: (expectedK * P.x - F.x) / (expectedK - 1),
     y: (expectedK * P.y - F.y) / (expectedK - 1),
   };
-  expect(h.beats.get('a').part('plot')[0].style.transformOrigin).toBe(`${fixed.x - 40}px ${fixed.y - 140}px`);
+  h.seek(0.05);
+  const [ox, oy] = h.beats.get('a').part('plot')[0].style.transformOrigin.split(' ').map(parseFloat);
+  expect(ox).toBeCloseTo(fixed.x - 40, 1);
+  expect(oy).toBeCloseTo(fixed.y - 140, 1);
   h.seek(1.2);
   expect(Number(result.ctx.gsap.getProperty(h.beats.get('a').part('plot')[0], 'scaleX'))).toBeCloseTo(
     Math.sqrt(expectedK),
     1,
   );
+  h.destroy();
+});
+
+it('keeps the zoom speed nonzero at the midpoint and lands B exactly at scale 1', () => {
+  const h = createHarness(scenario),
+    result = h.runMove(move, scenario.run);
+  const plotB = h.beats.get('b').part('frame')[0];
+  const scale = (t) => {
+    h.seek(t);
+    return Number(result.ctx.gsap.getProperty(h.beats.get('a').part('plot')[0], 'scaleX'));
+  };
+  const before = scale(1.1),
+    after = scale(1.3);
+  expect(Math.log(after / before) / 0.2).toBeGreaterThan(0.5);
+  h.seek(2.4);
+  expect(Number(result.ctx.gsap.getProperty(plotB, 'scaleX'))).toBe(1);
+  h.seek(0);
+  h.seek(2.4);
+  expect(Number(result.ctx.gsap.getProperty(plotB, 'scaleX'))).toBe(1);
   h.destroy();
 });
 

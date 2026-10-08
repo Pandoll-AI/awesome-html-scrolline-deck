@@ -28,7 +28,7 @@ it('passes contract and leaves the old value struck back', () => {
   const h = createHarness({ beats: scenario.beats });
   const r = h.runMove(move, scenario.run);
   h.seek(r.timing.duration);
-  expect(r.ctx.overlay.querySelector('.sl-strike-swap__value').textContent).toBe('105.6');
+  expect(r.ctx.overlay.querySelector('.sl-strike-swap__digits').textContent).toBe('105.6');
   expect(Number(r.ctx.gsap.getProperty(h.beats.get('n').part('value')[0], 'opacity'))).toBeCloseTo(0.35);
   h.destroy();
 });

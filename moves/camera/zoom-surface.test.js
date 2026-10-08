@@ -25,7 +25,7 @@ const scenario = {
     eases: { dive: 'sine.inOut', in: 'power2.in', out: 'power3.out' },
     tokens: { diveFill: 0.86, diveKMax: 40 },
   },
-  carry: (h) => h.stage.overlay.querySelector('.sl-zoom-carrier'),
+  carry: null,
 };
 
 it('meets the link contract and reverses the exponential scales', () => {

@@ -3,10 +3,21 @@ import { colorOf } from '../_shared/color.js';
 import { drawOn, line, svgLayer } from '../_shared/stroke.js';
 import { px } from '../_shared/timeline.js';
 
-const nodesExcept = (ctx, name, index) =>
-  Object.entries(ctx.beat.parts)
-    .flatMap(([part, nodes]) => (part === name ? nodes.filter((_, i) => i !== index) : nodes))
-    .filter((node) => !ctx.skipParts.includes(node.dataset.part) && !(ctx.skipNodes ?? []).includes(node));
+const SVG = 'http://www.w3.org/2000/svg';
+const HUD = ['title', 'dek', 'note', 'source', 'legend', 'caption', 'verdict'];
+
+/**
+ * Parts to dim: everything but the port, its ancestors (dimming an <svg> would dim the port inside it) and its
+ * descendants; a node whose ancestor is already dimmed is left alone so opacity never multiplies. Dimming is a
+ * fold inside the step span, so it also applies to parts a link handed over (C5 v2.2, #48).
+ */
+function others(ctx, port) {
+  const all = Object.values(ctx.beat.parts)
+    .flat()
+    .filter((node) => node !== port && !node.contains(port) && !port.contains(node));
+  const unique = [...new Set(all)];
+  return unique.filter((node) => !unique.some((other) => other !== node && other.contains(node)));
+}
 
 export default {
   id: 'port-aim',
@@ -30,26 +41,30 @@ export default {
       rect = anchor.rect;
     const box = params.box,
       port = { x: rect.x + rect.w * box.x, y: rect.y + rect.h * box.y, w: rect.w * box.w, h: rect.h * box.h };
-    const radius = Math.hypot(port.w, port.h) / 2 + px(ctx, ctx.tokens.ringPad ?? 12);
-    const startRadius = px(ctx, ctx.tokens.ringStart ?? radius / ctx.viewport.px + 44);
+    // 링 = 포트 모양 그대로의 사각 틀(숫자 획·막대·화면·버튼 띠마다 모양이 다르다). 넓고 옅은 판에서 조여든다
+    const pad = px(ctx, ctx.tokens.ringPad ?? 12);
+    const far = px(ctx, ctx.tokens.ringStart ?? 420) / 4;
+    const end = { x: port.x - pad, y: port.y - pad, width: port.w + pad * 2, height: port.h + pad * 2 };
+    const start = { x: end.x - far, y: end.y - far, width: end.width + far * 2, height: end.height + far * 2 };
     const accent = colorOf(ctx, 'accent'),
       svg = svgLayer(ctx);
-    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    circle.setAttribute('cx', String(port.x + port.w / 2));
-    circle.setAttribute('cy', String(port.y + port.h / 2));
-    circle.setAttribute('fill', accent);
-    circle.setAttribute('stroke', accent);
-    circle.setAttribute('stroke-width', String(px(ctx, ctx.tokens.ringStroke ?? 2)));
-    svg.append(circle);
-    const theta = -Math.PI / 4,
-      cx = port.x + port.w / 2,
-      cy = port.y + port.h / 2;
-    const leadStart = { x: cx + Math.cos(theta) * radius, y: cy + Math.sin(theta) * radius };
-    const dir = params.labelSide === 'left' ? -1 : params.labelSide === 'top' ? 0 : 1;
+    const ring = document.createElementNS(SVG, 'rect');
+    ring.setAttribute('class', 'sl-port-aim__ring');
+    ring.setAttribute('rx', String(px(ctx, 2)));
+    ring.setAttribute('fill', accent);
+    ring.setAttribute('stroke', accent);
+    ring.setAttribute('stroke-width', String(px(ctx, ctx.tokens.ringStroke ?? 2)));
+    svg.append(ring);
+    const gap = px(ctx, 64);
+    const side = params.labelSide;
+    const leadStart =
+      side === 'top'
+        ? { x: end.x + end.width / 2, y: end.y }
+        : { x: side === 'left' ? end.x : end.x + end.width, y: end.y + end.height / 2 };
     const leadEnd =
-      params.labelSide === 'top'
-        ? { x: leadStart.x, y: leadStart.y - px(ctx, 64) }
-        : { x: leadStart.x + dir * px(ctx, 64), y: leadStart.y };
+      side === 'top'
+        ? { x: leadStart.x, y: leadStart.y - gap }
+        : { x: leadStart.x + (side === 'left' ? -gap : gap), y: leadStart.y };
     const leader = params.label
       ? line(svg, leadStart.x, leadStart.y, leadEnd.x, leadEnd.y, {
           stroke: accent,
@@ -64,25 +79,27 @@ export default {
         position: 'absolute',
         left: `${leadEnd.x}px`,
         top: `${leadEnd.y}px`,
+        padding: side === 'top' ? `0 0 ${px(ctx, 8)}px` : `0 ${px(ctx, 12)}px`,
         color: accent,
-        fontFamily: 'monospace',
         fontWeight: '700',
       });
       ctx.overlay.append(label);
     }
-    ctx.initial(circle, { attr: { r: startRadius }, fillOpacity: 0.18, strokeOpacity: 0 });
+    ctx.initial(ring, { attr: start, fillOpacity: 0.18, strokeOpacity: 0 });
     if (leader) ctx.initial(leader, { strokeDashoffset: 1 });
-    if (label) ctx.initial(label, { autoAlpha: 0, y: px(ctx, 8) });
-    tl.to(
-      nodesExcept(ctx, anchor.part, anchor.index),
-      { opacity: ctx.tokens.dimOthers ?? 0.22, duration: d * 0.35, ease: ctx.ease('out') },
-      0,
-    );
-    const hud = ctx.beat.part('hud').filter((node) => !(ctx.skipNodes ?? []).includes(node));
+    // 기준점 정렬은 xPercent·yPercent로(gsap이 transform을 쓰면 CSS translate는 지워진다)
+    const anchorAt = side === 'top' ? { xPercent: -50, yPercent: -100 } : { xPercent: side === 'left' ? -100 : 0, yPercent: -50 };
+    if (label) ctx.initial(label, { ...anchorAt, autoAlpha: 0, y: px(ctx, 8) });
+    const hudNames = ctx.beat.type === 'number' ? [...HUD, 'label'] : HUD;
+    const dim = others(ctx, anchor.node);
+    const hud = dim.filter((node) => hudNames.includes(node.dataset.part));
+    const rest = dim.filter((node) => !hud.includes(node));
+    if (rest.length)
+      tl.to(rest, { opacity: ctx.tokens.dimOthers ?? 0.22, duration: d * 0.35, ease: ctx.ease('out') }, 0);
     if (hud.length) tl.to(hud, { opacity: 0.6, duration: d * 0.35, ease: ctx.ease('out') }, 0);
     tl.to(
-      circle,
-      { attr: { r: radius }, fillOpacity: 0, strokeOpacity: 1, duration: d * 0.45, ease: ctx.ease('inout') },
+      ring,
+      { attr: end, fillOpacity: 0, strokeOpacity: 1, duration: d * 0.45, ease: ctx.ease('inout') },
       d * 0.15,
     );
     if (params.label) {
