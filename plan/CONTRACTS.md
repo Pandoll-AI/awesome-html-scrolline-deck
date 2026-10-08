@@ -176,7 +176,7 @@ beats:
   - **v2 변경 (chart, #9·#10·#11·#12, E2-3)**: 이름 통일 — L1 = `title`, L2 = `dek`, 표식 주석 = `notes[]`(part `note`). zoom 덱의 `note:`(단수 문자열)는 `dek:`로 바꾼다(별칭 없음).
   - `title`·`dek`는 SVG 밖 HTML(`h2.sl-chart__title`, `p.sl-chart__dek`), plot 위. `notes[k]` → `p.sl-chart__note`에 `data-index`·`data-series`(생략 시 `0`), 위치 = 해당 mark 옆(viewBox 좌표를 % 위치로 환산한 inline `left/top`).
   - `orient: h` = 가로 막대(범주가 y축 위→아래, 값이 x축). `bar`에서만 의미, 다른 kind는 무시.
-  - 음수: 값 영역 = `[min(0, 최소값), max(0, 최대값)]`(둘 다 0이면 `[0, 1]`). 막대는 0 기준선에서 위·아래(h면 좌·우)로. 0 기준선 = part `baseline`(`line.sl-chart__baseline`, 값 영역에 음수가 있을 때만). mark에 `data-sign="neg"|"pos"`.
+  - 음수: 값 영역 = `[min(0, 최소값), max(0, 최대값)]`(둘 다 0이면 `[0, 1]`). **v2.2 (#50)**: 선택 필드 `domain: { min?, max? }`는 영역을 넓히기만 한다 = `[min(domain.min, 최소값, 0), max(domain.max, 최대값, 0)]`(전후 비교 차트가 같은 눈금). 렌더러는 실제 영역을 `svg.sl-chart`의 `data-min`·`data-max`에 적는다 — 값→좌표를 직접 환산하는 move는 series에서 다시 계산하지 말고 이 값을 읽는다. 막대는 0 기준선에서 위·아래(h면 좌·우)로. 0 기준선 = part `baseline`(`line.sl-chart__baseline`, 값 영역에 음수가 있을 때만). mark에 `data-sign="neg"|"pos"`.
   - `states[]`: 글자 필드(`title`·`dek`·`notes`·`unit`)는 상태 층(C4 공통)으로 미리 렌더. `kind`·`series` 변화(모양·값)는 step move 몫(렌더러는 base 상태 mark만 그림). 상태 층 순서 = `states[]` 순서.
 - `chronology` 렌더: track 위 event를 `scale`대로 배치. `axis: x`면 가로 레일(rail 컨셉).
   - **v2 변경 (chronology, #2·#3·#5·#6, E2-4)**: event마다 `dot`(점)·`stem`(점과 제목을 잇는 줄기) part를 늘 그림. `weight` → event `data-weight`(기본 `major`).

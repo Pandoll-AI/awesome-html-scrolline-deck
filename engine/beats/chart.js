@@ -16,10 +16,11 @@ function sourceLabel(rc, source) {
     .join(' · ');
 }
 
-function valueRange(series) {
+function valueRange(series, domain = {}) {
+  // domain(v2.2)은 값 영역을 넓히기만 한다: [min(domain.min, 최소값, 0), max(domain.max, 최대값, 0)].
   const values = series.flatMap((item) => item.values);
-  const min = Math.min(0, ...values);
-  const rawMax = Math.max(0, ...values);
+  const min = Math.min(0, ...values, domain.min ?? 0);
+  const rawMax = Math.max(0, ...values, domain.max ?? 0);
   return rawMax === min ? { min: 0, max: 1 } : { min, max: rawMax };
 }
 
@@ -98,6 +99,14 @@ export default {
       },
     },
     orient: { type: 'enum', values: ['v', 'h'], default: 'v', doc: 'bar 방향' },
+    domain: {
+      type: 'object',
+      fields: {
+        min: { type: 'number', doc: '값 영역 최소(데이터보다 작을 때만 넓힘)' },
+        max: { type: 'number', doc: '값 영역 최대(데이터보다 클 때만 넓힘)' },
+      },
+      doc: '값 영역 고정(전후 비교 차트가 같은 눈금을 쓰게)',
+    },
     highlight: {
       type: 'object',
       fields: {
@@ -128,7 +137,7 @@ export default {
   render(data, rc) {
     const parts = {};
     const view = root('chart', rc);
-    const range = valueRange(data.series);
+    const range = valueRange(data.series, data.domain);
     const horizontal = data.kind === 'bar' && data.orient === 'h';
     const categoryCount = data.categories.length;
     const categorySpace = horizontal
@@ -158,6 +167,9 @@ export default {
 
     const svg = add(parts, 'plot', node(rc, 'svg', 'sl-chart', view));
     svg.setAttribute('viewBox', '0 0 1600 900');
+    // move가 같은 눈금으로 값→좌표를 환산하도록 실제 값 영역을 내보낸다.
+    svg.dataset.min = String(range.min);
+    svg.dataset.max = String(range.max);
     svg.setAttribute('role', 'img');
     const axis = add(parts, 'axis', node(rc, 'g', 'sl-chart__axis', svg));
     const axisLine = node(rc, 'line', null, axis);
