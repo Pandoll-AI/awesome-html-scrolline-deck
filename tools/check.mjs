@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * npm run check = check-deps + check-tests + check-state (+ --hat <range>면 check-hat).
+ * npm run check = check-deps + check-tests + check-state + check-moves (+ --hat <range>면 check-hat).
  * 하나라도 실패하면 exit 1. W3에서 check-moves, W5에서 check-diversity가 여기에 붙는다.
  */
 import path from 'node:path';
@@ -9,6 +9,7 @@ import { checkDeps } from './check-deps.mjs';
 import { checkTests } from './check-tests.mjs';
 import { checkState } from './check-state.mjs';
 import { checkHat } from './check-hat.mjs';
+import { checkMoves } from './check-moves.mjs';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
@@ -34,6 +35,11 @@ console.log(
   `${state.board.length + state.runs.length ? 'FAIL' : 'ok  '} state  board 오류 ${state.board.length}, runs ${state.runLines}줄 오류 ${state.runs.length}`,
 );
 fail += state.board.length + state.runs.length;
+
+const moves = checkMoves(root);
+for (const x of moves.violations) console.log(`  ${x.rule} ${x.file} '${x.token}' ${x.message}`);
+console.log(`${moves.violations.length ? 'FAIL' : 'ok  '} moves  파일 ${moves.files}, 위반 ${moves.violations.length}`);
+fail += moves.violations.length;
 
 const hatAt = args.indexOf('--hat');
 if (hatAt >= 0) {
