@@ -181,7 +181,7 @@ beats:
     series:
       - { name: "태그 부착 상자", values: [1200, 2000, 3100, 4400, 6000, 8300, 11000, 14600, 19200] }
     unit: "상자/월"
-    highlight: { series: 0, index: 8 }
+    highlight: { series: "태그 부착 상자", index: 8 }
     place: { world: { x: 2.9, y: 2.3, z: 80 } }
     camera: { move: arc-flight, params: { duration: 1.2, altitude: 0, bank: 0 } }
     enter: { move: line-draw, at: 0.7 }
