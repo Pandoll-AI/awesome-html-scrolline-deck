@@ -18,11 +18,14 @@ export default {
   build(tl, ctx, params) {
     const d = params.duration,
       index = params.index < 0 ? (ctx.beat.data.highlight?.index ?? 0) : params.index,
-      series = ctx.beat.data.highlight?.series ?? 0;
+      named = ctx.beat.data.highlight?.series ?? 0,
+      // highlight.series is a series name or an index (C4 chart)
+      found = (ctx.beat.data.series ?? []).findIndex((x) => x?.name === named),
+      series = typeof named === 'number' ? named : Math.max(0, found);
     const marks = part(ctx, 'mark'),
       target =
         marks.find((n) => Number(n.dataset.index) === index && Number(n.dataset.series) === Number(series)) ??
-        marks[index];
+        marks.filter((n) => n.dataset.index !== 'all')[index];
     const other = marks.filter((n) => n !== target);
     tl.to(other, { autoAlpha: params.dim, duration: d * 0.5, ease: ctx.ease('out') }, 0);
     if (target) {

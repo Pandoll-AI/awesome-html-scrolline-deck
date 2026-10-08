@@ -111,13 +111,13 @@ beats:
     steps:
       - name: top
         move: scrub-callouts
-        params: { to: 0.42, anchor: { x: 0.64, y: 0.47 }, label: "패브릭 상판", note: "소리는 통과시키고 먼지는 막습니다" }
+        params: { to: 0.42, anchor: { x: 0.62, y: 0.19 }, label: "패브릭 상판", note: "소리는 통과시키고 먼지는 막습니다" }
       - name: mics
         move: scrub-callouts
-        params: { to: 0.67, anchor: { x: 0.64, y: 0.17 }, label: "MEMS 마이크 8개", note: "반경 5m 안의 목소리를 방향별로 나눕니다" }
+        params: { to: 0.67, anchor: { x: 0.62, y: 0.51 }, label: "MEMS 마이크 8개", note: "반경 5m 안의 목소리를 방향별로 나눕니다" }
       - name: npu
         move: scrub-callouts
-        params: { to: 0.92, anchor: { x: 0.64, y: 0.38 }, label: "온디바이스 NPU", note: "녹음을 기기 안에서 바로 글로 바꿉니다" }
+        params: { to: 0.92, anchor: { x: 0.62, y: 0.54 }, label: "온디바이스 NPU", note: "녹음을 기기 안에서 바로 글로 바꿉니다" }
     exit: { move: "engine:fade-out" }
     repeat: intended   # scrub-callouts 3 step(층마다 하나)
     exportHold: 2.2

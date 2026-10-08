@@ -35,8 +35,9 @@ export default {
     return { duration: params.duration, stops: [] };
   },
   build(tl, ctx, params) {
+    // anchor는 그려진 프레임(media 캔버스) 기준: 세로 화면에선 캔버스가 frame보다 작게 위쪽에 앉는다
     const d = params.duration,
-      rect = ctx.beat.anchor('frame').rect;
+      rect = (ctx.beat.part('media').length ? ctx.beat.anchor('media') : ctx.beat.anchor('frame')).rect;
     const x = rect.x + rect.w * params.anchor.x,
       y = rect.y + rect.h * params.anchor.y;
     const left = params.side === 'left';
@@ -49,8 +50,16 @@ export default {
     const previous = [...(ctx.stage.overlay?.querySelectorAll?.(`[data-callout-of="${ctx.beat.id}"]`) ?? [])];
     const index = ctx.step?.index ?? 0;
     const from = params.from >= 0 ? params.from : (ctx.beat.data.steps?.[index - 1]?.params?.to ?? 0);
+    // 세로 화면: 옆에 라벨 둘 폭이 없어 지시선은 아래로 내려 프레임 밑 왼쪽 정렬 라벨에 닿는다
+    const below = ctx.viewport.portrait;
+    const labelTop = rect.y + rect.h + px(ctx, 40);
     const svg = svgLayer(ctx),
-      stroke = line(svg, end, y, x, y, { stroke: accent, 'stroke-width': Math.max(1.5, px(ctx, 2)) });
+      stroke = below
+        ? line(svg, x, labelTop - px(ctx, 16), x, y, {
+            stroke: accent,
+            'stroke-width': Math.max(1.5, px(ctx, 2)),
+          })
+        : line(svg, end, y, x, y, { stroke: accent, 'stroke-width': Math.max(1.5, px(ctx, 2)) });
     const dot = document.createElement('i'),
       label = document.createElement('div'),
       note = document.createElement('div');
@@ -59,16 +68,23 @@ export default {
     note.className = 'sl-scrub-callouts__note';
     label.textContent = params.label;
     note.textContent = params.note;
-    const side = left
-      ? { right: `${ctx.viewport.w - (end - gap)}px`, textAlign: 'right' }
-      : { left: `${end + gap}px`, textAlign: 'left' };
+    const side = below
+      ? { left: `${px(ctx, 48)}px`, textAlign: 'left' }
+      : left
+        ? { right: `${ctx.viewport.w - (end - gap)}px`, textAlign: 'right' }
+        : { left: `${end + gap}px`, textAlign: 'left' };
     Object.assign(dot.style, { position: 'absolute', left: `${x}px`, top: `${y}px`, display: 'block' });
-    Object.assign(label.style, {
+    Object.assign(
+      label.style,
+      below
+        ? { position: 'absolute', top: `${labelTop}px`, ...side }
+        : { position: 'absolute', bottom: `${ctx.viewport.h - y + px(ctx, 4)}px`, ...side },
+    );
+    Object.assign(note.style, {
       position: 'absolute',
-      bottom: `${ctx.viewport.h - y + px(ctx, 4)}px`,
+      top: `${below ? labelTop + px(ctx, 52) : y + px(ctx, 10)}px`,
       ...side,
     });
-    Object.assign(note.style, { position: 'absolute', top: `${y + px(ctx, 10)}px`, ...side });
     const group = [svg, dot, label, note];
     if (params.dimOthers) {
       const scrim = document.createElement('div');

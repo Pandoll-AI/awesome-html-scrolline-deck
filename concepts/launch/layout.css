@@ -75,16 +75,17 @@
   display: none;
 }
 
-/* 마지막 공개(lockup 사진): 제품을 1.3배로 키워 화면 주인공으로(사진은 정수리 제품 폭 30%로 렌더됨),
+/* 마지막 공개(lockup 사진): 제품을 1.22배로 키우고 조금 내려(중심 0.45h) 화면 주인공으로(사진은 정수리 제품 폭 30%로 렌더됨),
    media 박스 자체를 키우고 넘친 부분은 frame이 자른다(transform은 move 몫이라 안 씀) */
 .sl-concept-launch .sl-beat--photo .sl-photo__frame {
   overflow: hidden;
 }
 .sl-concept-launch .sl-beat--photo .sl-photo__media {
   position: absolute;
-  inset: -15%;
-  width: 130%;
-  height: 130%;
+  top: -6%;
+  left: -11%;
+  width: 122%;
+  height: 122%;
 }
 /* 캡션: 제품 아래 가운데 한 줄 */
 .sl-concept-launch .sl-photo__caption {
@@ -124,7 +125,7 @@
 /* ── prompt: 실시간 기록. 상자 없이 대화가 찍히고, 같은 자리에서 결과 두 줄로 응축 ── */
 .sl-concept-launch .sl-beat--prompt {
   display: grid;
-  grid-template-columns: calc(1440 * var(--launch-u));
+  grid-template-columns: calc(1560 * var(--launch-u));
   grid-template-rows: auto auto;
   align-content: center;
   justify-content: center;
@@ -197,19 +198,66 @@
   background: var(--sl-accent);
 }
 
-/* ── 세로 화면: 제품 위 55%, 카피는 아래 ───────────────────────────── */
+/* ── 세로 화면: 제품 프레임은 16:9 그대로 위쪽에(제품 축이 가운데 오게 1.4배), 카피는 아래 ─────── */
 @media (max-aspect-ratio: 1/1) {
   .sl-concept-launch {
-    --launch-col-w: calc(640 * var(--launch-u));
-    --launch-copy: calc(56 * var(--launch-u));
+    --launch-copy: calc(52 * var(--launch-u));
+    --launch-hero: calc(240 * var(--launch-u));
+  }
+  .sl-concept-launch .sl-video__caption {
+    left: calc(48 * var(--launch-u));
+    width: calc(100% - 96 * var(--launch-u));
+  }
+  .sl-concept-launch .sl-frame-sequence {
+    position: absolute;
+    top: 8%;
+    left: -36.8%;
+    width: 140%;
+    height: auto;
+    aspect-ratio: 16 / 9;
   }
   .sl-concept-launch .sl-beat--video:has(.sl-frame-sequence) .sl-video__caption {
-    bottom: 12%;
+    bottom: 14%;
+  }
+  .sl-concept-launch .sl-beat--video:has(.sl-video__media-host) .sl-video__caption {
+    width: calc(100% - 96 * var(--launch-u));
+    font-size: var(--launch-copy);
   }
   .sl-concept-launch .sl-text__line {
     white-space: normal;
   }
+  .sl-concept-launch .sl-text--xl {
+    font-size: calc(108 * var(--launch-u));
+  }
+  .sl-concept-launch .sl-text--l {
+    font-size: calc(68 * var(--launch-u));
+  }
+  .sl-concept-launch .sl-text--m {
+    font-size: calc(60 * var(--launch-u));
+  }
+  .sl-concept-launch .sl-text__block {
+    max-width: calc(100% - 96 * var(--launch-u));
+  }
+  .sl-concept-launch .sl-number__label {
+    max-width: calc(640 * var(--launch-u));
+    font-size: calc(34 * var(--launch-u));
+  }
   .sl-concept-launch .sl-beat--prompt {
     grid-template-columns: calc(660 * var(--launch-u));
+  }
+  .sl-concept-launch .sl-prompt__field {
+    font-size: calc(40 * var(--launch-u));
+  }
+  .sl-concept-launch .sl-prompt__result {
+    font-size: calc(48 * var(--launch-u));
+  }
+  .sl-concept-launch .sl-beat--photo .sl-photo__media {
+    top: 0;
+    left: -50%;
+    width: 200%;
+    height: 72%;
+  }
+  .sl-concept-launch .sl-photo__caption {
+    bottom: 16%;
   }
 }
