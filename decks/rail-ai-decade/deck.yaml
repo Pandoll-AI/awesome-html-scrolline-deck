@@ -68,7 +68,7 @@ beats:
     place: { slot: full }
     enter: { move: mask-word-in, params: { duration: 1.4, captionIn: true } }
     steps:
-      - { name: dive, move: text-mask-dive }
+      - { name: dive, move: text-mask-dive, params: { focusX: 0.15, focusY: 0.55 } }   # 「1」 세로획 위(획 밖이면 종이로 들어가 화면이 빈다)
     link: { move: rail-drop, params: { duration: 1.6, toEvent: 0 } }
     exportHold: 2.6
 

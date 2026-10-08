@@ -292,3 +292,9 @@
 .sl-concept-rail .sl-beat--quote .sl-quote__source {
   font-size: calc(var(--rail-u) * 20);
 }
+
+/* 카메라가 기울어 내려앉는 동안(rail-settle) 바탕과 내용이 같은 평면이면 3D 깊이 정렬에서 바탕이 앞에 그려져
+   제목·레일이 가려졌다가 카메라가 정면이 되는 순간 툭 나타난다. 바탕을 살짝 뒤로 빼 둔다. */
+.sl-concept-rail .sl-chronology__ground {
+  translate: 0 0 -8px;
+}
