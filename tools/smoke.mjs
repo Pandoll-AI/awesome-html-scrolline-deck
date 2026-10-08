@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /**
  * Browser smoke for one deck: boot errors, then every stop via `__deck.seek(t)`.
- *   node tools/smoke.mjs <deckId> [--port 5190] [--host localhost] [--shots] [--driver aside|chrome]
- * Writes out/smoke/<deck>/report.json (+ stop-XX.png and sheet.png with --shots).
+ *   node tools/smoke.mjs <deckId> [--port 5190] [--host localhost] [--shots] [--driver aside|chrome] [--out dir]
+ * Writes out/smoke/<deck>/report.json (+ stop-XX.png and sheet.png with --shots); --out writes elsewhere.
+ * The chrome tab ignores Vite HMR reloads, so other agents' edits during a run do not wipe the probe.
  * Drivers: `aside` = Aside CLI repl (default, current viewport). `chrome` = hyperframes'
  * chrome-headless-shell over raw CDP at 1920×1080; `--shots` uses it because Aside
  * screenshots time out on background tabs.
@@ -17,12 +18,12 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ASIDE = '/mnt/c/Users/kim/AppData/Local/Aside/CLI/current/aside.exe';
 const DECK_ID = /^_?[a-z0-9][a-z0-9-]*$/;
 export const usage =
-  'node tools/smoke.mjs <deckId> [--port 5190] [--host localhost] [--shots] [--driver aside|chrome]';
+  'node tools/smoke.mjs <deckId> [--port 5190] [--host localhost] [--shots] [--driver aside|chrome] [--out dir]';
 export const SHEET_COLUMNS = 6;
 
 /** @param {string[]} argv */
 export function parseArgs(argv) {
-  const opts = { deck: null, port: 5190, host: 'localhost', shots: false, driver: null, help: false };
+  const opts = { deck: null, port: 5190, host: 'localhost', shots: false, driver: null, out: null, help: false };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === '--help' || arg === '-h') opts.help = true;
@@ -30,6 +31,7 @@ export function parseArgs(argv) {
     else if (arg === '--port') opts.port = Number(argv[(i += 1)]);
     else if (arg === '--host') opts.host = argv[(i += 1)];
     else if (arg === '--driver') opts.driver = argv[(i += 1)];
+    else if (arg === '--out') opts.out = argv[(i += 1)];
     else if (arg.startsWith('--')) throw new Error(`unknown option: ${arg}`);
     else if (!opts.deck) opts.deck = arg;
     else throw new Error(`unexpected argument: ${arg}`);
@@ -229,6 +231,30 @@ export function probeSource(deckId) {
 })();`;
 }
 
+/**
+ * Injected before the page's own scripts: drops Vite HMR `full-reload`/`update`/`prune` messages so a file
+ * saved by another agent mid-run does not reload the tab (which wiped `window.__smoke` and failed the run).
+ */
+export const HMR_FREEZE = `(() => {
+  const Native = window.WebSocket;
+  if (!Native || Native.__slFrozen) return;
+  const drop = (data) => {
+    try { return ['full-reload', 'update', 'prune'].includes(JSON.parse(data).type); } catch { return false; }
+  };
+  class Frozen extends Native {
+    constructor(url, protocols) {
+      super(url, protocols);
+      this.__slHmr = [].concat(protocols ?? []).includes('vite-hmr');
+    }
+    addEventListener(type, fn, opts) {
+      if (!this.__slHmr || type !== 'message' || typeof fn !== 'function') return super.addEventListener(type, fn, opts);
+      return super.addEventListener(type, (event) => { if (!drop(event.data)) fn.call(this, event); }, opts);
+    }
+  }
+  Frozen.__slFrozen = true;
+  window.WebSocket = Frozen;
+})();`;
+
 function deckUrl(opts) {
   return `http://${opts.host}:${opts.port}/decks/${opts.deck}/index.html`;
 }
@@ -288,6 +314,16 @@ export async function cdpConnect(wsUrl) {
 }
 
 export function chromePath() {
+  // Cached headless shell first: concurrent `npx hyperframes` calls race on the npx cache and print nothing.
+  const cache = path.join(os.homedir(), '.cache', 'hyperframes', 'chrome', 'chrome-headless-shell');
+  if (existsSync(cache)) {
+    const found = readdirSync(cache)
+      .sort()
+      .reverse()
+      .map((v) => path.join(cache, v, 'chrome-headless-shell-linux64', 'chrome-headless-shell'))
+      .find((f) => existsSync(f));
+    if (found) return found;
+  }
   const result = spawnSync('npx', ['hyperframes', 'browser', 'path'], { cwd: ROOT, encoding: 'utf8' });
   const file = result.stdout.trim().split('\n').at(-1);
   if (!file || !existsSync(file)) throw new Error('chrome not found: run `npx hyperframes browser ensure`');
@@ -331,6 +367,7 @@ async function runChrome(opts, outDir) {
     const cdp = await cdpConnect(target.webSocketDebuggerUrl);
     await cdp.send('Emulation.setDeviceMetricsOverride', { width: 1920, height: 1080, deviceScaleFactor: 1, mobile: false });
     await cdp.send('Page.enable');
+    await cdp.send('Page.addScriptToEvaluateOnNewDocument', { source: HMR_FREEZE });
     await cdp.send('Page.navigate', { url: deckUrl(opts) });
     const until = Date.now() + 30000;
     while (Date.now() < until && (await cdp.evaluate('document.readyState').catch(() => '')) !== 'complete')
@@ -382,7 +419,7 @@ async function main() {
   const opts = parseArgs(process.argv.slice(2));
   if (opts.help) return console.log(usage);
   if (!existsSync(path.join(ROOT, 'decks', opts.deck, 'deck.yaml'))) throw new Error(`deck not found: ${opts.deck}`);
-  const outDir = path.join(ROOT, 'out', 'smoke', opts.deck);
+  const outDir = opts.out ? path.resolve(opts.out) : path.join(ROOT, 'out', 'smoke', opts.deck);
   mkdirSync(outDir, { recursive: true });
   for (const f of readdirSync(outDir)) if (/^stop-\d+\.png$/.test(f)) rmSync(path.join(outDir, f));
   const raw = opts.driver === 'chrome' ? await runChrome(opts, outDir) : runAside(opts);
