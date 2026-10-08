@@ -67,6 +67,8 @@ beats:
     caption: "생성형 AI, Transformer에서 GPT-6까지 · 업계 브리핑 2026.10"
     place: { slot: full }
     enter: { move: mask-word-in, params: { duration: 1.4, captionIn: true } }
+    steps:
+      - { name: dive, move: text-mask-dive }
     link: { move: rail-drop, params: { duration: 1.6, toEvent: 0 } }
     exportHold: 2.6
 

@@ -51,7 +51,8 @@
       "engine:fade-in",
       "engine:fade-out",
       "engine:crossfade",
-      "engine:none"
+      "engine:none",
+      "text-mask-dive"
     ],
     "signature": [
       "rail-advance",

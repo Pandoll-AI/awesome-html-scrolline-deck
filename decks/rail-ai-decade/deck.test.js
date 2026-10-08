@@ -31,8 +31,8 @@ describe('rail-ai-decade deck', () => {
   it('keeps the planned stop count and duration stable', () => {
     const map = plan(deck, env);
     expect({ stops: map.stops.length, duration: Number(map.duration.toFixed(1)) }).toEqual({
-      stops: 38,
-      duration: 76.9,
+      stops: 39,
+      duration: 78.8,
     });
   });
 
