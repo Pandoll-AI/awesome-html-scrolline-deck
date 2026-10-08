@@ -1,7 +1,13 @@
 /** Timeline arithmetic shared by W3 moves. */
 export const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 export const lerp = (a, b, t) => a + (b - a) * t;
-export const seg = (d, a, b) => ({ at: d * a, duration: d * b - d * a });
+/**
+ * Segment [a, b] of a d-long move. Spread into tween vars (`tl.to(x, { ...seg(d, a, b) }, 0)`) it gives
+ * `delay` + `duration`, so the tween starts at d·a; `.at` (not enumerable, not spread) is the same start for
+ * `tl.to(x, { duration: s.duration }, s.at)`. It used to spread `at`, which GSAP ignores, so every segment began at 0.
+ */
+export const seg = (d, a, b) =>
+  Object.defineProperty({ delay: d * a, duration: d * b - d * a }, 'at', { value: d * a, enumerable: false });
 export const px = (ctx, n) => n * ctx.viewport.px;
 export function slots(n, { start = 0, span, each, compress = 1, minRatio = 0.4 }) {
   if (!n) return [];
