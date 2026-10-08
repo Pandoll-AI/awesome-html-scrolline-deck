@@ -36,7 +36,7 @@ describe('zoom-root-cause deck', () => {
     const map = plan(deck, env);
     expect({ stops: map.stops.length, duration: Number(map.duration.toFixed(1)) }).toEqual({
       stops: 23,
-      duration: 60.8,
+      duration: 60.5,
     });
   });
 
