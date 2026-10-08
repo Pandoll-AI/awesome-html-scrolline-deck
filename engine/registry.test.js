@@ -28,4 +28,10 @@ describe('createRegistry', () => {
     expect(() => createRegistry([{ ...good, timing: null }])).toThrow();
     expect(() => createRegistry([{ ...good, sources: [] }])).toThrow();
   });
+  it('rejects reserved sequence ids and invalid handoff definitions', () => {
+    expect(() => createRegistry([{ ...good, id: 'seq:private' }])).toThrow();
+    expect(() => createRegistry([{ ...good, handoff: true }])).toThrow();
+    expect(() => createRegistry([{ ...good, handoff: () => {} }])).toThrow();
+    expect(() => createRegistry([{ ...good, role: 'link', handoff: () => {} }])).not.toThrow();
+  });
 });

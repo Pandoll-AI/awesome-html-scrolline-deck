@@ -91,4 +91,109 @@ describe('validateDeck', () => {
     repeats.beats.push({ id: 'two', type: 'text' });
     expect(validateDeck(repeats, env).errors.some((x) => x.message.includes('repeats'))).toBe(true);
   });
+
+  it('audits v2 common fields, source arrays, chart references, and chronology sources', () => {
+    const richEnv = {
+      ...env,
+      concept: {
+        ...concept,
+        beats: { allow: [...concept.beats.allow, 'compare', 'chronology', 'sequence'] },
+      },
+      beatTypes: { ...env.beatTypes, compare: type, chronology: type },
+      sequences: { custom: { ...type, fields: { use: { type: 'string', required: true } } } },
+    };
+    const d = deck();
+    d.sources.push({ id: 's2', title: 'Second', short: 'S2' });
+    d.beats = [
+      { id: 'one', type: 'text', persist: true, tone: 6 },
+      { id: 'two', type: 'number', source: [] },
+      { id: 'three', type: 'chart', categories: ['A'], states: [{ name: 'base' }], notes: [{ index: 1 }] },
+      { id: 'four', type: 'chronology', events: [{ source: 'missing' }] },
+      { id: 'five', type: 'sequence', use: 'custom', enter: { move: 'rise' } },
+    ];
+    const messages = validateDeck(d, richEnv)
+      .errors.map((error) => error.message)
+      .join(' ');
+    expect(messages).toMatch(/place.world/);
+    expect(messages).toMatch(/integer from 0 to 5/);
+    expect(messages).toMatch(/empty array/);
+    expect(messages).toMatch(/must not be base/);
+    expect(messages).toMatch(/within categories/);
+    expect(messages).toMatch(/source is not in deck.sources/);
+    expect(messages).toMatch(/cannot specify enter/);
+
+    const valid = deck();
+    valid.beats = [
+      {
+        id: 'one',
+        type: 'text',
+        place: { world: { x: 0, y: 0 } },
+        persist: true,
+        tone: 0,
+        enter: { move: 'engine:none' },
+        exit: { move: 'engine:none' },
+      },
+      {
+        id: 'two',
+        type: 'compare',
+        items: [{ label: 'A', value: 1 }],
+        source: ['s1'],
+        enter: { move: 'engine:none' },
+        exit: { move: 'engine:none' },
+      },
+      { id: 'three', type: 'text', tone: 5, enter: { move: 'engine:none' } },
+    ];
+    expect(validateDeck(valid, richEnv).ok).toBe(true);
+  });
+
+  it('rejects every invalid tone and source-array shape while accepting an in-ledger array', () => {
+    for (const tone of [-1, 1.5, 6]) {
+      const d = deck();
+      d.beats[0].tone = tone;
+      expect(validateDeck(d, env).ok).toBe(false);
+    }
+    for (const source of [[], ['s1', 's1'], ['missing']]) {
+      const d = deck();
+      d.beats = [{ id: 'one', type: 'number', source }];
+      expect(validateDeck(d, env).ok).toBe(false);
+    }
+    const d = deck();
+    d.sources.push({ id: 's2', title: 'Second source', short: 'S2' });
+    d.beats = [{ id: 'one', type: 'number', source: ['s1', 's2'] }];
+    expect(validateDeck(d, env).ok).toBe(true);
+  });
+
+  it('requires each chart state name to belong to a step', () => {
+    const d = deck();
+    d.beats = [{ id: 'one', type: 'chart', states: [{ name: 'changed' }] }];
+    expect(validateDeck(d, env).errors).toContainEqual({
+      path: 'deck.beats[0].states[0].name',
+      message: 'must match a step name',
+    });
+  });
+
+  it('accepts a sequence without enter and rejects an authored sequence enter', () => {
+    const sequenceEnv = {
+      ...env,
+      concept: { ...concept, beats: { allow: [...concept.beats.allow, 'sequence'] } },
+      sequences: { custom: { ...type, fields: { use: { type: 'string', required: true } } } },
+    };
+    const d = deck();
+    d.beats = [{ id: 'one', type: 'sequence', use: 'custom' }];
+    expect(validateDeck(d, sequenceEnv).ok).toBe(true);
+    d.beats[0].enter = { move: 'rise' };
+    expect(validateDeck(d, sequenceEnv).errors).toContainEqual({
+      path: 'deck.beats[0].enter',
+      message: 'sequence beat cannot specify enter',
+    });
+  });
+
+  it('does not count a final beat default exit as a repeated move', () => {
+    const d = deck();
+    d.beats = [
+      { id: 'one', type: 'text', enter: { move: 'engine:none' } },
+      { id: 'two', type: 'text', enter: { move: 'engine:none' } },
+    ];
+    expect(validateDeck(d, env).ok).toBe(true);
+  });
 });

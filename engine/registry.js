@@ -12,6 +12,7 @@ function validate(def) {
     (!ID_PATTERN.test(def.id) && !(def.family === 'engine' && def.id.startsWith('engine:')))
   )
     fail('id');
+  if (def.id.startsWith('seq:')) fail(`${def.id}.id is reserved`);
   if (!FAMILIES.includes(def.family)) fail(`${def.id}.family`);
   if (!ROLES.includes(def.role)) fail(`${def.id}.role`);
   if (!Array.isArray(def.accepts) || !def.accepts.length) fail(`${def.id}.accepts`);
@@ -24,6 +25,8 @@ function validate(def) {
   }
   if (typeof def.timing !== 'function') fail(`${def.id}.timing`);
   if (typeof def.build !== 'function') fail(`${def.id}.build`);
+  if (def.handoff !== undefined && typeof def.handoff !== 'function') fail(`${def.id}.handoff`);
+  if (def.handoff !== undefined && def.role !== 'link') fail(`${def.id}.handoff requires link role`);
 }
 
 /** @param {import('./types.js').MoveDef[]} defs */

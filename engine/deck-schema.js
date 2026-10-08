@@ -1,5 +1,14 @@
 /** Deck shape validation and C3 content audit. */
-import { BEAT_TYPES, DECK_ID_PATTERN, ID_PATTERN, PLACEHOLDER_PATTERNS, NO_MOVE } from './constants.js';
+import {
+  BASE_STATE,
+  BEAT_TYPES,
+  DECK_ID_PATTERN,
+  ID_PATTERN,
+  NO_MOVE,
+  PLACEHOLDER_PATTERNS,
+  SOURCED_TYPES,
+  TONE_RANGE,
+} from './constants.js';
 import { validateSchema } from './util/schema.js';
 
 const issue = (errors, path, message) => errors.push({ path, message });
@@ -12,8 +21,10 @@ function walkStrings(value, path, errors) {
   else if (value && typeof value === 'object')
     Object.entries(value).forEach(([key, item]) => walkStrings(item, `${path}.${key}`, errors));
 }
-function defaultMove(beat, role, concept) {
+function defaultMove(beat, role, concept, isLast = false) {
   if (beat[role]) return beat[role];
+  // The final screen remains visible unless its author explicitly supplied an exit.
+  if (role === 'exit' && isLast) return null;
   const move = concept.defaults?.byType?.[beat.type]?.[role] ?? concept.defaults?.[role];
   return move
     ? { move }
@@ -24,7 +35,47 @@ function defaultMove(beat, role, concept) {
         : null;
 }
 function requiresSource(beat) {
-  return beat.type === 'number' || beat.type === 'quote' || beat.type === 'photo' || beat.type === 'chart';
+  if (!SOURCED_TYPES.includes(beat.type)) return false;
+  return beat.type !== 'compare' || beat.items?.some((item) => Object.hasOwn(item ?? {}, 'value'));
+}
+
+function validateSource(value, ids, path, errors) {
+  const values = Array.isArray(value) ? value : [value];
+  if (!values.length) {
+    issue(errors, path, 'must not be an empty array');
+    return;
+  }
+  const seen = new Set();
+  for (const [index, id] of values.entries()) {
+    const itemPath = Array.isArray(value) ? `${path}[${index}]` : path;
+    if (typeof id !== 'string' || !id) issue(errors, itemPath, 'must be a source id');
+    else if (seen.has(id)) issue(errors, itemPath, 'must not contain duplicate source ids');
+    else if (!ids.has(id)) issue(errors, itemPath, 'source is not in deck.sources');
+    seen.add(id);
+  }
+}
+
+function validateChartAudit(beat, path, errors) {
+  if (beat.type !== 'chart') return;
+  const stepNames = new Set((beat.steps ?? []).map((step) => step?.name));
+  for (const [index, state] of (beat.states ?? []).entries()) {
+    const statePath = `${path}.states[${index}].name`;
+    if (state?.name === BASE_STATE) issue(errors, statePath, 'must not be base');
+    if (!stepNames.has(state?.name)) issue(errors, statePath, 'must match a step name');
+  }
+  const maxIndex = (beat.categories?.length ?? 0) - 1;
+  for (const [key, entries] of [
+    ['notes', beat.notes ?? []],
+    ['highlight', beat.highlight ? [beat.highlight] : []],
+  ])
+    entries.forEach((entry, index) => {
+      if (!Number.isInteger(entry?.index) || entry.index < 0 || entry.index > maxIndex)
+        issue(
+          errors,
+          `${path}.${key}${key === 'notes' ? `[${index}]` : ''}.index`,
+          'must be within categories',
+        );
+    });
 }
 
 /** @param {import('./types.js').DeckSpec} deck */
@@ -67,14 +118,30 @@ export function validateDeck(deck, env) {
       errors.push(...validateSchema(type.fields, fields, path));
     }
     if (beat.link && i === deck.beats.length - 1) issue(errors, `${path}.link`, 'last beat cannot have link');
+    if (beat.persist === true && !beat.place?.world)
+      issue(errors, `${path}.persist`, 'is only allowed on place.world beats');
+    if (
+      beat.tone !== undefined &&
+      (!Number.isInteger(beat.tone) || beat.tone < TONE_RANGE.min || beat.tone > TONE_RANGE.max)
+    )
+      issue(errors, `${path}.tone`, `must be an integer from ${TONE_RANGE.min} to ${TONE_RANGE.max}`);
+    validateChartAudit(beat, path, errors);
+    for (const [eventIndex, event] of (beat.type === 'chronology' ? (beat.events ?? []) : []).entries())
+      if (event?.source !== undefined)
+        validateSource(event.source, sourceIds, `${path}.events[${eventIndex}].source`, errors);
     if (!deck.sample && requiresSource(beat)) {
       if (!beat.source) issue(errors, `${path}.source`, 'source is required');
-      else if (!sourceIds.has(beat.source)) issue(errors, `${path}.source`, 'source is not in deck.sources');
+      else validateSource(beat.source, sourceIds, `${path}.source`, errors);
     }
+    if (beat.source !== undefined && (deck.sample || !requiresSource(beat)))
+      validateSource(beat.source, sourceIds, `${path}.source`, errors);
+    if (beat.type === 'sequence' && beat.enter !== undefined)
+      issue(errors, `${path}.enter`, 'sequence beat cannot specify enter');
     const refs = [];
     for (const role of ['enter', 'exit', 'link', 'camera']) {
+      if (role === 'enter' && beat.type === 'sequence') continue;
       if (role === 'exit' && beat.link) continue; // C3: link가 있으면 exit 무시(plan과 같게)
-      const ref = defaultMove(beat, role, env.concept);
+      const ref = defaultMove(beat, role, env.concept, i === deck.beats.length - 1);
       if (ref) refs.push([role, ref]);
     }
     for (const step of beat.steps ?? []) refs.push(['step', step]);
