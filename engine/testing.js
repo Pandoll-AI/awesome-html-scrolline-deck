@@ -229,6 +229,8 @@ export function createHarness(opts) {
       },
       rng: seeded(`${concept.id ?? 'test'}:${beat.id}:${run.role}:${move.id}`),
       textMask: (text, options) => harnessMask(beat, text, options),
+      overlaysOf: (b) =>
+        [...overlay.children].filter((node) => node !== ctx.overlay && node.dataset.overlay?.endsWith(`-${b?.id}`)),
     };
     const tl = gsap.timeline({ defaults: { ease: 'none' } });
     move.build(tl, ctx, params);

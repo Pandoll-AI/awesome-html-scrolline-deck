@@ -106,8 +106,9 @@
  *   ease: (alias: string) => string,
  *   initial: (targets: Element|Element[], vars: object) => void,
  *   rng: () => number,
- *   textMask: (text: string, opts?: { rect?: Rect, align?: 'center'|'left' }) => string
- * }} MoveContext  v2: skipNodes·step·textMask 추가, prev·next·camera 채움
+ *   textMask: (text: string, opts?: { rect?: Rect, align?: 'center'|'left' }) => string,
+ *   overlaysOf: (beat: BeatInstance) => HTMLElement[]
+ * }} MoveContext  v2: skipNodes·step·textMask 추가, prev·next·camera 채움. v2.2: overlaysOf
  */
 /**
  * @typedef {{

@@ -24,3 +24,19 @@ describe('recede', () => {
     expect(h.beats.get('c').part('plot')[0].style.filter).not.toContain('blur');
   });
 });
+
+// 회귀(data 통합): recede가 primary·title만 흐려 dek·note·source와 move overlay(주석)가 exit 내내 그대로였다.
+it('recedes the other parts and the beat move overlays to the same opacity', () => {
+  const h = createHarness({
+    beats: [{ id: 'c', type: 'chart', data: { parts: { title: true, dek: true, mark: true, source: true } } }],
+  });
+  const note = h.stage.overlayFor('pin-c');
+  const r = h.runMove(move, { role: 'exit', beat: 'c', params: { to: 0.3, duration: 0.9 } });
+  h.seek(r.timing.duration);
+  const op = (n) => Number(r.ctx.gsap.getProperty(n, 'opacity'));
+  const beat = h.beats.get('c');
+  expect(op(beat.part('dek')[0])).toBeCloseTo(0.3);
+  expect(op(beat.part('source')[0])).toBeCloseTo(0.3);
+  expect(op(note)).toBeCloseTo(0.3);
+  h.destroy();
+});

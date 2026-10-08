@@ -28,11 +28,19 @@ export default {
     tl.to(all, { scale: params.scaleTo, duration: d * 0.6, ease: ctx.ease('inout') }, 0);
     const primary = ctx.beat.part(ctx.beat.primary),
       title = ctx.beat.part('title'),
-      targets = [...new Set([...primary, ...title])];
+      lead = [...new Set([...primary, ...title])];
+    // 결론(primary·title)은 위로 빠지며 흐려지고, 나머지 part(dek·note·source·unit)와 이 beat의 move overlay
+    // (주석·값 라벨)도 같은 끝 opacity로. 겹친 part는 바깥 것만(opacity가 곱해지지 않게).
+    const rest = [...all.filter((node) => !lead.includes(node)), ...(ctx.overlaysOf?.(ctx.beat) ?? [])],
+      outer = rest.filter(
+        (node) =>
+          !rest.some((other) => other !== node && other.contains(node)) && !lead.some((l) => l.contains(node)),
+      );
     tl.to(
-      targets,
+      lead,
       { y: -params.drift * ctx.viewport.h, opacity: params.to, duration: d * 0.8, ease: ctx.ease('in') },
       d * 0.2,
     );
+    if (outer.length) tl.to(outer, { opacity: params.to, duration: d * 0.8, ease: ctx.ease('in') }, d * 0.2);
   },
 };

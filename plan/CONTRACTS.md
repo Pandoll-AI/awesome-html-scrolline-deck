@@ -273,6 +273,7 @@ export default {
   initial(targets: Element|Element[], vars: object): void,
   rng(): number,                      // [0,1), seed = hashSeed(`${deck.id}:${beat.id}:${role}:${move.id}`)
   textMask(text: string, opts?: { rect?: Rect, align?: 'center'|'left' }): string,   // v2: C13 textMask + 컨셉 display 글꼴
+  overlaysOf(beat: BeatInstance): HTMLElement[],   // v2.2: 그 beat의 앞 span move overlay들(이 move의 overlay 제외). exit·link가 나가는 beat의 주석·canvas를 같이 접을 때. engine:fade-out·engine:crossfade(A쪽)·recede가 쓴다
 }
 // v2: MoveDef 선택 필드
 handoff?(params, data: { from: object, to: object }): { from?: { part?: string, index?: number }, to?: { part?: string, index?: number } }   // link만, 순수

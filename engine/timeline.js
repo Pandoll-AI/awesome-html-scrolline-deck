@@ -31,12 +31,14 @@ const fadeIn = (tl, ctx, p) => {
   ctx.initial(nodes, { autoAlpha: 0 });
   tl.to(nodes, { autoAlpha: 1, duration: p.duration }, 0);
 };
-const fadeOut = (tl, ctx, p) => tl.to(allParts(ctx.beat), { autoAlpha: 0, duration: p.duration }, 0);
+// 나가는 beat의 move overlay(차트 주석·waffle canvas 등)도 같이 접는다. 안 그러면 span 끝에서 한 프레임에 사라진다.
+const leaving = (ctx, beat) => [...allParts(beat), ...(ctx.overlaysOf?.(beat) ?? [])];
+const fadeOut = (tl, ctx, p) => tl.to(leaving(ctx, ctx.beat), { autoAlpha: 0, duration: p.duration }, 0);
 const crossfade = (tl, ctx, p) => {
   const to = allParts(ctx.beat);
   ctx.initial(to, { autoAlpha: 0 });
   const n = Math.min(p.duration * 0.4, 0.15);
-  tl.to(allParts(ctx.from), { autoAlpha: 0, duration: p.duration - n }, 0);
+  tl.to(leaving(ctx, ctx.from), { autoAlpha: 0, duration: p.duration - n }, 0);
   tl.to(to, { autoAlpha: 1, duration: n }, p.duration - n);
 };
 export const ENGINE_MOVE_DEFS = Object.freeze([
@@ -334,6 +336,7 @@ export function build(map, env) {
     });
   }
   let lastCamera = { x: 0.5, y: 0.5, s: 1 };
+  const overlaysByBeat = new Map();
   for (const m of map.beats)
     for (const s of m.spans) {
       const beat = byId.get(m.id);
@@ -385,6 +388,7 @@ export function build(map, env) {
         initial: (nodes, vars) => initial.push([nodes, vars]),
         rng: createRng(hashSeed(`${deck.id}:${beat.id}:${s.role}:${move.id}`)),
         textMask: (text, options) => maskUrl(beat, text, options),
+        overlaysOf: (b) => (overlaysByBeat.get(b?.id) ?? []).filter((node) => node !== overlay),
       };
       if (from && s.role === 'link') ctx.handoff = skip?.handoff;
       if (sequence) sequence.build(local, ctx);
@@ -392,6 +396,8 @@ export function build(map, env) {
       if (local.duration() > ctx.duration + 0.001)
         throw new Error(`${move.id} local timeline exceeds planned duration`);
       master.add(local, s.start);
+      if (!overlaysByBeat.has(m.id)) overlaysByBeat.set(m.id, []);
+      overlaysByBeat.get(m.id).push(overlay);
       gsap.set(overlay, { autoAlpha: 0 });
       master.set(overlay, { autoAlpha: 1 }, s.start);
       if (index < beats.length - 1 && !beat.data.persist)
