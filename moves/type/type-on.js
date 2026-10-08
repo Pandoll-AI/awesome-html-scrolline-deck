@@ -41,10 +41,14 @@ export default {
       words = units(ctx, 'word');
     const field = ctx.beat.anchor('field').rect,
       caret = units(ctx, 'caret');
+    // caret은 글 끝에 inline으로 놓여 있다: 무대 좌표 rect를 caret 자기 자리(rest) 기준 translate로 바꾼다.
+    const rest = caret.length ? ctx.beat.anchor('caret').rect : { x: 0, y: 0 },
+      caretAt = (r, end = true) => ({ x: r.x + (end ? r.w : 0) - rest.x, y: r.y - rest.y }),
+      start = chars.length ? caretAt(ctx.beat.anchor('char', 0).rect, false) : { x: field.x - rest.x, y: 0 };
     const label = units(ctx, 'label'),
       result = units(ctx, 'result');
     ctx.initial(result, { autoAlpha: 0 });
-    ctx.initial(caret, { x: field.x, autoAlpha: 1, color: colorOf(ctx, 'accent') });
+    ctx.initial(caret, { ...start, autoAlpha: 1, color: colorOf(ctx, 'accent') });
     if (p.labelFirst) {
       ctx.initial(label, { autoAlpha: 0 });
       tl.to(label, { autoAlpha: 1, duration: d * 0.1, ease: ctx.ease('out') }, 0);
@@ -69,7 +73,7 @@ export default {
         const at = d * (0.1 + (i / Math.max(1, chars.length)) * 0.82),
           rect = ctx.beat.anchor('char', i).rect;
         tl.set(node, { autoAlpha: 1 }, at);
-        tl.set(caret, { x: rect.x + rect.w }, at);
+        tl.set(caret, caretAt(rect), at);
       });
     } else {
       ctx.initial(words, { autoAlpha: 0 });
@@ -92,7 +96,7 @@ export default {
         const group = words.slice(index, index + size),
           last = index + size - 1;
         tl.set(group, { autoAlpha: 1 }, at);
-        tl.set(caret, { x: ctx.beat.anchor('word', last).rect.x + ctx.beat.anchor('word', last).rect.w }, at);
+        tl.set(caret, caretAt(ctx.beat.anchor('word', last).rect), at);
         at += p.pause;
         index += size;
         groupIndex += 1;

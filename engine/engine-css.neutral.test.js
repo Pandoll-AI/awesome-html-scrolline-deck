@@ -29,3 +29,15 @@ it('gives the loop/play video host a box so the text mask is measured with heigh
   expect(rule('.sl-video__media-host')).toMatch(/inset:\s*0/);
   expect(rule('.sl-photo__frame,\n.sl-video__frame')).toMatch(/margin:\s*0/);
 });
+
+// 회귀(kinetic·launch·zoom 통합): size 필드·em 배경·slot 폭·prompt 공백이 CSS에 없었다.
+it('maps text sizes, clears the mark background, sizes slots to content and keeps prompt spaces', () => {
+  expect(rule('.sl-text--m')).toMatch(/var\(--sl-size-m\)/);
+  expect(rule('.sl-text--l')).toMatch(/var\(--sl-size-l\)/);
+  expect(rule('.sl-text--xl')).toMatch(/var\(--sl-size-xl\)/);
+  expect(css.indexOf('.sl-text--m {')).toBeGreaterThan(css.indexOf('.sl-text__block {'));
+  expect(rule('.sl-text__em')).toMatch(/background:\s*none/);
+  expect(css).toMatch(/:where\(\.sl-slot-center[^)]*\)\s*\{[^}]*width:\s*max-content/);
+  expect(rule('.sl-prompt__char')).toMatch(/white-space:\s*pre/);
+  expect(rule('.sl-prompt__run')).toMatch(/white-space:\s*nowrap/);
+});

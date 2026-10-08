@@ -61,6 +61,11 @@
 .sl-slot-full {
   inset: 0;
 }
+/* 비 full 슬롯은 left 50% 등에서 남은 폭으로 줄어들지 않게 내용 폭(최대 = 무대 − 양 여백). concept slots.w가 있으면 inline max-width가 이긴다. */
+:where(.sl-slot-center, .sl-slot-left, .sl-slot-right, .sl-slot-top, .sl-slot-bottom, .sl-slot-lower-third) {
+  width: max-content;
+  max-width: calc(100% - 2 * var(--sl-gutter));
+}
 .sl-slot-lower-third {
   position: absolute;
 }
@@ -100,8 +105,18 @@
   letter-spacing: var(--sl-tracking-display);
 }
 .sl-text__block {
-  font-size: var(--sl-size-xl);
+  font-size: var(--sl-size-l);
   font-weight: var(--sl-weight-display);
+}
+/* text size 필드(C4, 기본 l) */
+.sl-text--xl {
+  font-size: var(--sl-size-xl);
+}
+.sl-text--l {
+  font-size: var(--sl-size-l);
+}
+.sl-text--m {
+  font-size: var(--sl-size-m);
 }
 .sl-text__line {
   display: block;
@@ -110,6 +125,9 @@
 .sl-quote__word,
 .sl-prompt__word {
   display: inline-block;
+}
+.sl-text__em {
+  background: none;
 }
 .sl-text__em,
 .sl-quote__mark,
@@ -439,8 +457,14 @@
 .sl-prompt__result {
   margin-block-start: var(--sl-gutter);
 }
+.sl-prompt__run {
+  display: inline-block;
+  white-space: nowrap;
+}
+/* inline-block 글자는 공백이 0폭으로 접히므로 pre로 폭을 지킨다. 줄은 어절(run) 사이 공백에서만 갈린다. */
 .sl-prompt__char {
   display: inline-block;
+  white-space: pre;
 }
 .sl-code__block {
   padding: var(--sl-gutter);

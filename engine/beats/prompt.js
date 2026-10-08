@@ -48,7 +48,11 @@ export default {
     const view = root('prompt', rc);
     if (data.label) add(parts, 'label', node(rc, 'label', 'sl-prompt__label', view, data.label));
     const field = add(parts, 'field', node(rc, 'div', 'sl-prompt__field', view));
-    textChars(rc, field, data.text, parts);
+    // 어절(공백 아닌 덩어리)은 sl-prompt__run 한 개에 묶어 어절 안에서 줄이 갈리지 않게 한다. 공백 글자는 field 바로 아래.
+    for (const token of String(data.text).split(/(\s+)/)) {
+      if (!token) continue;
+      textChars(rc, /^\s+$/.test(token) ? field : node(rc, 'span', 'sl-prompt__run', field), token, parts);
+    }
     add(parts, 'caret', node(rc, 'span', 'sl-prompt__caret', field, '▍'));
     if (data.result) {
       const result = add(parts, 'result', node(rc, 'div', 'sl-prompt__result', view));
