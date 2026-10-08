@@ -21,3 +21,8 @@ media-src/
 state/notes/
 state/tmp/
 plan/PLAN.md
+tools/codex.sh
+tools/runner.env
+tools/wait-runs.py
+tools/merge-moves.py
+tools/media-chain.sh

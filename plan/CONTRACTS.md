@@ -682,7 +682,7 @@ Registry = { get(id): MoveDef /* 없으면 throw */, has(id): boolean, ids(): st
 | `npm test` | `vitest run` (환경 happy-dom, pool `vmThreads` — 워커당 환경 1회·파일마다 VM 격리, 대상 `{engine,moves,concepts,decks,tools}/**/*.test.{js,mjs}`). 실제 레포 전체 검사는 단위 테스트에 두지 않고 `npm run check` 몫. 하위 node 프로세스·임시 트리는 /mnt/d 밖(os.tmpdir) | 전부 녹색 |
 | `npm run check` | `node tools/check.mjs` = check-deps + check-tests(모듈마다 테스트) + check-state(board·runs 스키마) + check-moves(C5·C10) + check-concepts(C11 layout.css, v2.2) | exit 0 |
 | `npm run ci` | `npm test && npm run check` | main 병합 조건 |
-| `npm install --cache /mnt/d/_cache/npm` | `.npmrc`의 `legacy-peer-deps=true` 전제(npm 10.9 arborist가 vitest 5·vite 8 peer 묶음에서 죽음) | 워커는 설치 금지, 메인만 |
+| `npm install` | `.npmrc`의 `legacy-peer-deps=true` 전제(npm 10.9 arborist가 vitest 5·vite 8 peer 묶음에서 죽음) | 워커는 설치 금지, 메인만 |
 | `node tools/check.mjs --hat <base>..<head>` | 두 모자 검사 | feature: 테스트 파일 추가·수정 1개 이상 / refactor: 기존 `*.test.js` 수정 0(이름 변경만 허용) |
 
 - 커밋 trailer: 병합 커밋마다 `Hat: feature|refactor|none` 한 줄(check-hat 대상). **v2.2**: `none` = 문서·계획·자산 커밋, 코드(`*.js`·`*.mjs`·`*.css`) 변경 0이어야 함.

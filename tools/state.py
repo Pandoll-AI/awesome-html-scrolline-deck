@@ -7,7 +7,7 @@
 """
 import json, sys, uuid, hashlib, datetime
 from pathlib import Path
-S = Path('/mnt/d/scrolline-v2/state'); ROOT = S.parent
+ROOT = Path(__file__).resolve().parent.parent; S = ROOT / 'state'
 now = lambda: datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='seconds')
 def opt(args, k, d=None):
     return args[args.index(k) + 1] if k in args else d
