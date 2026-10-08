@@ -28,8 +28,10 @@ export default {
       : units.flatMap((node) => [...node.querySelectorAll('[data-part="word"]')]);
     ctx.initial(units, { clipPath: 'inset(0)' });
     ctx.initial(animated, { yPercent: 105, autoAlpha: 0 });
+    // 마지막 단위도 d 안에 끝나도록 시차를 줄인다(어절이 많은 인용).
+    const stagger = animated.length > 1 ? Math.min(p.stagger, (d * 0.3) / (animated.length - 1)) : 0;
     animated.forEach((node, i) =>
-      tl.to(node, { yPercent: 0, autoAlpha: 1, duration: d * 0.7, ease: ctx.ease('out') }, i * p.stagger),
+      tl.to(node, { yPercent: 0, autoAlpha: 1, duration: d * 0.7, ease: ctx.ease('out') }, i * stagger),
     );
     if (p.tracking > 0) {
       ctx.initial(units, { letterSpacing: `${p.tracking}em` });

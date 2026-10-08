@@ -1,5 +1,6 @@
 /** A full frame arcs down into an event thumbnail. */
 import { transferVars } from '../../engine/index.js';
+import { eventPart } from '../_shared/event-part.js';
 import { finishLink, ghost } from '../_shared/link.js';
 
 export default {
@@ -15,8 +16,8 @@ export default {
     arc: { type: 'number', default: 0.06, min: 0, max: 0.2, doc: 'arc(안무 설명의 같은 이름)' },
   },
   timing: (p) => ({ duration: p.duration, stops: [] }),
-  handoff(p) {
-    return { from: { part: 'frame' }, to: { part: 'media', index: p.toEvent } };
+  handoff(p, { to } = {}) {
+    return { from: { part: 'frame' }, to: eventPart(to?.events, 'media', p.toEvent) };
   },
   build(tl, ctx, p) {
     const d = p.duration,

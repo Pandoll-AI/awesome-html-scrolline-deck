@@ -1,5 +1,6 @@
 /** Lift one rail event into a beat's primary subject. */
 import { transferVars } from '../../engine/index.js';
+import { eventPart } from '../_shared/event-part.js';
 import { finishLink, ghost } from '../_shared/link.js';
 
 export default {
@@ -23,8 +24,8 @@ export default {
     liftRise: { type: 'number', default: 0.12, min: 0.04, max: 0.3, doc: 'liftRise(안무 설명의 같은 이름)' },
   },
   timing: (p) => ({ duration: p.duration, stops: [] }),
-  handoff(p) {
-    return { from: { part: p.fromPart, index: p.fromEvent }, to: { part: p.toPart, index: p.toIndex } };
+  handoff(p, { from } = {}) {
+    return { from: eventPart(from?.events, p.fromPart, p.fromEvent), to: { part: p.toPart, index: p.toIndex } };
   },
   build(tl, ctx, p) {
     const d = p.duration,
