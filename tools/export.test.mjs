@@ -10,14 +10,7 @@ describe('export CLI', () => {
     expect(output).toContain('--dry-run');
   });
 
-  it('prints the _smoke dry-run path plan without invoking Vite or a renderer', () => {
-    const output = execFileSync(process.execPath, ['tools/export.mjs', '_smoke', '--fps', '15', '--dry-run'], {
-      encoding: 'utf8',
-    });
-    const plan = JSON.parse(output);
-    expect(plan.out).toMatch(/out\/export\/_smoke\.mp4$/);
-    expect(plan.path.duration).toBeGreaterThan(0);
-  }, 20_000);
+  // --dry-run 계획은 export.plan.test.mjs가 프로세스 안에서 본다(하위 node 프로세스는 /mnt/d 부하에서 10초+).
 
   it('parses an internal deck ID and resolves its isolated output paths', () => {
     expect(parseExportArgs(['_smoke', '--fps', '15', '--dry-run'])).toMatchObject({ deckId: '_smoke', fps: 15, dryRun: true });

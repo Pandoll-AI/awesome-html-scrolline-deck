@@ -1,4 +1,6 @@
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 export const DECK_ID = /^_?[a-z0-9][a-z0-9-]*$/;
 
@@ -41,3 +43,39 @@ export function parseCaptureArgs(args) {
           .filter(Boolean);
   return { deckId, stops: args.includes('--stops'), between: args.includes('--between'), at };
 }
+
+// 엔진·registry는 늘 이 레포 것(root는 덱·출력 위치만 바꾼다).
+const CODE_ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+const holdsFor = (deck, map) =>
+  Object.fromEntries(
+    map.stops
+      .map((stop) => {
+        const beat = deck.beats.find((item) => item.id === stop.beat);
+        return [stop.name, beat?.exportHold];
+      })
+      .filter(([, hold]) => Number.isFinite(hold)),
+  );
+
+/**
+ * Deck → timing map and export path, no build or render (the --dry-run report).
+ * Engine, yaml and the move registry load lazily: a static import made `--help` take seconds on /mnt/d.
+ */
+export async function exportPlan(root, { deckId, fps, out: outArg }) {
+  const { deckFile, buildDir, out } = exportPaths(root, deckId, outArg);
+  if (!existsSync(deckFile)) throw new Error(`deck not found: ${deckId}`);
+  const [{ default: YAML }, { exportPath }, { plan }] = await Promise.all([
+    import('yaml'),
+    import('../engine/export.js'),
+    import('../engine/timeline.js'),
+  ]);
+  const deck = YAML.parse(readFileSync(deckFile, 'utf8'));
+  const [{ default: moves }, { default: concept }] = await Promise.all([
+    import('../moves/index.js'),
+    import(pathToFileURL(path.join(CODE_ROOT, 'concepts', deck.concept, 'index.js')).href),
+  ]);
+  const map = plan(deck, { registry: moves, concept });
+  const pathInfo = exportPath(map, deck.export, holdsFor(deck, map));
+  return { deck: deckId, fps, out, buildDir, map, path: pathInfo };
+}
+

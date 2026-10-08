@@ -1,12 +1,11 @@
 // @vitest-environment node
 import { describe, it, expect, afterAll } from 'vitest';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { checkTests } from './check-tests.mjs';
 
-const REPO = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
-const TMP = fs.mkdtempSync(path.join(REPO, '.cache', 'tests-'));
+const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'scrolline-tests-'));
 afterAll(() => fs.rmSync(TMP, { recursive: true, force: true }));
 
 describe('check-tests', () => {

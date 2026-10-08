@@ -4,28 +4,16 @@ import { cpSync, existsSync, readFileSync, readdirSync, writeFileSync } from 'no
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import YAML from 'yaml';
-import { exportPath } from '../engine/export.js';
-import { plan } from '../engine/timeline.js';
-import { exportPaths, parseExportArgs } from './export-lib.mjs';
+import { exportPlan, parseExportArgs } from './export-lib.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const usage =
+export const usage =
   'node tools/export.mjs <deckId> [--fps 30] [--out out/export/<deckId>.mp4] [--build-only] [--report file] [--dry-run]';
 const run = (command, args, env = process.env) => {
   const result = spawnSync(command, args, { cwd: ROOT, env, stdio: 'inherit' });
   if (result.error) throw result.error;
   if (result.status !== 0) throw new Error(`${command} exited ${result.status}`);
 };
-const holdsFor = (deck, map) =>
-  Object.fromEntries(
-    map.stops
-      .map((stop) => {
-        const beat = deck.beats.find((item) => item.id === stop.beat);
-        return [stop.name, beat?.exportHold];
-      })
-      .filter(([, hold]) => Number.isFinite(hold)),
-  );
 
 function setCompositionRoot(file, duration) {
   const html = readFileSync(file, 'utf8');
@@ -54,17 +42,8 @@ async function main() {
   const parsed = parseExportArgs(args);
   if (parsed.help) return console.log(usage);
   const { deckId, fps } = parsed;
-  const paths = exportPaths(ROOT, deckId, parsed.out);
-  const { deckFile, buildDir, out } = paths;
-  if (!existsSync(deckFile)) throw new Error(`deck not found: ${deckId}`);
-  const deck = YAML.parse(readFileSync(deckFile, 'utf8'));
-  const [{ default: moves }, { default: concept }] = await Promise.all([
-    import('../moves/index.js'),
-    import(`../concepts/${deck.concept}/index.js`),
-  ]);
-  const map = plan(deck, { registry: moves, concept });
-  const pathInfo = exportPath(map, deck.export, holdsFor(deck, map));
-  const report = { deck: deckId, fps, out, buildDir, map, path: pathInfo };
+  const report = await exportPlan(ROOT, parsed);
+  const { buildDir, out } = report;
   if (parsed.report) writeFileSync(path.resolve(ROOT, parsed.report), `${JSON.stringify(report, null, 2)}\n`);
   if (parsed.dryRun) return console.log(JSON.stringify(report, null, 2));
   run('npx', ['vite', 'build'], {
