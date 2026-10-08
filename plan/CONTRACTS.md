@@ -211,7 +211,7 @@ BeatView = { root: HTMLElement, parts: Record<string, Element[]>, media?: { seq?
 > 1. **anchor index**: `beat.anchor(part?, index = 0)`. 음수 index = 뒤에서(-1 = 마지막). `Handoff.index`는 양수로 정규화된 값. 「N번째 막대·사건」을 handoff 대상으로 쓸 수 있다(#7·#8).
 > 2. **link가 넘길 part 고르기**: MoveDef 선택 함수 `handoff(params, { from, to }) → { from?: { part?, index? }, to?: { part?, index? } }`(순수, link만). 생략하면 양쪽 primary·index 0. 엔진이 이것으로 `ctx.handoff`를 만든다.
 > 3. **skip 규칙**: `ctx.skipNodes: Element[]` 추가 — 이 요소들은 건드리지 않는다(enter·step 모두: `ctx.initial`·들여오기 tween 금지). **v2.2**: step이 그 요소를 「지나간 것」으로 접는 tween(step 구간 안, build 시점 inline style 불변)은 허용(#48). `ctx.skipParts`는 통째로 넘어간 part 이름만(to.index를 지정한 link면 `[]`, 그 요소 하나만 skipNodes). move는 둘 다 지켜야 함.
-> 4. **영상 핸들**: `ctx.beat.media = { seq?: FrameSeq, clip?: Clip }`. 스크럽 move는 `tl.to(proxy, { p: 1, onUpdate: () => ctx.beat.media.seq.setProgress(proxy.p) })`처럼 tween onUpdate에서만 부른다(C13). link에서 A의 영상은 `ctx.from.media`(#16·#20).
+> 4. **영상 핸들**: `ctx.beat.media = { seq?: FrameSeq, clip?: Clip }`. 스크럽 move는 `scrubTo(tl, seq, …)`(`moves/_shared/media.js`)로 부른다. **v2.2**: tween `onUpdate` 부수 효과 금지 — `seek()`·`pause(t)`·export는 콜백을 억제해 점프 때 안 불린다(launch 통합). 값을 받아 DOM·canvas·프레임에 쓰는 일은 `driveValue(tl, apply, { from, to, at, duration, ease })`(`moves/_shared/drive.js`, tween이 accessor 속성을 직접 써서 setter가 매 렌더 실행)로(C13). link에서 A의 영상은 `ctx.from.media`(#16·#20).
 > 5. **글자 마스크**: 렌더러는 `data-mask-text`만 표시, 마스크 적용은 move. `ctx.textMask(text, { rect?, align? }) → data URL`(글꼴 = 컨셉 display 글꼴·굵기, rect 기본 = `ctx.beat.anchor('media').rect`). 적용은 `ctx.initial(media, { maskImage: url, webkitMaskImage: url, maskRepeat: 'no-repeat', … })` 후 `maskSize`·`maskPosition` tween(#17).
 > 6. **overlay 수명**: `ctx.overlay`는 span 시작에 보이고 **그 move를 가진 beat가 끝날 때**(`beat.span.end`, persist beat면 끝까지) 숨는다. step·ambient가 만든 링·주석은 beat 끝까지 남는다(#19). 먼저 지우고 싶으면 move가 자기 tween으로 지운다. link span은 받는 beat(B) 소유라 B 끝까지.
 > 7. **채워지는 ctx**: `prev`·`next`(앞뒤 BeatInstance), `camera`(camera role: place.world에서 계산, C8), `step: { name, index }`(step role). 
@@ -576,7 +576,7 @@ FrameSeq = { canvas: HTMLCanvasElement, count: number, setProgress(p: number): v
 - `FramesManifest`(`frames.json`): `{ version: 1, fps, count, width, height, pattern: 'f_%04d.webp', tiers: { "1920": "1920/", "960": "960/" }, poster: 'poster.webp' }`. 프레임 경로 = manifest 폴더 + tiers[tier] + pattern(1-base).
 - tier 선택: `viewport.w × dpr ≥ 1400` → 가장 큰 tier, 아니면 960.
 - 로딩 순서: poster → 8장 간격(coarse) → 현재 위치 ±12장 → 나머지. 그리기 = 목표 프레임이 없으면 **가장 가까운 앞쪽 로드된 프레임**(되감기 안정).
-- `setProgress`는 timeline tween의 `onUpdate`에서만 부름(스크럽 결정론).
+- `setProgress`는 timeline tween이 쓰는 setter에서만 부름(`driveValue`·`scrubTo`, 스크럽 결정론). **v2.2**: manifest 로드 전 `setProgress`·`setFrame`은 기억했다가 도착 뒤 그 프레임을 그린다.
 
 ```ts
 videoClip(host, { src, poster, loop, mode: 'play'|'loop' }, { exportMode: boolean }) → Clip

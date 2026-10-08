@@ -43,6 +43,12 @@ function imageLoad(url) {
   });
 }
 
+/** @param {{ progress?: number, index?: number }} want @param {number} count */
+function frameFor(want, count) {
+  const raw = want.index ?? (want.progress ?? 0) * (count - 1);
+  return Math.max(0, Math.min(count - 1, Math.round(Number.isFinite(raw) ? raw : 0)));
+}
+
 /** @param {HTMLElement} host @param {import('./types.js').FramesManifest | string} source @param {{ fit?: 'cover'|'contain', tier?: number, viewport?: import('./types.js').Viewport }} [opts] */
 export function frameSequence(host, source, opts = {}) {
   const canvas = document.createElement('canvas');
@@ -53,6 +59,8 @@ export function frameSequence(host, source, opts = {}) {
   let manifest;
   let base = '';
   let current = 0;
+  // manifest 전에 온 setProgress·setFrame(부팅 직후 정지점 seek·발표 키 점프)은 버리지 않고 도착 뒤 적용한다.
+  let pending = null;
   let posterImage;
   const loaded = new Map();
   let started;
@@ -85,6 +93,8 @@ export function frameSequence(host, source, opts = {}) {
     } else manifest = source;
     canvas.width = manifest.width;
     canvas.height = manifest.height;
+    if (pending) current = frameFor(pending, manifest.count);
+    pending = null;
     const viewport = opts.viewport ?? {
       w: window.innerWidth || manifest.width,
       dpr: window.devicePixelRatio || 1,
@@ -111,14 +121,14 @@ export function frameSequence(host, source, opts = {}) {
     },
     setProgress(progress) {
       const count = manifest?.count ?? (typeof source === 'string' ? 0 : source.count);
-      if (!count) return;
-      current = Math.max(0, Math.min(count - 1, Math.round(Number(progress) * (count - 1))));
+      if (!count) return void (pending = { progress: Number(progress) });
+      current = frameFor({ progress: Number(progress) }, count);
       draw(current);
     },
     setFrame(index) {
       const count = manifest?.count ?? (typeof source === 'string' ? 0 : source.count);
-      if (!count) return;
-      current = Math.max(0, Math.min(count - 1, Math.round(index)));
+      if (!count) return void (pending = { index: Number(index) });
+      current = frameFor({ index: Number(index) }, count);
       draw(current);
     },
     ready,
