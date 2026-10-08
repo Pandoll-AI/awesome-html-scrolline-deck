@@ -3,7 +3,7 @@
  * 렌더 = 정지점 완성 상태 DOM. 움직임 0. 루트 <section class="sl-beat sl-beat--photo" data-beat="<id>">는 build가 id를 채운다.
  */
 
-import { add, asset, node, root } from './helpers.js';
+import { add, asset, node, root, sourceText } from './helpers.js';
 /** @type {import('../types.js').BeatTypeDef} */
 export default {
   type: 'photo',
@@ -48,7 +48,7 @@ export default {
       doc: '저작자 표기',
     },
     source: {
-      type: 'string',
+      type: 'any',
       doc: '출처 id(deck.sources[].id). sample 덱이 아니면 수치·인용·실사에 필수',
     },
   },
@@ -73,6 +73,8 @@ export default {
           [data.caption, data.credit].filter(Boolean).join(' — '),
         ),
       );
+    if (data.source)
+      add(parts, 'source', node(rc, 'small', 'sl-photo__source', frame, sourceText(rc, data.source)));
     return { root: view, parts };
   },
 };

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { add, root } from './helpers.js';
+import { add, root, sourceText } from './helpers.js';
 import { validateSchema } from '../util/schema.js';
 import { beatTypes } from './index.js';
 describe('beat helpers', () => {
@@ -9,6 +9,11 @@ describe('beat helpers', () => {
     add(parts, 'block', document.createElement('div'));
     expect(view.dataset.beat).toBeUndefined();
     expect(parts.block).toHaveLength(1);
+  });
+
+  it('formats source ids with short names, titles, and an id fallback', () => {
+    const rc = { sources: { s1: { short: 'Reuters', title: 'Reuters News' }, s2: { title: 'Full title' } } };
+    expect(sourceText(rc, ['s1', 's2', 'gone'])).toBe('Reuters · Full title · gone');
   });
 });
 

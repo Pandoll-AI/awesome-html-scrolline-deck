@@ -3,7 +3,7 @@
  * 렌더 = 정지점 완성 상태 DOM. 움직임 0. 루트 <section class="sl-beat sl-beat--compare" data-beat="<id>">는 build가 id를 채운다.
  */
 
-import { add, asset, node, root } from './helpers.js';
+import { add, asset, node, root, sourceText } from './helpers.js';
 /** @type {import('../types.js').BeatTypeDef} */
 export default {
   type: 'compare',
@@ -41,6 +41,10 @@ export default {
       type: 'string',
       doc: '결론 한 줄',
     },
+    source: {
+      type: 'any',
+      doc: '출처 id 또는 id 배열',
+    },
   },
   render(data, rc) {
     const parts = {};
@@ -70,6 +74,8 @@ export default {
       }
     });
     if (data.verdict) add(parts, 'verdict', node(rc, 'p', 'sl-compare__verdict', view, data.verdict));
+    if (data.source)
+      add(parts, 'source', node(rc, 'small', 'sl-compare__source', view, sourceText(rc, data.source)));
     return { root: view, parts };
   },
 };

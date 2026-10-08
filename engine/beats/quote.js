@@ -3,7 +3,7 @@
  * 렌더 = 정지점 완성 상태 DOM. 움직임 0. 루트 <section class="sl-beat sl-beat--quote" data-beat="<id>">는 build가 id를 채운다.
  */
 
-import { add, node, root, textWords } from './helpers.js';
+import { add, node, root, sourceText, textWords } from './helpers.js';
 /** @type {import('../types.js').BeatTypeDef} */
 export default {
   type: 'quote',
@@ -24,7 +24,7 @@ export default {
       doc: '직함',
     },
     source: {
-      type: 'string',
+      type: 'any',
       doc: '출처 id(deck.sources[].id). sample 덱이 아니면 수치·인용·실사에 필수',
     },
   },
@@ -37,6 +37,8 @@ export default {
     textWords(rc, body, data.text, parts);
     const cite = add(parts, 'by', node(rc, 'cite', 'sl-quote__by', view, data.by));
     if (data.role) cite.append(document.createTextNode(`, ${data.role}`));
+    if (data.source)
+      add(parts, 'source', node(rc, 'small', 'sl-quote__source', view, sourceText(rc, data.source)));
     return { root: view, parts };
   },
 };

@@ -22,6 +22,12 @@ export function asset(rc, path) {
   return rc.asset ? rc.asset(path) : path;
 }
 
+/** Format one or more deck source ids for a presentational source part. */
+export function sourceText(rc, source) {
+  const ids = Array.isArray(source) ? source : source ? [source] : [];
+  return ids.map((id) => rc.sources?.[id]?.short ?? rc.sources?.[id]?.title ?? id).join(' · ');
+}
+
 export function textWords(rc, parent, text, parts) {
   const values = rc.words
     ? rc.words(parent, text)

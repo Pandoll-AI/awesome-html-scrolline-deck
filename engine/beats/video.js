@@ -3,7 +3,7 @@
  * 렌더 = 정지점 완성 상태 DOM. 움직임 0. 루트 <section class="sl-beat sl-beat--video" data-beat="<id>">는 build가 id를 채운다.
  */
 
-import { add, asset, node, root } from './helpers.js';
+import { add, asset, node, root, sourceText } from './helpers.js';
 /** @type {import('../types.js').BeatTypeDef} */
 export default {
   type: 'video',
@@ -59,8 +59,12 @@ export default {
       doc: '영상 마스크',
     },
     source: {
-      type: 'string',
+      type: 'any',
       doc: '출처 id(deck.sources[].id). sample 덱이 아니면 수치·인용·실사에 필수',
+    },
+    credit: {
+      type: 'string',
+      doc: '스톡 영상 라이선스 표기',
     },
   },
   render(data, rc) {
@@ -68,11 +72,28 @@ export default {
     const view = root('video', rc);
     const frame = add(parts, 'frame', node(rc, 'figure', 'sl-video', view));
     let media;
+    let mediaHandle;
     if (data.mode === 'scrub' && rc.media?.frameSequence) {
       const host = node(rc, 'div', 'sl-video__media', frame);
       const sequence = rc.media.frameSequence(host, asset(rc, data.frames));
       media = sequence.canvas;
       add(parts, 'media', media);
+      mediaHandle = { seq: sequence };
+    } else if ((data.mode === 'play' || data.mode === 'loop') && rc.media?.videoClip) {
+      const host = node(rc, 'div', 'sl-video__media-host', frame);
+      const clip = rc.media.videoClip(
+        host,
+        {
+          src: asset(rc, data.src),
+          poster: asset(rc, data.poster),
+          loop: data.mode === 'loop',
+          mode: data.mode,
+        },
+        { exportMode: rc.mode === 'export' },
+      );
+      media = clip.el;
+      add(parts, 'media', media);
+      mediaHandle = { clip };
     } else {
       media = add(parts, 'media', node(rc, 'video', 'sl-video__media', frame));
       media.src = asset(rc, data.src);
@@ -88,6 +109,9 @@ export default {
       if (data.mask.type === 'text' && data.mask.text) media.dataset.maskText = data.mask.text;
     }
     if (data.caption) add(parts, 'caption', node(rc, 'figcaption', 'sl-video__caption', frame, data.caption));
-    return { root: view, parts };
+    if (data.credit) add(parts, 'credit', node(rc, 'small', 'sl-video__credit', frame, data.credit));
+    if (data.source)
+      add(parts, 'source', node(rc, 'small', 'sl-video__source', frame, sourceText(rc, data.source)));
+    return { root: view, parts, media: mediaHandle };
   },
 };

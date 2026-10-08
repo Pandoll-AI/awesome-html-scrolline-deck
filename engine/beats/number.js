@@ -3,7 +3,7 @@
  * 렌더 = 정지점 완성 상태 DOM. 움직임 0. 루트 <section class="sl-beat sl-beat--number" data-beat="<id>">는 build가 id를 채운다.
  */
 
-import { add, node, root } from './helpers.js';
+import { add, node, root, sourceText } from './helpers.js';
 /** @type {import('../types.js').BeatTypeDef} */
 export default {
   type: 'number',
@@ -50,7 +50,7 @@ export default {
       doc: 'count-up 시작 값',
     },
     source: {
-      type: 'string',
+      type: 'any',
       doc: '출처 id(deck.sources[].id). sample 덱이 아니면 수치·인용·실사에 필수',
     },
   },
@@ -77,7 +77,8 @@ export default {
     if (format.suffix) value.append(node(rc, 'span', 'sl-number__suffix', null, format.suffix));
     if (format.unit) add(parts, 'unit', node(rc, 'span', 'sl-number__unit', value, format.unit));
     add(parts, 'label', node(rc, 'p', 'sl-number__label', view, data.label));
-    if (data.source) add(parts, 'source', node(rc, 'small', 'sl-number__source', view, data.source));
+    if (data.source)
+      add(parts, 'source', node(rc, 'small', 'sl-number__source', view, sourceText(rc, data.source)));
     return { root: view, parts };
   },
 };

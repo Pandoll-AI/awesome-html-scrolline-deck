@@ -13,4 +13,12 @@ describe('photo beat', () => {
     expect(view.parts.caption[0].textContent).toBe('사진');
   });
   it('declares missing src invalid', () => expect(beat.fields.src.required).toBe(true));
+  it('formats array sources in a source part', () => {
+    const view = beat.render(
+      { src: 'assets/a.webp', alt: '풍경', source: ['s1', 's2'] },
+      { sources: { s1: { short: '사진가' }, s2: { title: '아카이브' } } },
+    );
+    expect(beat.fields.source.type).toBe('any');
+    expect(view.parts.source[0].textContent).toBe('사진가 · 아카이브');
+  });
 });

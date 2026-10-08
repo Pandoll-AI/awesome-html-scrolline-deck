@@ -3,7 +3,7 @@
  * 렌더 = 정지점 완성 상태 DOM. 움직임 0. 루트 <section class="sl-beat sl-beat--prompt" data-beat="<id>">는 build가 id를 채운다.
  */
 
-import { add, asset, node, root, textChars } from './helpers.js';
+import { add, asset, node, root, textChars, textWords } from './helpers.js';
 /** @type {import('../types.js').BeatTypeDef} */
 export default {
   type: 'prompt',
@@ -57,7 +57,7 @@ export default {
         img.src = asset(rc, data.result.src);
         img.alt = data.result.alt ?? '';
       }
-      if (data.result.type === 'text' && data.result.text) result.textContent = data.result.text;
+      if (data.result.type === 'text' && data.result.text) textWords(rc, result, data.result.text, parts);
     }
     return { root: view, parts };
   },
