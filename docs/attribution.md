@@ -6,20 +6,9 @@ This page lists what Scrolline borrows and from whom. The code is original and r
 
 Every move names the techniques it builds on in its `sources` field, for example `sources: ['blur-resolve', 'rack-focus']` in `moves/reveal/focus-pull.js`. The slugs refer to the effect catalogue in [awesome-ai-motion](https://github.com/gongnyang/awesome-ai-motion) by the same author. Those techniques are general motion principles (mask reveal, rack focus, match cut, infinite zoom, rolling digits and so on), reimplemented here against the move contract.
 
-## Reference work (ideas only)
+## Influences (ideas only)
 
-Before the build, scroll stories, product pages, data journalism and keynotes were studied for their motion and pacing. Each deck's direction document in `plan/concepts/` names what it took from each reference, and what it left out. The rule for all of them was to keep the idea and timing principle and drop the code and assets.
-
-| Area | References studied |
-|---|---|
-| Data journalism | The Pudding, Our World in Data, The New York Times (Snow Fall), The Washington Post, The Guardian |
-| Product pages | Apple (AirPods Pro, Vision Pro, MacBook Pro, iPad Pro), Linear, Stripe, Vercel, Nothing |
-| Scroll and web craft | Codrops tutorials and demos, FWA case studies, Isolume (Selva), Firewatch, CANALS Amsterdam |
-| Timelines | Timeline Traveler, FWDTools, FlowRadar, CamelWeb (Braun 100 years) |
-| Presentations | Stripe Sessions, Vercel Ship, OpenAI DevDay, Config, Apple Keynote, Prezi, Pitch, reveal.js, Slidev |
-| Film grammar | Charles and Ray Eames, *Powers of Ten* (1977), as the model for the zoom concept |
-
-All names and trademarks belong to their owners. No affiliation or endorsement is implied.
+Scrolline's motion grammar was shaped by looking at how good scroll stories and keynotes pace information: data journalism such as The Pudding and The New York Times, product pages such as Apple's, web motion craft such as Codrops, and the film *Powers of Ten* (1977) for the zoom concept. We kept general principles (one focal point, continuous camera, one object turning into the next) and wrote everything here from scratch. No code, images, fonts or brand assets from those works are included, and no affiliation or endorsement is implied.
 
 ## Media in the example decks
 

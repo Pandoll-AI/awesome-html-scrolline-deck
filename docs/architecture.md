@@ -2,7 +2,7 @@
 
 How Scrolline v2 is put together, the rules that keep it that way, and where project state lives.
 
-The source of truth for design is `plan/` (written in Korean): `PLAN.md` (goals), `ARCHITECTURE.md` (reasons), `CONTRACTS.md` (interfaces). When code and `CONTRACTS.md` disagree, the code is wrong. This page is an English summary.
+The source of truth for design is `plan/` (written in Korean): `ARCHITECTURE.md` (reasons), `CONTRACTS.md` (interfaces). When code and `CONTRACTS.md` disagree, the code is wrong. This page is an English summary.
 
 ## Layers
 

@@ -1,7 +1,7 @@
 # rail-ai-decade — rail(가로 레일 연표) 컨셉 플래그십 덱
 # 「생성형 AI 10년: 2017 Transformer부터 2026까지」 업계 브리핑. 실데이터(sample: false).
 # 날짜·수치는 전부 sources의 원문에서 확인한 것만 실음(확인일 2026-10-08, Aside 브라우저·웹 검색).
-# 계약 요청 중인 필드(메인 승인 대기, plan/concepts/rail.md §8):
+# 계약 요청 중인 필드(메인 승인 대기, docs/concepts.md):
 #   chronology: label, counter, tone, events[].weight, events[].source / 모든 beat source: 문자열 또는 id 배열
 #   rail-lift params.toIndex(anchor index)
 # 미채택 시 W4 처리: 위 필드 삭제, source 배열은 첫 id만 남기고 나머지는 주석으로.

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated": "2026-10-08T05:19:16+00:00",
+  "updated": "2026-10-08T10:49:41+00:00",
   "waves": {
     "W1": {
       "root_run_id": null,
@@ -8,6 +8,18 @@
     },
     "W2": {
       "root_run_id": null,
+      "status": "pass"
+    },
+    "W3": {
+      "status": "pass"
+    },
+    "W4": {
+      "status": "pass"
+    },
+    "W5": {
+      "status": "pass"
+    },
+    "W6": {
       "status": "running"
     }
   },
@@ -93,33 +105,33 @@
   },
   "concepts": {
     "rail": {
-      "stage": "direction",
-      "status": "todo",
+      "stage": "done",
+      "status": "pass",
       "runs": []
     },
     "data": {
-      "stage": "direction",
-      "status": "todo",
+      "stage": "done",
+      "status": "pass",
       "runs": []
     },
     "launch": {
-      "stage": "direction",
-      "status": "todo",
+      "stage": "done",
+      "status": "pass",
       "runs": []
     },
     "zoom": {
-      "stage": "direction",
-      "status": "todo",
+      "stage": "done",
+      "status": "pass",
       "runs": []
     },
     "canvas": {
-      "stage": "direction",
-      "status": "todo",
+      "stage": "done",
+      "status": "pass",
       "runs": []
     },
     "kinetic": {
-      "stage": "direction",
-      "status": "todo",
+      "stage": "done",
+      "status": "pass",
       "runs": []
     }
   },

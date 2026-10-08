@@ -6,4 +6,4 @@ Pexels License (https://www.pexels.com/license/) — 무료·상업 이용 가�
 |---|---|---|---|---|---|
 | `assets/melt/melt.mp4`, `assets/melt/frames.json`(+ `1920/`·`960/`·`poster.webp`) | [Footage Of Melting Ice](https://www.pexels.com/video/footage-of-melting-ice-855765/) (Pexels 855765, 1920×1080 25fps 63초) | Pixabay ([pexels.com/@pixabay](https://www.pexels.com/@pixabay)) | Pexels License | 2026-10-08 | 0–58초를 6.5초로 압축(약 8.9배속), 24fps, 무음 H.264 → extract-frames 156장(webp q78) |
 
-- `assets/demo/demo.mp4`는 자체 HyperFrames 렌더(외부 소재 없음, plan/briefs/MEDIA-C1-demo.md)
+- `assets/demo/demo.mp4`는 자체 HyperFrames 렌더(외부 소재 없음)

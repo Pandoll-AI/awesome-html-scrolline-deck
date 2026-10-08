@@ -8,3 +8,16 @@ NOTES-*.md
 state/notes/
 state/tmp/
 media-src/
+# 내부 작업 문서·레퍼런스 원장(비공개)
+research/
+plan/concepts/
+plan/briefs/
+plan/WORK-SPLIT*.md
+plan/MEDIA.md
+plan/move-ownership.json
+plan/CONTRACT-REQUESTS.md
+out/
+media-src/
+state/notes/
+state/tmp/
+plan/PLAN.md

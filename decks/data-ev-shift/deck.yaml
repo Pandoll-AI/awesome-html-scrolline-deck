@@ -1,5 +1,5 @@
 # 컨셉 data 덱. 「전기차 전환은 어디까지 왔나」 — 2025년 실적·2026년 전망 시장 분석 보고(실데이터).
-# 스토리보드 정본: plan/concepts/data.md §5. 수치는 전부 sources에서 확인한 값(2026-10-08 확인).
+# 스토리보드 정본: docs/concepts.md).
 # 파생 수치(증가율·배수·차이)는 OWID CSV 원값으로 계산: data.md §5.3 계산표.
 #
 # 계약 제안 필드(아직 C4에 없음 → 메인 승인 전엔 validateDeck가 unknown key로 막음, data.md §8):

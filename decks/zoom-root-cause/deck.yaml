@@ -1,5 +1,5 @@
 # zoom-root-cause — 문제 진단 보고: 3분기 매출 하락의 진짜 원인
-# 가상 회사 「누리살림」(생활용품 D2C) 표본. 모든 수치는 표본이며 서로 맞물리게 설계했다(plan/concepts/zoom.md §5 수치 원장).
+# 가상 회사 「누리살림」(생활용품 D2C) 표본. 모든 수치는 표본이며 서로 맞물리게 설계했다(docs/concepts.md).
 # 계약 확장 전제(10-08 메인 채택, W2 병합 뒤 반영): ① BeatInstance.anchor(part, index) ② chart.title·chart.note ③ chart 음수 값
 id: zoom-root-cause
 title: "3분기 매출 진단: 숫자에서 버튼까지"

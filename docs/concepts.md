@@ -15,7 +15,7 @@ Related: [getting-started](getting-started.md) · [writing-a-deck](writing-a-dec
 | `canvas` | Canvas fly-through | xyz | `arc-flight` `establish-crane` `atlas-pullback` | A camera flies over one large map, lands on each region to speak, then pulls back to show the whole route. Pan, altitude arc and tilt in one flight | Pitch decks, strategy maps, processes |
 | `kinetic` | Kinetic type lecture | free (camera fixed) | `word-door` `slot-pick` `phrase-fold` | Letters are the stage and do the camera's work. Sentences are typed, rewound, folded; one slot becomes another word; a word opens as a door onto video | Lectures, keynotes, statements |
 
-Each concept has one example deck in `decks/` (`rail-ai-decade`, `data-ev-shift`, `launch-orbit-note`, `zoom-root-cause`, `canvas-pitch`, `kinetic-next-word`). The design notes behind each concept are in `plan/concepts/<id>.md`.
+Each concept has one example deck in `decks/` (`rail-ai-decade`, `data-ev-shift`, `launch-orbit-note`, `zoom-root-cause`, `canvas-pitch`, `kinetic-next-word`).
 
 ## Pack layout
 

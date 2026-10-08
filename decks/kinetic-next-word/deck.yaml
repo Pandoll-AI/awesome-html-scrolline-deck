@@ -1,5 +1,5 @@
 # kinetic-next-word — 직장인 AI 기초 강의 오프닝 「AI는 어떻게 답을 만드나: 다음 단어 예측」
-# 컨셉 kinetic(카메라 고정, 글자가 무대). 스토리보드 정본: plan/concepts/kinetic.md §5
+# 컨셉 kinetic(카메라 고정, 글자가 무대). 스토리보드 정본: docs/concepts.md
 # 확률 값은 전부 설명용 예시(slot-pick note로 화면 표기). 실측은 b-five 하나: assets/runs/haiku-5runs.md
 # 프롬프트·답 문자열은 실측 원문 그대로(글자 하나 바꾸지 않음)
 
