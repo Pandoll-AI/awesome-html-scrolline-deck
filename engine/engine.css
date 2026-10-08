@@ -41,41 +41,28 @@
   box-sizing: border-box;
 }
 .sl-place-world {
-  transform: translateZ(var(--sl-world-z)) scale(var(--sl-world-scale));
   transform-origin: 0 0;
 }
 .sl-slot-center {
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
+  position: absolute;
 }
 .sl-slot-left {
-  left: var(--sl-gutter);
-  top: 50%;
-  transform: translateY(-50%);
+  position: absolute;
 }
 .sl-slot-right {
-  right: var(--sl-gutter);
-  top: 50%;
-  transform: translateY(-50%);
+  position: absolute;
 }
 .sl-slot-top {
-  left: 50%;
-  top: var(--sl-gutter);
-  transform: translateX(-50%);
+  position: absolute;
 }
 .sl-slot-bottom {
-  left: 50%;
-  bottom: var(--sl-gutter);
-  transform: translateX(-50%);
+  position: absolute;
 }
 .sl-slot-full {
   inset: 0;
 }
 .sl-slot-lower-third {
-  left: 50%;
-  bottom: var(--sl-gutter);
-  transform: translateX(-50%);
+  position: absolute;
 }
 .sl-move-overlay {
   position: absolute;
@@ -97,4 +84,262 @@
   inset: 0;
   z-index: 20;
   background: #000;
+}
+
+/* C4 기본 배치: 렌더러는 구조만 만들고, 여기서는 정지점의 읽기 상태를 둔다. */
+.sl-text__block,
+.sl-quote__block,
+.sl-prompt__field,
+.sl-code__block {
+  max-width: min(82vw, 1500px);
+}
+.sl-text__block,
+.sl-quote__text {
+  font-family: var(--sl-font-display);
+  line-height: var(--sl-leading-display);
+  letter-spacing: var(--sl-tracking-display);
+}
+.sl-text__block {
+  font-size: var(--sl-size-xl);
+  font-weight: var(--sl-weight-display);
+}
+.sl-text__line {
+  display: block;
+}
+.sl-text__word,
+.sl-quote__word,
+.sl-prompt__word {
+  display: inline-block;
+}
+.sl-text__em,
+.sl-quote__mark,
+.sl-prompt__caret,
+.sl-code__caret {
+  color: var(--sl-accent);
+}
+
+.sl-photo__frame,
+.sl-video__frame {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+.sl-photo__media,
+.sl-video__media {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.sl-photo__caption,
+.sl-video__caption {
+  position: absolute;
+  left: var(--sl-caption-left);
+  bottom: var(--sl-caption-bottom);
+  width: var(--sl-caption-width);
+  color: var(--sl-fg);
+  font-size: var(--sl-size-caption);
+}
+.sl-video__credit {
+  position: absolute;
+  right: var(--sl-gutter);
+  bottom: var(--sl-gutter);
+  color: var(--sl-fg-muted);
+  font-size: var(--sl-size-caption);
+}
+
+.sl-number__value {
+  font-family: var(--sl-font-display);
+  font-size: var(--sl-size-xl);
+  font-weight: var(--sl-weight-display);
+  line-height: var(--sl-leading-display);
+}
+.sl-number__digits,
+.sl-number__unit {
+  display: inline-block;
+}
+.sl-number__label,
+.sl-number__source,
+.sl-chart__source,
+.sl-compare__source {
+  color: var(--sl-fg-muted);
+  font-size: var(--sl-size-caption);
+}
+
+.sl-chart__title {
+  margin: 0;
+  color: var(--sl-fg);
+  font-size: var(--sl-size-l);
+}
+.sl-chart__dek {
+  color: var(--sl-fg-muted);
+  font-size: var(--sl-size-m);
+}
+.sl-chart__plot {
+  display: block;
+  width: min(88vw, 1600px);
+  height: auto;
+  overflow: visible;
+}
+.sl-chart__axis,
+.sl-chart__baseline {
+  stroke: var(--sl-rule);
+}
+.sl-chart__label,
+.sl-chart__legend,
+.sl-chart__note {
+  color: var(--sl-fg-muted);
+  fill: var(--sl-fg-muted);
+  font-size: var(--sl-size-caption);
+}
+.sl-chart__mark {
+  fill: var(--sl-accent);
+  stroke: var(--sl-accent);
+}
+.sl-chart__note {
+  position: absolute;
+}
+
+.sl-chronology__track {
+  position: relative;
+  display: flex;
+  gap: var(--sl-gutter);
+  align-items: center;
+  min-width: min(90vw, 1720px);
+  border-block-start: 1px solid var(--sl-rule);
+}
+.sl-chronology__event {
+  position: relative;
+  flex: 1 0 0;
+  color: var(--sl-fg);
+}
+.sl-chronology__dot {
+  display: block;
+  width: var(--sl-size-caption);
+  height: var(--sl-size-caption);
+  border-radius: var(--sl-radius);
+  background: var(--sl-accent);
+}
+.sl-chronology__stem {
+  display: block;
+  height: var(--sl-gutter);
+  border-inline-start: 1px solid var(--sl-rule);
+}
+.sl-chronology__date,
+.sl-chronology__note,
+.sl-chronology__source,
+.sl-chronology__caption {
+  color: var(--sl-fg-muted);
+  font-size: var(--sl-size-caption);
+}
+.sl-chronology__title,
+.sl-chronology__label {
+  color: var(--sl-fg);
+  font-size: var(--sl-size-m);
+}
+.sl-chronology__media {
+  display: block;
+  max-width: 100%;
+}
+.sl-chronology__counter {
+  display: flex;
+  overflow: hidden;
+  font-family: var(--sl-font-display);
+  font-size: var(--sl-size-l);
+}
+.sl-chronology__reel {
+  display: flex;
+  flex-direction: column;
+  height: 1em;
+  line-height: 1em;
+}
+.sl-chronology__reel > * {
+  flex: 0 0 1em;
+}
+.sl-chronology__ground,
+.sl-chronology__ghost {
+  position: absolute;
+  inset: 0;
+  color: var(--sl-fg-muted);
+}
+.sl-chronology__now {
+  position: absolute;
+  inset-block: 0;
+  border-inline-start: 1px solid var(--sl-accent);
+}
+.sl-chronology__tick {
+  position: absolute;
+  height: var(--sl-gutter);
+  border-inline-start: 1px solid var(--sl-rule);
+}
+
+.sl-compare__item {
+  display: inline-block;
+  width: min(38vw, 600px);
+  vertical-align: top;
+}
+.sl-compare__label,
+.sl-compare__value {
+  color: var(--sl-fg);
+  font-family: var(--sl-font-display);
+}
+.sl-compare__text,
+.sl-compare__verdict {
+  color: var(--sl-fg-muted);
+  font-size: var(--sl-size-m);
+}
+.sl-compare__divider {
+  margin-inline: var(--sl-gutter);
+  color: var(--sl-accent);
+}
+.sl-compare__media {
+  display: block;
+  max-width: 100%;
+}
+
+.sl-quote__by {
+  display: block;
+  color: var(--sl-fg-muted);
+  font-size: var(--sl-size-caption);
+}
+.sl-prompt__field {
+  padding: var(--sl-gutter);
+  border: 1px solid var(--sl-rule);
+  color: var(--sl-fg);
+  font-family: var(--sl-font-mono);
+  font-size: var(--sl-size-m);
+}
+.sl-prompt__label,
+.sl-code__caption {
+  color: var(--sl-fg-muted);
+  font-size: var(--sl-size-caption);
+}
+.sl-prompt__result {
+  margin-block-start: var(--sl-gutter);
+}
+.sl-prompt__char {
+  display: inline-block;
+}
+.sl-code__block {
+  padding: var(--sl-gutter);
+  color: var(--sl-fg);
+  background: var(--sl-scrim);
+  font-family: var(--sl-font-mono);
+  font-size: var(--sl-size-m);
+}
+.sl-code__line {
+  display: block;
+}
+.sl-code__token {
+  color: var(--sl-accent-2);
+}
+
+[data-state] {
+  transition:
+    opacity 0.15s linear,
+    visibility 0.15s linear;
+}
+[data-state]:not([data-state='base']) {
+  visibility: hidden;
+  opacity: 0;
 }

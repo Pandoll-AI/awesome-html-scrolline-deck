@@ -1,4 +1,4 @@
-import { MAX_TILT, SLOTS } from './constants.js';
+import { MAX_TILT, SLOT_DEFAULTS, SLOTS } from './constants.js';
 
 /**
  * C2 뷰포트 식. portrait = w/h <= 1, px = portrait ? w/760 : min(w, h*16/9)/1920, dpr = min(dpr, 2)
@@ -64,19 +64,34 @@ export function createStage(host, opts) {
     viewport,
     placeBeat(beatRoot, place = { slot: 'center' }) {
       beatRoot.classList.remove(...slotClasses, 'sl-place-world');
+      beatRoot.style.removeProperty('inset');
+      beatRoot.style.removeProperty('max-width');
+      beatRoot.style.removeProperty('translate');
+      beatRoot.style.removeProperty('scale');
       if ('world' in place) {
         const { x, y, z = 0, s = 1 } = place.world;
         beatRoot.classList.add('sl-place-world');
         beatRoot.style.left = `${x * viewport.w}px`;
         beatRoot.style.top = `${y * viewport.h}px`;
-        beatRoot.style.setProperty('--sl-world-z', `${z}px`);
-        beatRoot.style.setProperty('--sl-world-scale', String(s));
+        beatRoot.style.translate = `0 0 ${z}px`;
+        beatRoot.style.scale = String(s);
+        beatRoot.style.transformOrigin = '0 0';
         world.append(beatRoot);
         return;
       }
       const slot = place.slot || 'center';
       if (!SLOTS.includes(slot)) throw new Error(`Unknown stage slot: ${slot}`);
       beatRoot.classList.add(`sl-slot-${slot}`);
+      if (slot === 'full') {
+        beatRoot.style.inset = '0';
+      } else {
+        const override = concept.slots?.[slot] ?? {};
+        const spec = { ...SLOT_DEFAULTS[slot], ...override };
+        beatRoot.style.left = `${spec.x * 100}%`;
+        beatRoot.style.top = `${spec.y * 100}%`;
+        beatRoot.style.translate = `${-spec.ax * 100}% ${-spec.ay * 100}%`;
+        if (spec.w != null) beatRoot.style.maxWidth = `${spec.w * 100}%`;
+      }
       screen.append(beatRoot);
     },
     cameraVars({ x, y, s, rx = 0, ry = 0 }) {

@@ -58,18 +58,22 @@ export function measure(root, beats, measureFn = defaultMeasure) {
  * @param {string} part  비면 primary
  * @param {import('./types.js').MeasureSnapshot} snapshot
  * @param {string} [primary]
+ * @param {number} [index]
  * @returns {import('./types.js').Handoff}
  */
-export function anchorOf(beat, part, snapshot, primary) {
+export function anchorOf(beat, part, snapshot, primary, index = 0) {
   const name = part || primary || beat.primary || Object.keys(beat.parts ?? {})[0];
-  const node = beat.parts?.[name]?.[0];
-  if (!name || !node) throw new Error(`Beat "${beat.id}" has no anchor part "${name ?? ''}"`);
+  const nodes = beat.parts?.[name] ?? [];
+  const normalized = index < 0 ? nodes.length + index : index;
+  const node = nodes[normalized];
+  if (!name || !node) throw new Error(`Beat "${beat.id}" has no ${name ?? ''}[${normalized}]`);
   const rect = snapshot.get(node);
   if (!rect) throw new Error(`Anchor "${beat.id}.${name}" was not measured`);
   const computed = globalThis.getComputedStyle?.(node);
   return {
     beat: beat.id,
     part: name,
+    index: normalized,
     kind: node.getAttribute?.('data-handoff-kind') === 'point' ? 'point' : 'rect',
     rect: { ...rect },
     point: { x: rect.x + rect.w / 2, y: rect.y + rect.h / 2 },

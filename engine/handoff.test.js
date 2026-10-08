@@ -57,4 +57,18 @@ describe('handoff 좌표 도우미', () => {
       transformOrigin: '0 0',
     });
   });
+
+  it('selects indexed anchors and normalizes negative indices', () => {
+    const nodes = [
+      document.createElement('span'),
+      document.createElement('span'),
+      document.createElement('span'),
+    ];
+    const beat = { id: 'bars', primary: 'mark', parts: { mark: nodes } };
+    const snapshot = new Map(nodes.map((node, index) => [node, { x: index * 10, y: 0, w: 8, h: 8 }]));
+    expect(anchorOf(beat, 'mark', snapshot, undefined, 1)).toMatchObject({ index: 1, node: nodes[1] });
+    expect(anchorOf(beat, 'mark', snapshot, undefined, -1)).toMatchObject({ index: 2, node: nodes[2] });
+    expect(() => anchorOf(beat, 'mark', snapshot, undefined, 3)).toThrow('Beat "bars" has no mark[3]');
+    expect(() => anchorOf(beat, 'mark', snapshot, undefined, -4)).toThrow('Beat "bars" has no mark[-1]');
+  });
 });
