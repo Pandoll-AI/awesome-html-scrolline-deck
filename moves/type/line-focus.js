@@ -1,5 +1,6 @@
 /** Focus text lines in sequence, then settle them into their authored state. */
 import { colorOf } from '../_shared/color.js';
+import { partFree } from '../_shared/skip.js';
 
 const lineCount = (data) =>
   data?.lines?.length ||
@@ -23,12 +24,11 @@ export default {
     };
   },
   build(tl, ctx, p) {
-    const lines = ctx.skipParts.includes('line') ? [] : ctx.beat.part('line'),
+    const lines = partFree(ctx, 'line'),
       d = ctx.duration;
     if (!lines.length) return;
-    const own = ctx.beat.part('block')[0];
-    // a link that delivered the block owns it (skipNodes): then lines move, the block stays put
-    const block = own && !ctx.skipNodes?.includes(own) && !ctx.skipParts.includes('block') ? own : null;
+    // a link that delivered the block owns it and its lines (skipNodes): leave them alone
+    const block = partFree(ctx, 'block')[0] ?? null;
     const boxOf = (i) => ctx.beat.anchor('line', i).rect;
     const blockRect = block ? ctx.beat.anchor('block').rect : null;
     // The line being read sits at the block's centre; earlier lines are pushed up and recede.
