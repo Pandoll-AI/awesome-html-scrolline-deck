@@ -1,12 +1,15 @@
 #!/usr/bin/env node
 /** Scrolline deck helper (CONTRACTS C3, C15, C16). */
 import fs from 'node:fs';
+import { register } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { parse } from 'yaml';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ID = /^[a-z0-9][a-z0-9-]*$/;
+// plan은 내부 덱(`_smoke`)도 받는다(C3 DECK_ID_PATTERN). new는 공개 덱 이름만.
+const DECK_ID = /^_?[a-z0-9][a-z0-9-]*$/;
 const option = (args, name) => {
   const index = args.indexOf(name);
   return index < 0 ? undefined : args[index + 1];
@@ -18,7 +21,7 @@ export function deckTemplate(id, concept, layout = false) {
   return {
     yaml: `id: ${id}\ntitle: "${id}"\nlang: ko\nconcept: ${concept}\nsample: false\nsources: []\nbeats: []\n`,
     html: `<!doctype html>\n<html lang="ko"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>${id}</title></head><body><div id="app"></div><script type="module" src="./main.js"></script></body></html>\n`,
-    main: `import { boot } from '../../engine/index.js';\nimport '../../engine/engine.css';\nimport moves from '../../moves/index.js';\nimport concept from '../../concepts/${concept}/index.js';\nimport '../../concepts/${concept}/tokens.css';\n${layoutImport}import deck from './deck.yaml';\n\nboot({ host: document.getElementById('app'), deck, concept, moves, assetBase: new URL("./", document.baseURI).href });\n`,
+    main: `import { boot } from '../../engine/index.js';\nimport '../../engine/engine.css';\nimport moves from '../../moves/index.js';\nimport concept from '../../concepts/${concept}/index.js';\nimport '../../concepts/${concept}/tokens.css';\n${layoutImport}import deck from './deck.yaml';\n\nboot({\n  host: document.getElementById('app'),\n  deck,\n  concept,\n  moves,\n  assetBase: new URL('./', document.baseURI).href,\n  mode: import.meta.env.SCROLLINE_MODE,\n});\n`,
   };
 }
 
@@ -45,6 +48,22 @@ export function moveRows(registry, filters = {}) {
     .map((m) => `${m.id}\t${m.family}\t${m.role}`);
 }
 
+/**
+ * main.js가 boot에 넘기는 sequences와 같은 것: `import <use> from './sequences/<file>.js'`.
+ * sequence 모듈이 deck.yaml을 import할 수 있어 yaml 로더 hook을 먼저 건다.
+ */
+async function deckSequences(root, id) {
+  const main = path.join(root, 'decks', id, 'main.js');
+  if (!fs.existsSync(main)) return {};
+  const entries = [...fs.readFileSync(main, 'utf8').matchAll(/import\s+(\w+)\s+from\s+['"]\.\/sequences\/([\w-]+\.js)['"]/g)];
+  if (!entries.length) return {};
+  register('./lib/yaml-hook.mjs', import.meta.url);
+  const mods = await Promise.all(
+    entries.map(([, , file]) => import(pathToFileURL(path.join(root, 'decks', id, 'sequences', file)).href)),
+  );
+  return Object.fromEntries(entries.map(([, name], i) => [name, mods[i].default]));
+}
+
 async function loadMoves(root) {
   return (await import(pathToFileURL(path.join(root, 'moves/index.js')).href)).default;
 }
@@ -69,26 +88,23 @@ export async function run(
     return 0;
   }
   if (command === 'plan') {
-    if (!id || !ID.test(id)) throw new Error('plan requires a valid <deckId>');
+    if (!id || !DECK_ID.test(id)) throw new Error('plan requires a valid <deckId>');
     const deck = parse(fs.readFileSync(path.join(root, 'decks', id, 'deck.yaml'), 'utf8'));
-    const [moves, conceptMod, timeline, beats] = await Promise.all([
+    const [moves, conceptMod, timeline, beats, schema, sequences] = await Promise.all([
       loadMoves(root),
       import(pathToFileURL(path.join(root, 'concepts', deck.concept, 'index.js')).href),
       import(pathToFileURL(path.join(root, 'engine/timeline.js')).href),
       import(pathToFileURL(path.join(root, 'engine/beats/index.js')).href),
+      import(pathToFileURL(path.join(root, 'engine/deck-schema.js')).href),
+      deckSequences(root, id),
     ]);
-    out(
-      JSON.stringify(
-        timeline.plan(deck, {
-          registry: moves,
-          concept: conceptMod.default,
-          beatTypes: beats.beatTypes,
-          sequences: {},
-        }),
-        null,
-        2,
-      ),
-    );
+    const env = { registry: moves, concept: conceptMod.default, beatTypes: beats.beatTypes, sequences };
+    const validation = schema.validateDeck(deck, env);
+    if (!validation.ok) {
+      for (const e of validation.errors) err(`${e.path}: ${e.message}`);
+      return 1;
+    }
+    out(JSON.stringify(timeline.plan(deck, env), null, 2));
     return 0;
   }
   err(

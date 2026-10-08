@@ -76,7 +76,9 @@ describe('check-concepts deck imports', () => {
       'concepts/rail/layout.css': '.sl-concept-rail .a { top: 0; }',
       'concepts/data/tokens.css': '',
       'decks/ok/main.js':
-        "import '../../concepts/rail/index.js';\nimport '../../concepts/rail/tokens.css';\nimport '../../concepts/rail/layout.css';",
+        "import '../../concepts/rail/index.js';\nimport '../../concepts/rail/tokens.css';\nimport '../../concepts/rail/layout.css';\nboot({ mode: import.meta.env.SCROLLINE_MODE });",
+      'decks/nomode/main.js':
+        "import '../../concepts/data/index.js';\nimport '../../concepts/data/tokens.css';\nboot({ deck });",
       'decks/missing/main.js': "import '../../concepts/rail/index.js';\nimport '../../concepts/rail/tokens.css';",
       'decks/order/main.js':
         "import '../../concepts/rail/index.js';\nimport '../../concepts/rail/layout.css';\nimport '../../concepts/rail/tokens.css';",
@@ -88,6 +90,7 @@ describe('check-concepts deck imports', () => {
     expect(result.violations.map((v) => `${v.file} ${v.message}`).sort()).toEqual([
       'decks/foreign/main.js 다른 컨셉 layout.css import 금지',
       'decks/missing/main.js 컨셉 layout.css import 누락',
+      'decks/nomode/main.js boot에 mode: import.meta.env.SCROLLINE_MODE 누락(MP4 export 불가)',
       'decks/order/main.js layout.css는 tokens.css 다음에 import',
     ]);
   });

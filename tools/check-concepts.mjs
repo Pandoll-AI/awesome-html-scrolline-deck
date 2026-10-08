@@ -4,7 +4,8 @@
  *   node tools/check-concepts.mjs [root]
  * concepts/<id>/layout.css: 선택자는 전부 `.sl-concept-<id>` 범위, 색은 var(--sl-*)만(16진·색 함수·색 이름 금지),
  * `--sl-*` 정의 금지(컨셉 고유 변수는 `--<id>-*`), `!important`·`@import` 금지, @keyframes 이름은 `<id>-`로 시작.
- * decks/<deck>/main.js: 컨셉에 layout.css가 있으면 tokens.css 다음에 import, 다른 컨셉 layout.css는 import 금지.
+ * decks/<deck>/main.js: 컨셉에 layout.css가 있으면 tokens.css 다음에 import, 다른 컨셉 layout.css는 import 금지,
+ * boot에 `mode: import.meta.env.SCROLLINE_MODE`(C15, export가 이 값으로 export 모드를 켠다).
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -203,6 +204,8 @@ export function checkConcepts(root) {
     if (!fs.existsSync(abs)) continue;
     const code = fs.readFileSync(abs, 'utf8');
     const concept = code.match(/concepts\/([^/'"]+)\/index\.js/)?.[1];
+    if (/\bboot\s*\(/.test(code) && !/mode:\s*import\.meta\.env\.SCROLLINE_MODE/.test(code))
+      violations.push({ file: rel, token: 'mode', rule: 'C15', message: 'boot에 mode: import.meta.env.SCROLLINE_MODE 누락(MP4 export 불가)' });
     const imported = [...code.matchAll(/import\s+['"][^'"]*concepts\/([^/'"]+)\/layout\.css['"]/g)].map((m) => m[1]);
     for (const other of imported.filter((c) => c !== concept))
       violations.push({ file: rel, token: `concepts/${other}/layout.css`, rule: 'C11', message: '다른 컨셉 layout.css import 금지' });

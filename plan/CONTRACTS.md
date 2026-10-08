@@ -645,9 +645,19 @@ import '../../engine/engine.css';
 import moves from '../../moves/index.js';
 import concept from '../../concepts/<concept>/index.js';
 import '../../concepts/<concept>/tokens.css';
+import '../../concepts/<concept>/layout.css';   // v2.2: 그 컨셉에 있을 때만(C11)
 import deck from './deck.yaml';
-boot({ host: document.getElementById('app'), deck, concept, moves, assetBase: import.meta.env.BASE_URL });
+// sequence 덱: import ground from './sequences/ground.js'; … → boot({ …, sequences: { ground } })
+boot({
+  host: document.getElementById('app'),
+  deck,
+  concept,
+  moves,
+  assetBase: new URL('./', document.baseURI).href,
+  mode: import.meta.env.SCROLLINE_MODE,   // v2.2 필수: tools/export.mjs가 SCROLLINE_MODE=export로 빌드(없으면 MP4 export 불가)
+});
 ```
+- **v2.2**: `node tools/check.mjs`(concepts 항목)가 `mode` 줄 누락을 막는다. `npm run deck -- plan <id>`는 `_` 내부 덱도 받고, `main.js`의 `./sequences/*.js` import를 그대로 읽어 `validateDeck` 뒤 plan을 낸다(오류면 목록 출력·exit 1).
 
 ---
 
@@ -674,7 +684,7 @@ Registry = { get(id): MoveDef /* 없으면 throw */, has(id): boolean, ids(): st
 | `npm install --cache /mnt/d/_cache/npm` | `.npmrc`의 `legacy-peer-deps=true` 전제(npm 10.9 arborist가 vitest 5·vite 8 peer 묶음에서 죽음) | 워커는 설치 금지, 메인만 |
 | `node tools/check.mjs --hat <base>..<head>` | 두 모자 검사 | feature: 테스트 파일 추가·수정 1개 이상 / refactor: 기존 `*.test.js` 수정 0(이름 변경만 허용) |
 
-- 커밋 trailer: 병합 커밋마다 `Hat: feature|refactor` 한 줄(check-hat 대상).
+- 커밋 trailer: 병합 커밋마다 `Hat: feature|refactor|none` 한 줄(check-hat 대상). **v2.2**: `none` = 문서·계획·자산 커밋, 코드(`*.js`·`*.mjs`·`*.css`) 변경 0이어야 함.
 - **check-tests 규칙**: `engine/**/*.js`·`moves/**/*.js`(테스트·`index.js`·`types.js`·`constants.js`·`testing.js`·`moves/_shared/` 제외)마다 옆에 `.test.js` 필수. 단 파일 첫 30줄 안에 `@stub` 표기가 있으면 면제(스캐폴드 상태). 워커는 구현 시 `@stub`을 지우고 테스트를 넣는다.
 - **engine 모듈 테스트 최소 항목**
   - timeline: map 불변식 ①~⑤, 고정 fixture 덱의 stop t 값 정확 일치, fallback move 대체 시 map 동일
