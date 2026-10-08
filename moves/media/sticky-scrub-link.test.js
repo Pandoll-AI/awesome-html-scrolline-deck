@@ -14,7 +14,7 @@ const scenario = {
     h.beats.get('a').media.seq = { setProgress: vi.fn() };
     h.beats.get('b').media.seq = { setProgress: vi.fn() };
   },
-  carry: (h) => h.stage.overlay.querySelector('[data-sl-rect]'),
+  carry: null, // 두 beat가 같은 자리(full)라 유령 복제 없음
   nodes: () => [],
 };
 describe('sticky-scrub-link', () => {
@@ -28,6 +28,18 @@ describe('sticky-scrub-link', () => {
     expect(h.beats.get('b').media.seq.setProgress).toHaveBeenCalledWith(0.8);
     expect(Number(r.ctx.gsap.getProperty(r.ctx.handoff.to.node, 'opacity'))).toBe(1);
     expect(Number(r.ctx.gsap.getProperty(r.ctx.handoff.from.node, 'opacity'))).toBe(0);
+    h.destroy();
+  });
+  it('keeps B media hidden until the swap so A carries the turn', () => {
+    const h = createHarness({ beats: scenario.beats, rects: scenario.rects });
+    scenario.prepare(h);
+    const r = h.runMove(move, scenario.run);
+    const media = h.beats.get('b').part('media')[0];
+    h.seek(0.7 * r.timing.duration);
+    if (media) expect(Number(r.ctx.gsap.getProperty(media, 'opacity'))).toBe(0);
+    expect(Number(r.ctx.gsap.getProperty(r.ctx.handoff.from.node, 'opacity'))).toBe(1);
+    h.seek(r.timing.duration);
+    if (media) expect(Number(r.ctx.gsap.getProperty(media, 'opacity'))).toBe(1);
     h.destroy();
   });
 });

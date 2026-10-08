@@ -32,7 +32,7 @@ describe('launch-orbit-note deck', () => {
     const map = plan(deck, env);
     expect({ stops: map.stops.length, duration: Number(map.duration.toFixed(1)) }).toEqual({
       stops: 18,
-      duration: 44.4,
+      duration: 37.8,
     });
   });
 

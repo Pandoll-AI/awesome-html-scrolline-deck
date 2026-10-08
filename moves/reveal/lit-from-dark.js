@@ -25,7 +25,9 @@ export default {
   timing: (params) => ({ duration: params.duration, stops: [] }),
   build(tl, ctx, params) {
     const d = params.duration;
-    const frame = usable(ctx, 'frame');
+    // 빛은 제품(media)에만: frame에 걸면 caption까지 마스크·밝기를 같이 받아 정지점에서 회색으로 남는다
+    const media = usable(ctx, 'media');
+    const frame = media.length ? media : usable(ctx, 'frame');
     const captions = usable(ctx, 'caption');
     if (ctx.reduce) {
       ctx.initial([...frame, ...captions], { autoAlpha: 0 });
@@ -51,8 +53,8 @@ export default {
       frame,
       {
         filter: 'brightness(1)',
-        maskPosition: '40% 30%',
-        maskSize: '160% 160%',
+        maskPosition: '50% 50%',
+        maskSize: '700% 700%',
         duration: d * 0.55,
         ease: ctx.ease('out'),
       },
@@ -66,7 +68,7 @@ export default {
       const at = Math.min(d * (0.65 + index * 0.08), d * 0.9);
       tl.to(caption, { autoAlpha: 1, y: 0, duration: Math.max(0, d - at), ease: ctx.ease('out') }, at);
     });
-    tl.set(frame, { filter: 'none', transform: 'none' }, d);
+    tl.set(frame, { filter: 'none' }, d);
     clearMask(tl, frame, d);
   },
 };

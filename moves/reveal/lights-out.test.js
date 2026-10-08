@@ -10,12 +10,11 @@ const scenario = {
 
 it('satisfies the move contract', () => expect(checkMove(move, scenario, createHarness)).toEqual([]));
 
-it('ends on a dark transparent frame', () => {
+it('ends on a fully dark frame', () => {
   const h = createHarness(scenario);
   const { timing } = h.runMove(move, scenario.run);
   const frame = h.beats.get('p').part('frame')[0];
   h.seek(timing.duration);
-  expect(Number(frame.style.opacity)).toBe(0);
-  expect(frame.style.filter).toContain('brightness(0.04)');
+  expect(frame.style.filter).toContain('brightness(0)');
   h.destroy();
 });

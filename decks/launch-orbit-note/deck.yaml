@@ -13,7 +13,7 @@ beats:
     lines: ["회의는 한 시간.", "정리는 그다음부터."]
     emphasis: ["정리는"]
     size: xl
-    place: { slot: center }
+    place: { slot: full }
     enter: { move: line-mask-rise }
     exit: { move: "engine:fade-out" }
     exportHold: 2.0
@@ -38,7 +38,8 @@ beats:
     text: "그래서 그 한 사람의 몫을 테이블에 맡기기로 했습니다."
     lines: ["그래서 그 한 사람의 몫을", "테이블에 맡기기로 했습니다."]
     size: m
-    place: { slot: center }
+    at: 0.9   # 앞 장면 암전(lights-out)이 끝난 검정에서 시작
+    place: { slot: full }
     enter: { move: line-mask-rise }
     exit: { move: "engine:fade-out" }
     repeat: intended   # 헤드라인 문법 통일(line-mask-rise 2번째)
@@ -54,7 +55,7 @@ beats:
     caption: "Minute. 회의 테이블 한가운데 두는 기록기."
     place: { slot: full }
     enter: { move: lit-from-dark, params: { scrubTo: 0.18 } }
-    link: { move: sticky-scrub-link, params: { to: 0.42 } }
+    link: { move: sticky-scrub-link, params: { from: 0.18, to: 0.42 } }
     hold: 0.9
     exportHold: 2.4
 
@@ -67,7 +68,8 @@ beats:
     mode: scrub
     caption: "마이크 여덟 개가 목소리의 방향을 듣습니다."
     place: { slot: full }
-    link: { move: sticky-scrub-link, params: { to: 0.7 } }
+    enter: { move: "engine:none" }   # link가 제품을 넘겨줌(다시 어둠에서 켜지지 않음)
+    link: { move: sticky-scrub-link, params: { from: 0.42, to: 0.7 } }
     repeat: intended   # sticky 피처 리빌 = 같은 link 연쇄
 
   - id: b-halo
@@ -79,7 +81,8 @@ beats:
     mode: scrub
     caption: "지금 말하는 사람 쪽으로 빛이 기웁니다."
     place: { slot: full }
-    link: { move: sticky-scrub-link, params: { to: 1.0 } }
+    enter: { move: "engine:none" }   # link가 제품을 넘겨줌(다시 어둠에서 켜지지 않음)
+    link: { move: sticky-scrub-link, params: { from: 0.7, to: 1.0 } }
     repeat: intended
 
   - id: b-allday
@@ -91,7 +94,8 @@ beats:
     mode: scrub
     caption: "두께 24mm. 한 번 충전으로 회의 서른 시간."
     place: { slot: full }
-    link: { move: sticky-scrub-link, params: { to: 1.0, bAt: 0, duration: 0.7 } }
+    enter: { move: "engine:none" }   # link가 제품을 넘겨줌(다시 어둠에서 켜지지 않음)
+    link: { move: sticky-scrub-link, params: { from: 1.0, to: 1.0, bAt: 0, duration: 0.7 } }
     repeat: intended
 
   - id: b-inside
@@ -103,6 +107,7 @@ beats:
     mode: scrub
     caption: "열어 보면, 층마다 맡은 일이 하나씩."
     place: { slot: full }
+    enter: { move: "engine:none" }   # link가 제품을 넘겨줌(다시 어둠에서 켜지지 않음)
     steps:
       - name: top
         move: scrub-callouts
@@ -130,8 +135,8 @@ beats:
       text: |-
         결정  시안 2종, 화요일 오전 전달 — 태오
         할 일  카피 확정, 월요일 15:00 — 지민
-    place: { slot: center }
-    enter: { move: type-on }
+    place: { slot: full }
+    enter: { move: type-on, params: { speed: 60 } }
     steps:
       - { name: summary, move: transcript-condense }
     exit: { move: "engine:fade-out" }
@@ -143,7 +148,7 @@ beats:
     value: 12
     format: { unit: "초" }
     label: "회의가 끝나고 회의록이 도착하기까지 · 1시간 회의 기준"
-    place: { slot: center }
+    place: { slot: full }
     enter: { move: number-slam }
     exit: { move: "engine:fade-out" }
     repeat: intended   # engine:fade-out 반복
@@ -156,7 +161,7 @@ beats:
     lines: ["녹음은 기기 밖으로 나가지 않습니다.", "나가는 건 회의록뿐입니다."]
     emphasis: ["회의록뿐입니다."]
     size: l
-    place: { slot: center }
+    place: { slot: full }
     enter: { move: line-mask-rise }
     exit: { move: "engine:fade-out" }
     repeat: intended   # line-mask-rise 3번째
@@ -180,8 +185,9 @@ beats:
     src: assets/img/lockup.webp
     alt: "위에서 본 Minute, 앰버 빛 고리 전체가 켜짐"
     caption: "Minute — 11월 출시, 249,000원"
+    at: 0.9   # 앞 장면 암전(lights-out)이 끝난 검정에서 시작
     place: { slot: full }
-    enter: { move: lit-from-dark }
+    enter: { move: lit-from-dark, params: { scaleFrom: 1 } }
     ambient: [ { move: slow-push } ]
     repeat: intended   # 첫 공개와 수미상관
     exportHold: 3.0

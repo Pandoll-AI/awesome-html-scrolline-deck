@@ -1,4 +1,5 @@
 /** Slams a final numeric value into focus with one optional clipped light sweep. */
+import { colorOf } from '../_shared/color.js';
 import { px } from '../_shared/timeline.js';
 
 const part = (ctx, name) => (ctx.skipParts.includes(name) ? [] : ctx.beat.part(name));
@@ -50,6 +51,9 @@ export default {
       if (params.sweep && !ctx.reduce) {
         const rect = ctx.beat.anchor('digits', index).rect;
         const shine = document.createElement('span');
+        // overlay는 숫자와 다른 상자라 글꼴을 상속하지 않는다: 계산된 글꼴을 그대로 옮겨야 빛 띠가 획 위에 겹친다
+        const cs = globalThis.getComputedStyle?.(node);
+        const accent = colorOf(ctx, 'accent');
         shine.className = 'sl-number-slam__sweep';
         shine.textContent = node.textContent;
         Object.assign(shine.style, {
@@ -59,14 +63,19 @@ export default {
           width: rect.w + 'px',
           height: rect.h + 'px',
           color: 'transparent',
-          backgroundImage:
-            'linear-gradient(90deg, transparent 0%, #ffb000 45%, #fff 50%, #ffb000 55%, transparent 100%)',
+          whiteSpace: 'nowrap',
+          backgroundImage: `linear-gradient(90deg, transparent 0%, ${accent} 45%, ${colorOf(ctx, 'fg')} 50%, ${accent} 55%, transparent 100%)`,
           backgroundClip: 'text',
           WebkitBackgroundClip: 'text',
           backgroundSize: `${100 / params.sweepWidth}% 100%`,
           backgroundPosition: '-100% 0',
           pointerEvents: 'none',
-          font: 'inherit',
+          fontFamily: cs?.fontFamily || 'inherit',
+          fontSize: cs?.fontSize || 'inherit',
+          fontWeight: cs?.fontWeight || 'inherit',
+          fontVariantNumeric: cs?.fontVariantNumeric || 'normal',
+          letterSpacing: cs?.letterSpacing || 'normal',
+          lineHeight: cs?.lineHeight || 'normal',
         });
         ctx.overlay.append(shine);
         ctx.initial(shine, { autoAlpha: 0 });

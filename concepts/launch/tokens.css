@@ -30,4 +30,9 @@
   --sl-perspective: 2000px;
   --sl-gutter: calc(var(--px) * 120 * 1px);
   --sl-radius: calc(var(--px) * 28 * 1px);
+
+  /* 카피 칼럼(1~5단, x 120–720): 제품 축 0.62w 왼쪽 */
+  --sl-caption-left: calc(var(--px) * 120 * 1px);
+  --sl-caption-bottom: 40%;
+  --sl-caption-width: calc(var(--px) * 600 * 1px);
 }
