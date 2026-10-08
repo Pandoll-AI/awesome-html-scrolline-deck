@@ -34,4 +34,7 @@ it('runs both tracks left by the month gap between eras', () => {
   h.seek(2);
   expect(Math.round(r.ctx.gsap.getProperty(aTrack, 'x'))).toBe(-728);
   expect(Math.round(r.ctx.gsap.getProperty(bTrack, 'x'))).toBe(0);
+  // 회귀: 경계선이 왼쪽 끝 x 0에 남아 B의 모든 정지 화면에 세로선이 보였다.
+  const boundary = r.ctx.overlay.lastElementChild;
+  expect(Number(r.ctx.gsap.getProperty(boundary, 'opacity'))).toBe(0);
 });

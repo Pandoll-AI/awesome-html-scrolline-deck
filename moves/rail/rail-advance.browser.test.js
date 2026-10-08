@@ -75,3 +75,15 @@ it('folds a passed thumbnail even when the link put it there (skipNodes)', () =>
   expect(Number(r.ctx.gsap.getProperty(media, 'opacity'))).toBe(0);
   expect(Number(r.ctx.gsap.getProperty(beat.part('title')[1], 'opacity'))).toBe(1);
 });
+
+it('keeps rolling the counter that a counter-handoff link placed (skipNodes)', () => {
+  const { h, beat } = setup();
+  const counter = beat.part('counter')[0];
+  const r = h.runMove(move, { role: 'step', beat: 'rail', params: { from: 0, to: 1 }, skipNodes: [counter] });
+  const calls = [];
+  move.build(r.ctx.gsap.timeline(), { ...r.ctx, initial: (nodes, vars) => calls.push([nodes, vars]) }, {
+    from: 0, to: 1, base: 0.6, perMonth: 0.05, max: 2.6, ghostParallax: 0.35, blurMax: 4, trailOpacity: 0.32,
+  });
+  const cols = [...counter.querySelectorAll('[data-place]')];
+  expect(calls.filter(([nodes]) => cols.includes(nodes))).toHaveLength(6);
+});

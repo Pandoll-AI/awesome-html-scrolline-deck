@@ -121,7 +121,8 @@ export default {
       ctx.initial(media, { clipPath: 'inset(100% 0 0 0)', autoAlpha: 0 });
       tl.to(media, { clipPath: 'inset(0% 0 0 0)', autoAlpha: 1, duration: d * 0.22, ease: ctx.ease('out') }, d * 0.76);
     }
-    const counter = nodes(ctx, 'counter')[0];
+    // 카운터는 counter-handoff가 놓고 간 뒤에도 사건마다 구른다(skip은 들여오기만, #48).
+    const counter = ctx.beat.part('counter')[0];
     if (counter) {
       const reel = reelFrom(counter),
         kind = ctx.beat.data.counter,

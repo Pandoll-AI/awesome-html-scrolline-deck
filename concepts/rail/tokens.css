@@ -33,7 +33,7 @@
   --sl-perspective: 1800px;
   --sl-gutter: calc(var(--px) * 120 * 1px);
   --sl-caption-left: calc(var(--px) * 120 * 1px);
-  --sl-caption-bottom: calc(var(--px) * 96 * 1px);
+  --sl-caption-bottom: calc(var(--px) * 40 * 1px);
   --sl-caption-width: calc(var(--px) * 1200 * 1px);
   --sl-radius: 0px;
 }

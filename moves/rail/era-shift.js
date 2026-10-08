@@ -85,6 +85,9 @@ export default {
     ctx.overlay.append(boundary);
     ctx.initial(boundary, { x: ctx.viewport.w });
     tl.to(boundary, { x: 0, duration: d * 0.6, ease: ctx.ease('inout') }, d * 0.2);
+    // 왼쪽 끝에 닿은 경계선은 정지 화면에 남기지 않는다.
+    ctx.initial(boundary, { autoAlpha: 1 });
+    tl.to(boundary, { autoAlpha: 0, duration: d * 0.12, ease: ctx.ease('in') }, d * 0.8);
     const aLabel = usable(ctx, a, 'label'),
       bLabel = usable(ctx, b, 'label');
     ctx.initial(bLabel, { autoAlpha: 0, letterSpacing: `${params.labelTracking}em` });

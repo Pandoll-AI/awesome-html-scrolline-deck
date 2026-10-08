@@ -214,6 +214,7 @@ export function probeSource(deckId) {
           last = y;
         }
         window.__deck.tl.seek(stop.t);
+        await (document.fonts?.ready ?? Promise.resolve());
         await frame();
       } catch (e) {
         errors.push(String(e?.stack || e));
@@ -244,7 +245,7 @@ try {
     smokeOut.pageErrors = await smokeTab.evaluate(() => window.__smoke.pageErrors.slice());
   }
   console.log('@@SMOKE@@' + JSON.stringify(smokeOut));
-} finally { try { await closeTab(smokeTab); } catch (e) { console.log('close failed: ' + e.message); } } }`;
+} finally { try { await closeTab(smokeTab); } catch (e) { try { await smokeTab.evaluate(() => window.close()); } catch {} } } }`;
   const result = spawnSync('timeout', ['170', ASIDE, 'repl', code], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
   const out = `${result.stdout ?? ''}${result.stderr ?? ''}`;
   const line = out.split('\n').find((l) => l.startsWith('@@SMOKE@@'));
@@ -253,7 +254,7 @@ try {
 }
 
 /** Minimal CDP session over Node's WebSocket. */
-async function cdpConnect(wsUrl) {
+export async function cdpConnect(wsUrl) {
   const ws = new WebSocket(wsUrl);
   await new Promise((resolve, reject) => {
     ws.onopen = resolve;
@@ -283,7 +284,7 @@ async function cdpConnect(wsUrl) {
   return { send, evaluate, close: () => ws.close() };
 }
 
-function chromePath() {
+export function chromePath() {
   const result = spawnSync('npx', ['hyperframes', 'browser', 'path'], { cwd: ROOT, encoding: 'utf8' });
   const file = result.stdout.trim().split('\n').at(-1);
   if (!file || !existsSync(file)) throw new Error('chrome not found: run `npx hyperframes browser ensure`');
