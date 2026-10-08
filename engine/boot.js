@@ -154,6 +154,7 @@ export async function boot(opts) {
     built?.destroy?.();
     built = await build(map, {
       stage,
+      gsap,
       deck,
       registry: moves,
       concept,

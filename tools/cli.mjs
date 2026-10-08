@@ -16,7 +16,7 @@ export function deckTemplate(id, concept) {
   return {
     yaml: `id: ${id}\ntitle: "${id}"\nlang: ko\nconcept: ${concept}\nsample: false\nsources: []\nbeats: []\n`,
     html: `<!doctype html>\n<html lang="ko"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>${id}</title></head><body><div id="app"></div><script type="module" src="./main.js"></script></body></html>\n`,
-    main: `import { boot } from '../../engine/index.js';\nimport '../../engine/engine.css';\nimport moves from '../../moves/index.js';\nimport concept from '../../concepts/${concept}/index.js';\nimport '../../concepts/${concept}/tokens.css';\nimport deck from './deck.yaml';\n\nboot({ host: document.getElementById('app'), deck, concept, moves, assetBase: import.meta.env.BASE_URL });\n`,
+    main: `import { boot } from '../../engine/index.js';\nimport '../../engine/engine.css';\nimport moves from '../../moves/index.js';\nimport concept from '../../concepts/${concept}/index.js';\nimport '../../concepts/${concept}/tokens.css';\nimport deck from './deck.yaml';\n\nboot({ host: document.getElementById('app'), deck, concept, moves, assetBase: new URL("./", document.baseURI).href });\n`,
   };
 }
 
