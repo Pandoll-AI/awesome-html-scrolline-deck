@@ -48,7 +48,7 @@ export default {
     base: { type: 'number', default: 0.6, min: 0.3, max: 1.2, doc: 'Base travel duration.' },
     perMonth: { type: 'number', default: 0.05, min: 0, max: 0.15, doc: 'Extra duration per month.' },
     max: { type: 'number', default: 2.6, min: 0.8, max: 4, doc: 'Maximum travel duration.' },
-    ghostParallax: { type: 'number', default: 0.35, min: 0, max: 0.8, doc: 'Ghost layer travel ratio.' },
+    ghostParallax: { type: 'number', default: 1, min: 0, max: 1, doc: 'Year-marker travel ratio (1 = rides the rail).' },
     blurMax: { type: 'number', default: 4, min: 0, max: 8, doc: 'Maximum motion blur in px.' },
     trailOpacity: { type: 'number', default: 0.32, min: 0.15, max: 0.6, doc: 'Passed-event opacity.' },
   },
@@ -88,15 +88,20 @@ export default {
       tl.to(track, { filter: `blur(${blur}px)`, duration: d * 0.15, ease: ctx.ease('out') }, 0);
       tl.to(track, { filter: `blur(${blur}px)`, duration: d * 0.25, ease: 'none' }, d * 0.15);
       tl.to(track, { filter: 'none', duration: d * 0.15, ease: ctx.ease('in') }, d * 0.4);
-      // 유령 연도만 느리게(종이 ground 자체는 화면에 고정)
-      const ghosts = nodes(ctx, 'ghost');
-      tl.fromTo(
-        ghosts,
-        { x: start * params.ghostParallax },
-        { x: end * params.ghostParallax, duration: travel, ease: ctx.ease('travel'), immediateRender: false },
-        0,
-      );
     }
+    // 연도 표석은 레일과 같이 달린다(종이 ground 자체는 화면에 고정)
+    const ghosts = nodes(ctx, 'ghost');
+    tl.fromTo(
+      ghosts,
+      { x: start * params.ghostParallax },
+      {
+        x: end * params.ghostParallax,
+        duration: travel,
+        ease: ctx.reduce ? 'none' : ctx.ease('travel'),
+        immediateRender: false,
+      },
+      0,
+    );
     // 지나온 사건: 상세는 접고 줄기만 흐린 자취로. 사이에 낀 사건은 점만 스친다.
     // skipNodes는 「들여오기」에서만 뺀다: link가 놓은 썸네일도 지나가면 접는다(C5 v2 skip 규칙 명시).
     const skip = ctx.skipNodes ?? [];

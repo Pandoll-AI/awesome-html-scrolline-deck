@@ -100,7 +100,7 @@
     "railY": 0.66,
     "monthPx": 64,
     "overviewMonthPx": 14,
-    "ghostParallax": 0.35,
+    "ghostParallax": 1,
     "blurMax": 4,
     "trailOpacity": 0.32,
     "minorScale": 0.62,

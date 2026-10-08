@@ -1,7 +1,7 @@
 /** Link two chronology eras with a travelling boundary. Used by rail chapter transitions; signature rail move. */
 import { colorOf } from '../_shared/color.js';
 import { finishLink } from '../_shared/link.js';
-import { railFocus } from '../_shared/rail-focus.js';
+import { eventDetail, railFocus } from '../_shared/rail-focus.js';
 import { reelFrom, rollReel } from '../_shared/reel.js';
 import { px } from '../_shared/timeline.js';
 
@@ -56,11 +56,21 @@ export default {
     const aStart = nowX(ctx, a) - dotX(a, aEvents.length - 1),
       bEnd = nowX(ctx, b) - dotX(b, 0);
     railFocus(ctx, b, 0);
-    ctx.initial(bGround, { clipPath: 'inset(0 0 0 100%)', autoAlpha: 1 });
+    ctx.initial(bGround, { clipPath: 'inset(0% 0% 0% 100%)', autoAlpha: 1 });
+    // 앞 시대 종이는 경계선 왼쪽에만 남는다(뒤 beat가 아래 깔려도 넘김이 보이게)
+    ctx.initial(aGround, { clipPath: 'inset(0% 0% 0% 0%)' });
     if (!ctx.reduce) {
       const travel = { duration: d * 0.75, ease: ctx.ease('travel'), immediateRender: false };
       tl.fromTo(aTrack, { x: aStart }, { x: aStart - gap, ...travel }, 0);
       tl.fromTo(bTrack, { x: bEnd + gap }, { x: bEnd, ...travel }, 0);
+      // 연도 표석은 자기 레일과 같이 달린다
+      const aGhosts = a.part('ghost'),
+        bGhosts = usable(ctx, b, 'ghost');
+      if (aGhosts.length) tl.fromTo(aGhosts, { x: aStart }, { x: aStart - gap, ...travel }, 0);
+      if (bGhosts.length) tl.fromTo(bGhosts, { x: bEnd + gap }, { x: bEnd, ...travel }, 0);
+      // 떠나는 시대의 초점 사건(제목·설명·날짜)은 출발과 함께 접는다 — 새 시대 사건과 겹치지 않게
+      const aDetail = eventDetail(a, aEvents.length - 1).filter((node) => node.dataset.part !== 'stem');
+      tl.to(aDetail, { autoAlpha: 0, duration: d * 0.15, ease: ctx.ease('in') }, 0);
       tl.to(bTrack, { autoAlpha: 1, duration: d * 0.15, ease: ctx.ease('out') }, d * 0.15);
     } else {
       tl.to(aTrack, { autoAlpha: 0, duration: d * 0.12 }, d * 0.68);
@@ -68,12 +78,14 @@ export default {
     tl.to(
       bGround,
       {
-        clipPath: ctx.reduce ? 'inset(0 0 0 0)' : 'inset(0 0 0 0)',
+        clipPath: 'inset(0% 0% 0% 0%)', // 단위를 맞춰야 GSAP이 보간한다
         duration: d * 0.6,
         ease: ctx.ease('inout'),
       },
       d * 0.2,
     );
+    if (!ctx.reduce)
+      tl.to(aGround, { clipPath: 'inset(0% 100% 0% 0%)', duration: d * 0.6, ease: ctx.ease('inout') }, d * 0.2);
     const boundary = document.createElement('div');
     Object.assign(boundary.style, {
       position: 'absolute',
@@ -113,12 +125,16 @@ export default {
         rollReel(tl, reel, fromText, toText, { at: d * 0.1, duration: d * 0.65, ease: ctx.ease('travel') });
     }
     if (bCounter) ctx.initial(bCounter, { autoAlpha: 0 });
-    const stem = usable(ctx, b, 'stem').slice(0, 1),
-      title = usable(ctx, b, 'title').slice(0, 1);
+    const first = eventDetail(b, 0).filter((node) => !(ctx.skipNodes ?? []).includes(node)),
+      stem = first.filter((node) => node.dataset.part === 'stem'),
+      title = first.filter((node) => node.dataset.part === 'title'),
+      rest = first.filter((node) => !['stem', 'title'].includes(node.dataset.part));
     ctx.initial(stem, { scaleY: 0, transformOrigin: 'bottom' });
     ctx.initial(title, { y: px(ctx, 18), autoAlpha: 0 });
+    ctx.initial(rest, { autoAlpha: 0 });
     tl.to(stem, { scaleY: 1, duration: d * 0.18, ease: ctx.ease('arrive') }, d * 0.75);
-    tl.to(title, { y: 0, autoAlpha: 1, duration: d * 0.18, ease: ctx.ease('out') }, d * 0.82);
+    tl.to(title, { y: 0, autoAlpha: 1, duration: d * 0.18, ease: ctx.ease('out') }, d * 0.8);
+    tl.to(rest, { autoAlpha: 1, duration: d * 0.14, ease: ctx.ease('out') }, d * 0.86);
     finishLink(tl, ctx, {
       at: d,
       cross: 0.1,

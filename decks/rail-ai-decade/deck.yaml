@@ -221,7 +221,7 @@ beats:
       - { name: gpt4, move: rail-advance, params: { to: 1 } }
       - { name: llama2, move: rail-advance, params: { to: 2 } }
       - { name: gemini, move: rail-advance, params: { to: 3 } }
-    link: { move: era-shift, params: { duration: 2.0 } }
+    link: { move: era-shift, params: { duration: 2.0, boundaryWidth: 5 } }
     repeat: intended
     exportHold: 1.8
 
@@ -284,7 +284,7 @@ beats:
     steps:
       - { name: computer-use, move: rail-advance, params: { to: 1 } }
       - { name: mcp, move: rail-advance, params: { to: 2 } }
-    link: { move: era-shift, params: { duration: 1.8 } }
+    link: { move: era-shift, params: { duration: 1.8, boundaryWidth: 5 } }
     repeat: intended   # era-shift 2회째(시대 경계 2곳)
     exportHold: 1.8
 

@@ -33,6 +33,8 @@ export default {
       { from, to } = ctx.handoff;
     if (ctx.reduce) return finishLink(tl, ctx, { at: d, cross: 0.12 });
     const carry = ghost(ctx, from.node, from.rect);
+    // 점에서 떠오르면 끝까지 둥근 잉크 방울로 간다(따옴표·이름표 자리에서 겹쳐 바뀐다)
+    const radius = from.part === 'dot' ? '50%' : 0;
     const stem = ctx.from.part('stem').at(p.fromEvent) ?? ctx.from.part('stem').at(-1);
     const sinking = ['track', 'event', 'counter', 'label'].flatMap((name) => ctx.from.part(name));
     ctx.initial(carry, {
@@ -41,7 +43,7 @@ export default {
       y: 0,
       scaleX: 1,
       scaleY: 1,
-      borderRadius: 0,
+      borderRadius: radius,
       transformOrigin: '0 0',
     });
     ctx.initial(to.node, { autoAlpha: 0 });
@@ -53,7 +55,7 @@ export default {
     tl.to(carry, { y: -p.liftRise * ctx.viewport.h, duration: d * 0.3, ease: ctx.ease('in') }, 0);
     tl.to(
       carry,
-      { ...transferVars(from.rect, to.rect), borderRadius: 0, duration: d * 0.55, ease: ctx.ease('inout') },
+      { ...transferVars(from.rect, to.rect), borderRadius: radius, duration: d * 0.55, ease: ctx.ease('inout') },
       d * 0.3,
     );
     finishLink(tl, ctx, { at: d, cross: 0.12, from: [from.node, carry] });

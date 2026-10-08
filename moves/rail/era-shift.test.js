@@ -44,7 +44,7 @@ describe('era-shift', () => {
     scenario.prepare(h);
     const r = h.runMove(move, scenario.run);
     h.seek(r.timing.duration);
-    expect(h.beats.get('b').part('ground')[0].style.clipPath).toBe('inset(0 0 0 0)');
+    expect(h.beats.get('b').part('ground')[0].style.clipPath).toMatch(/^inset\(0%? 0%? 0%? 0%?\)$/);
     expect(Number(r.ctx.gsap.getProperty(h.beats.get('b').part('label')[0], 'opacity'))).toBe(1);
     h.destroy();
   });
