@@ -82,4 +82,17 @@ describe('createScrollDriver', () => {
     );
     window.removeEventListener('scrolline:stop', received);
   });
+
+  // 회귀(?stop 브라우저 확인): attach 직후 seek이 ScrollTrigger 범위 계산 전이라 y 0으로 가서 t가 0에 남았다.
+  it('measures the ScrollTrigger range on attach so an immediate seek lands at its y', () => {
+    const range = { start: 0, end: 0, kill: vi.fn() };
+    range.refresh = vi.fn(() => Object.assign(range, { start: 100, end: 600 }));
+    mock.create.mockReturnValue(range);
+    const track = document.createElement('div');
+    const tl = { time: vi.fn(() => 0), seek: vi.fn() };
+    const driver = createScrollDriver({ track, tl, map, viewport: { h: 100 }, reduce: false });
+    driver.attach();
+    expect(range.refresh).toHaveBeenCalledOnce();
+    expect(driver.timeToY(4)).toBe(300);
+  });
 });

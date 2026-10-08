@@ -55,6 +55,9 @@ export function createScrollDriver({ track, tl, map, viewport, reduce }) {
       scrub: true,
       animation: tl,
     });
+    // ScrollTrigger는 start·end를 다음 refresh까지 미룬다. 그 전에 seek(boot의 ?t·?stop, rebuild 복귀)하면
+    // timeToY가 0을 돌려 스크롤이 맨 위에 남고 scrub이 timeline을 0으로 되돌린다.
+    st.refresh?.();
     lenis.on('scroll', onScroll);
     gsap.ticker.add(ticker);
     gsap.ticker.lagSmoothing(0);
