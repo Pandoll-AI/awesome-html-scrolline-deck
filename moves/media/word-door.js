@@ -4,6 +4,7 @@
  * between them. The doors slide apart (each still showing the footage inside its strokes) and the
  * gap widens until it is the whole frame.
  */
+import { driveValue } from '../_shared/drive.js';
 import { applyTextMask } from '../_shared/mask.js';
 import { glyphMask } from '../_shared/glyph-mask.js';
 
@@ -64,12 +65,12 @@ export default {
       return;
     }
     const cut = left.splitX;
-    const door = { l: 0, r: 0 };
     const layers = `url("${left.url}"), url("${right.url}"), linear-gradient(#fff, #fff)`;
-    const paint = () => {
-      const gapX = cut + door.l,
-        gapW = Math.max(0, door.r - door.l);
-      const pos = `${door.l}px 0px, ${door.r}px 0px, ${gapX}px 0px`;
+    // o = how far each door has slid out (left door −o, right door +o); the gap between them is 2o
+    const paint = (o) => {
+      const gapX = cut - o,
+        gapW = Math.max(0, 2 * o);
+      const pos = `${-o}px 0px, ${o}px 0px, ${gapX}px 0px`;
       const size = `${W}px 100%, ${W}px 100%, ${gapW}px 100%`;
       for (const node of media)
         Object.assign(node.style, {
@@ -87,19 +88,18 @@ export default {
         webkitMaskImage: layers,
         maskRepeat: 'no-repeat',
         webkitMaskRepeat: 'no-repeat',
-        onComplete: paint,
-        onReverseComplete: paint,
       },
       0,
     );
     ctx.initial(media, { scale: params.mediaScaleFrom, filter: 'brightness(0.92)' });
     const crack = W * params.gap * 0.5;
-    if (ctx.reduce) {
-      tl.to(door, { l: -W, r: W, duration: d * 0.9, ease: ctx.ease('inout'), onUpdate: paint }, 0);
-    } else {
+    // driveValue, not onUpdate: seek()/pause(t) suppress callbacks (C5 v2.2)
+    if (ctx.reduce)
+      driveValue(tl, paint, { from: 0, to: W, at: 0, duration: d * 0.9, ease: ctx.ease('inout') });
+    else {
       // crack open (0–0.22), hold a beat, then the doors run off-frame (0.3–0.85)
-      tl.to(door, { l: -crack, r: crack, duration: d * 0.22, ease: ctx.ease('out'), onUpdate: paint }, 0);
-      tl.to(door, { l: -W, r: W, duration: d * 0.55, ease: ctx.ease('inout'), onUpdate: paint }, d * 0.3);
+      driveValue(tl, paint, { from: 0, to: crack, at: 0, duration: d * 0.22, ease: ctx.ease('out') });
+      driveValue(tl, paint, { from: crack, to: W, at: d * 0.3, duration: d * 0.55, ease: ctx.ease('inout') });
     }
     tl.to(media, { scale: 1, filter: 'brightness(1)', duration: d * 0.6, ease: ctx.ease('inout') }, d * 0.3);
     tl.set(media, { maskImage: 'none', webkitMaskImage: 'none' }, d);

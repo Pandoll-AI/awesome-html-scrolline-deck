@@ -1,4 +1,5 @@
 /** Replace outgoing text with seeded glyphs before the authored text fades away. */
+import { driveValue } from '../_shared/drive.js';
 import { scrambleAt, scrambleTable } from '../_shared/scramble.js';
 
 export default {
@@ -30,15 +31,21 @@ export default {
       });
     ctx.initial(block, { autoAlpha: 1 });
     // no paint at build: an earlier step (scramble-swap) may own the text before this exit starts
-    if (!ctx.reduce) tl.to(proxy, { p: 1, duration: d * 0.75, ease: 'none', onUpdate: paint }, 0);
     tl.to(block, { autoAlpha: 0, duration: d * 0.4, ease: ctx.ease('in') }, d * 0.6);
-    tl.call(
-      () =>
-        nodes.forEach((node, index) => {
-          node.textContent = originals[index];
-        }),
-      [],
-      d,
+    // driveValue, not onUpdate/call: seek()/pause(t) suppress callbacks (C5 v2.2).
+    // v runs over the whole exit: glyphs boil for the first 75%, the hidden text is restored at the end.
+    const restore = () =>
+      nodes.forEach((node, index) => {
+        node.textContent = originals[index];
+      });
+    driveValue(
+      tl,
+      (v) => {
+        if (v >= 1) return restore();
+        proxy.p = ctx.reduce ? 0 : Math.min(0.999, v / 0.75);
+        paint();
+      },
+      { from: 0, to: 1, at: 0, duration: d, ease: 'none' },
     );
   },
 };

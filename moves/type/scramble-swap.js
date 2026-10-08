@@ -1,5 +1,6 @@
 /** Strike one word, scramble it deterministically, and settle on its replacement. */
 import { colorOf } from '../_shared/color.js';
+import { driveValue } from '../_shared/drive.js';
 import { scrambleAt, scrambleTable } from '../_shared/scramble.js';
 import { line, svgLayer } from '../_shared/stroke.js';
 
@@ -75,7 +76,14 @@ export default {
     tl.to(node, { width: rect.w, marginRight: 0, duration: d * 0.5, ease: ctx.ease('inout') }, d * 0.35);
     tl.to(stroke, { scaleX: 1, duration: d * 0.25, ease: ctx.ease('inout') }, 0);
     tl.to(node, { autoAlpha: 0.45, duration: d * 0.1, ease: ctx.ease('out') }, d * 0.25);
-    tl.to(proxy, { p: 1, duration: d * 0.5, ease: 'none', onUpdate: paint }, d * 0.35);
+    // driveValue, not onUpdate: seek()/pause(t) suppress callbacks (C5 v2.2)
+    driveValue(tl, (v) => ((proxy.p = v), paint()), {
+      from: 0,
+      to: 1,
+      at: d * 0.35,
+      duration: d * 0.5,
+      ease: 'none',
+    });
     tl.to(stroke, { autoAlpha: 0, duration: d * 0.5, ease: ctx.ease('out') }, d * 0.35);
     tl.to(
       node,

@@ -21,17 +21,17 @@ export default {
     const rect = ctx.beat.anchor(p.part, index).rect,
       caret = document.createElement('i');
     caret.className = 'sl-caret-blink';
-    caret.textContent = '▍';
     Object.assign(caret.style, {
       position: 'absolute',
       left: `${rect.x + rect.w}px`,
       top: `${rect.y}px`,
-      width: '0.06em',
-      height: `${rect.h * 0.9}px`,
-      color: colorOf(ctx, 'accent'),
+      width: `${Math.max(3, rect.h * 0.04)}px`,
+      height: `${rect.h * 0.78}px`,
+      marginTop: `${rect.h * 0.13}px`,
+      background: colorOf(ctx, 'accent'),
     });
     ctx.overlay.append(caret);
-    ctx.initial(caret, { x: '0.12em', autoAlpha: 1 });
+    ctx.initial(caret, { x: rect.h * 0.08, autoAlpha: 1 });
     if (!ctx.reduce)
       for (let at = p.period / 2; at < ctx.duration; at += p.period) {
         tl.set(caret, { autoAlpha: 0 }, at);

@@ -26,7 +26,9 @@ export default {
     const lines = ctx.skipParts.includes('line') ? [] : ctx.beat.part('line'),
       d = ctx.duration;
     if (!lines.length) return;
-    const block = ctx.beat.part('block')[0];
+    const own = ctx.beat.part('block')[0];
+    // a link that delivered the block owns it (skipNodes): then lines move, the block stays put
+    const block = own && !ctx.skipNodes?.includes(own) && !ctx.skipParts.includes('block') ? own : null;
     const boxOf = (i) => ctx.beat.anchor('line', i).rect;
     const blockRect = block ? ctx.beat.anchor('block').rect : null;
     // The line being read sits at the block's centre; earlier lines are pushed up and recede.
