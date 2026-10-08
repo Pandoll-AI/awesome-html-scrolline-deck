@@ -4,6 +4,7 @@
  */
 import { gsap } from 'gsap';
 import { anchorOf, measure } from './handoff.js';
+import { textMask } from './media.js';
 
 const DEFAULT_RECT = { x: 0, y: 0, w: 100, h: 100 };
 const PRIMARY_BY_TYPE = {
@@ -64,6 +65,24 @@ function installRect(node, rect) {
     return box({ x: rect.x + x, y: rect.y + y, w: rect.w * sx, h: rect.h * sy });
   };
 }
+function cameraTarget(place, previous = { x: 0.5, y: 0.5, s: 1 }) {
+  const world = place?.world;
+  if (!world) return previous;
+  const scale = world.s ?? 1;
+  return { x: world.x + 0.5 * scale, y: world.y + 0.5 * scale, s: 1 / scale, rx: 0, ry: 0 };
+}
+function harnessMask(beat, text, options = {}) {
+  const rect = options.rect ?? beat.anchor('media').rect;
+  const style = globalThis.getComputedStyle?.(beat.root);
+  const family = style?.getPropertyValue('--sl-font-display').trim() || 'sans-serif';
+  const weight = style?.getPropertyValue('--sl-weight-display').trim() || '700';
+  return textMask(text, {
+    font: `${weight} ${Math.max(1, Math.min(rect.w, rect.h))}px ${family}`,
+    width: rect.w,
+    height: rect.h,
+    align: options.align ?? 'center',
+  });
+}
 
 /**
  * @param {{ beats: Array<{ id: string, type: string, data: object, place?: import('./types.js').Place }>,
@@ -73,7 +92,7 @@ function installRect(node, rect) {
  * @returns {{
  *   stage: import('./types.js').Stage,
  *   beats: Map<string, import('./types.js').BeatInstance>,
- *   runMove: (move: import('./types.js').MoveDef, o: { role: import('./types.js').Role, beat: string, from?: string, params?: object }) =>
+ *   runMove: (move: import('./types.js').MoveDef, o: { role: import('./types.js').Role, beat: string, from?: string, params?: object, step?: object, skipNodes?: Element[] }) =>
  *            { tl: object, ctx: import('./types.js').MoveContext, timing: import('./types.js').MoveTiming },
  *   seek: (t: number) => void,
  *   snapshot: (nodes: Element[], props?: string[]) => object,
@@ -119,14 +138,24 @@ export function createHarness(opts) {
     const primary = spec.data?.primary ?? PRIMARY_BY_TYPE[spec.type] ?? 'primary';
     const names = new Set([...Object.keys(spec.data?.parts ?? {}), primary]);
     for (const key of Object.keys(rects))
-      if (key.startsWith(`${spec.id}.`)) names.add(key.slice(spec.id.length + 1));
+      if (key.startsWith(`${spec.id}.`)) names.add(key.slice(spec.id.length + 1).split('#')[0]);
     const parts = {};
     for (const name of names) {
-      const el = document.createElement('div');
-      el.dataset.part = name;
-      installRect(el, { ...(rects[`${spec.id}.${name}`] ?? DEFAULT_RECT) });
-      beatRoot.append(el);
-      parts[name] = [el];
+      const indexes = Object.keys(rects)
+        .filter((key) => key.match(new RegExp(`^${spec.id}\\.${name}#\\d+$`)))
+        .map((key) => Number(key.slice(key.lastIndexOf('#') + 1)));
+      const count = Math.max(1, ...indexes.map((index) => index + 1));
+      parts[name] = [];
+      for (let index = 0; index < count; index += 1) {
+        const el = document.createElement('div');
+        el.dataset.part = name;
+        el.classList.add(`sl-${spec.type}__${name}`);
+        installRect(el, {
+          ...(rects[`${spec.id}.${name}#${index}`] ?? rects[`${spec.id}.${name}`] ?? DEFAULT_RECT),
+        });
+        beatRoot.append(el);
+        parts[name].push(el);
+      }
     }
     root.append(beatRoot);
     const beat = {
@@ -139,11 +168,13 @@ export function createHarness(opts) {
       primary,
       part: (name) => parts[name] ?? [],
       span: { start: 0, stop: 0, end: 0 },
+      media: spec.media ?? {},
     };
     beats.set(spec.id, beat);
   }
   const measured = measure(root, [...beats.values()]);
-  for (const beat of beats.values()) beat.anchor = (part) => anchorOf(beat, part, measured, beat.primary);
+  for (const beat of beats.values())
+    beat.anchor = (part, index = 0) => anchorOf(beat, part, measured, beat.primary, index);
   const master = gsap.timeline({ paused: true, defaults: { ease: 'none' } }),
     concept = opts.concept ?? {};
   function runMove(move, run) {
@@ -156,21 +187,39 @@ export function createHarness(opts) {
     const rawTiming = move.timing(params, data),
       duration = rawTiming.duration === 'fill' ? 1 : rawTiming.duration,
       initials = [];
+    const selected =
+      run.role === 'link' ? (move.handoff?.(params, { from: from.data, to: beat.data }) ?? {}) : {};
+    const handoff =
+      run.role === 'link'
+        ? {
+            from: from.anchor(selected.from?.part, selected.from?.index),
+            to: beat.anchor(selected.to?.part, selected.to?.index),
+          }
+        : undefined;
+    const beatList = [...beats.values()],
+      beatIndex = beatList.indexOf(beat);
+    const indexed = selected.to?.index !== undefined;
     const ctx = {
       gsap,
       plugins: {},
       role: run.role,
       beat,
       from,
-      prev: undefined,
-      next: undefined,
-      handoff: run.role === 'link' ? { from: from.anchor(), to: beat.anchor() } : undefined,
+      prev: beatList[beatIndex - 1],
+      next: beatList[beatIndex + 1],
+      handoff,
+      camera: run.role === 'camera' ? cameraTarget(beat.place) : undefined,
       stage,
       viewport,
       reduce: Boolean(opts.reduce),
       start: 0,
       duration,
-      skipParts: [],
+      skipParts: indexed ? [] : run.role === 'link' ? [handoff.to.part] : [],
+      skipNodes: run.skipNodes ?? (indexed ? [handoff.to.node] : []),
+      step:
+        run.role === 'step'
+          ? { name: run.step?.name ?? String((run.step?.index ?? 0) + 1), index: run.step?.index ?? 0 }
+          : undefined,
       overlay: stage.overlayFor(`${move.id}-${beat.id}`),
       tokens: concept.tokens ?? {},
       ease: (name) => concept.eases?.[name] ?? name,
@@ -178,6 +227,7 @@ export function createHarness(opts) {
         initials.push([targets, { ...vars }]);
       },
       rng: seeded(`${concept.id ?? 'test'}:${beat.id}:${run.role}:${move.id}`),
+      textMask: (text, options) => harnessMask(beat, text, options),
     };
     const tl = gsap.timeline({ defaults: { ease: 'none' } });
     move.build(tl, ctx, params);

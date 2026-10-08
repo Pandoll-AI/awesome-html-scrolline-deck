@@ -3,11 +3,31 @@ import { ENGINE_TIMING_DEFAULTS, REDUCE_FALLBACK, STOP_PREFIX } from './constant
 import { resolveParams } from './util/schema.js';
 import { measure, anchorOf } from './handoff.js';
 import { createRng, hashSeed } from './util/rng.js';
+import { textMask } from './media.js';
 
 const field = (value, doc) => ({ type: 'number', default: value, min: 0, doc });
 const allParts = (beat) => Object.values(beat.parts).flat();
+const stateOf = (node) => node.closest?.('[data-state]')?.dataset.state;
+const visibleParts = (ctx) =>
+  allParts(ctx.beat).filter(
+    (node) =>
+      !ctx.skipParts.includes(node.dataset?.part) &&
+      !ctx.skipNodes.includes(node) &&
+      (!stateOf(node) || stateOf(node) === 'base'),
+  );
 const fadeIn = (tl, ctx, p) => {
-  const nodes = allParts(ctx.beat).filter((n) => !ctx.skipParts.includes(n.dataset?.part));
+  if (ctx.role === 'step' && ctx.step) {
+    const states = allParts(ctx.beat).filter((node) => stateOf(node));
+    const next = states.filter((node) => stateOf(node) === ctx.step.name && !ctx.skipNodes.includes(node));
+    const other = states.filter((node) => stateOf(node) !== ctx.step.name && !ctx.skipNodes.includes(node));
+    if (!next.length && !other.length) return;
+    ctx.initial(next, { autoAlpha: 0 });
+    tl.to(other, { autoAlpha: 0, duration: p.duration }, 0);
+    tl.to(next, { autoAlpha: 1, duration: p.duration }, 0);
+    return;
+  }
+  const nodes = visibleParts(ctx);
+  if (!nodes.length) return;
   ctx.initial(nodes, { autoAlpha: 0 });
   tl.to(nodes, { autoAlpha: 1, duration: p.duration }, 0);
 };
@@ -68,8 +88,9 @@ export const ENGINE_MOVE_DEFS = Object.freeze([
 export function resolveTiming(conceptTiming = {}, deckTiming = {}) {
   return { ...ENGINE_TIMING_DEFAULTS, ...conceptTiming, ...deckTiming };
 }
-function defaultRef(b, role, concept) {
+function defaultRef(b, role, concept, isLast = false) {
   if (b[role]) return b[role];
+  if (role === 'exit' && isLast) return null;
   const id = concept.defaults?.byType?.[b.type]?.[role] ?? concept.defaults?.[role];
   return id
     ? { move: id }
@@ -118,7 +139,10 @@ export function plan(deck, env) {
         });
       t = s + l.duration;
     }
-    const enter = resolve(env.registry, defaultRef(b, 'enter', env.concept));
+    const sequence = b.type === 'sequence' ? env.sequences?.[b.use] : null;
+    const enter = sequence
+      ? { move: { id: `seq:${b.use}`, timing: () => sequence.timing(b.data) }, params: {}, at: 0 }
+      : resolve(env.registry, defaultRef(b, 'enter', env.concept));
     if (enter) {
       const e = timing(enter.move, enter.params, b);
       const es = Math.max(s, t + enter.at);
@@ -157,7 +181,7 @@ export function plan(deck, env) {
     }
     entry.end = holdEnd;
     if (!b.link) {
-      const exit = resolve(env.registry, defaultRef(b, 'exit', env.concept));
+      const exit = resolve(env.registry, defaultRef(b, 'exit', env.concept, i === deck.beats.length - 1));
       if (exit) {
         const x = timing(exit.move, exit.params, b);
         add(entry, 'exit', exit, holdEnd, holdEnd + x.duration);
@@ -194,6 +218,41 @@ export function plan(deck, env) {
 function typeFor(data, env) {
   return data.type === 'sequence' ? env.sequences?.[data.use] : env.beatTypes[data.type];
 }
+function addPartClasses(view, data) {
+  const prefix = data.type === 'sequence' ? `sl-seq-${data.use}` : `sl-${data.type}`;
+  for (const [part, nodes] of Object.entries(view.parts ?? {}))
+    for (const node of nodes) node.classList?.add(`${prefix}__${part}`);
+}
+function cameraTarget(data, previous) {
+  const world = data.place?.world;
+  if (!world) return previous;
+  const scale = world.s ?? 1;
+  return { x: world.x + 0.5 * scale, y: world.y + 0.5 * scale, s: 1 / scale, rx: 0, ry: 0 };
+}
+function fontForMask(beat, rect) {
+  const style = globalThis.getComputedStyle?.(beat.root);
+  const family = style?.getPropertyValue('--sl-font-display').trim() || style?.fontFamily || 'sans-serif';
+  const weight = style?.getPropertyValue('--sl-weight-display').trim() || style?.fontWeight || '700';
+  return { family, weight, size: Math.max(1, Math.min(rect.h, rect.w) || 1) };
+}
+function maskUrl(beat, text, options = {}) {
+  const rect = options.rect ?? beat.anchor('media').rect;
+  const { family, weight, size } = fontForMask(beat, rect);
+  let fontSize = size;
+  const canvas = globalThis.document?.createElement?.('canvas');
+  const context = canvas?.getContext?.('2d');
+  if (context) {
+    context.font = `${weight} ${fontSize}px ${family}`;
+    const width = context.measureText(text).width;
+    if (width > 0) fontSize *= (rect.w * 0.92) / width;
+  }
+  return textMask(text, {
+    font: `${weight} ${fontSize}px ${family}`,
+    width: rect.w,
+    height: rect.h,
+    align: options.align ?? 'center',
+  });
+}
 /** C6 builder; boot owns the asynchronous font-ready rebuild boundary. */
 export function build(map, env) {
   const { stage, deck, gsap } = env;
@@ -211,8 +270,12 @@ export function build(map, env) {
       el: env.el,
       words: env.words,
       chars: env.chars,
+      sources: env.sources ?? Object.fromEntries((deck.sources ?? []).map((source) => [source.id, source])),
+      mode: env.mode ?? 'live',
     });
     view.root.dataset.beat = data.id;
+    if (data.tone !== undefined) view.root.dataset.tone = String(data.tone);
+    addPartClasses(view, data);
     stage.placeBeat(view.root, data.place ?? { slot: 'center' });
     const m = map.beats.find((x) => x.id === data.id);
     const beat = {
@@ -224,58 +287,106 @@ export function build(map, env) {
       parts: view.parts,
       part: (name) => view.parts[name] ?? [],
       span: { start: m.start, stop: m.stop, end: m.end },
+      media: view.media ?? {},
     };
     beats.push(beat);
     byId.set(beat.id, beat);
   }
   const snapshot = measure(stage.root, beats, env.measureFn);
-  for (const b of beats) b.anchor = (part) => anchorOf(b, part, snapshot, typeFor(b.data, env).primary);
+  for (const b of beats)
+    b.anchor = (part, index = 0) => anchorOf(b, part, snapshot, typeFor(b.data, env).primary, index);
   const master = gsap.timeline({ paused: true, defaults: { ease: 'none' } });
+  const skips = new Map();
+  for (let i = 1; i < map.beats.length; i += 1) {
+    const m = map.beats[i];
+    const link = m.spans.find((span) => span.role === 'link');
+    if (!link) continue;
+    const from = beats[i - 1],
+      beat = beats[i],
+      move = env.registry.get(link.move);
+    const selected = move.handoff?.(link.params, { from: from.data, to: beat.data }) ?? {};
+    const fromChoice = selected.from ?? {};
+    const toChoice = selected.to ?? {};
+    const handoff = {
+      from: from.anchor(fromChoice.part, fromChoice.index),
+      to: beat.anchor(toChoice.part, toChoice.index),
+    };
+    const indexed = toChoice.index !== undefined;
+    skips.set(beat.id, {
+      handoff,
+      skipParts: indexed ? [] : [handoff.to.part],
+      skipNodes: indexed ? [handoff.to.node] : beat.part(handoff.to.part),
+    });
+  }
+  let lastCamera = { x: 0.5, y: 0.5, s: 1 };
   for (const m of map.beats)
     for (const s of m.spans) {
       const beat = byId.get(m.id);
-      const original = env.registry.get(s.move);
+      const index = deck.beats.findIndex((x) => x.id === m.id);
+      const sequence = beat.data.type === 'sequence' && s.role === 'enter' ? typeFor(beat.data, env) : null;
+      const original = sequence ?? env.registry.get(s.move);
       const fallback = env.reduce && original.reduce === 'fade';
       const move = fallback ? env.registry.get(REDUCE_FALLBACK[s.role]) : original;
       if (s.role === 'camera' && env.reduce && original.reduce !== 'self')
         throw new Error('camera move must reduce itself');
       const local = gsap.timeline();
-      const index = deck.beats.findIndex((x) => x.id === m.id);
       const from =
         s.role === 'link' ? byId.get(deck.beats[index - 1]?.id) : s.role === 'exit' ? beat : undefined;
+      const skip = skips.get(beat.id);
+      const camera = cameraTarget(beat.data, lastCamera);
+      if (s.role === 'camera') lastCamera = camera;
+      const ordinal = m.spans.filter(
+        (span, spanIndex) => spanIndex < m.spans.indexOf(s) && span.role === s.role,
+      ).length;
+      const overlay = stage.overlayFor(`${m.id}:${s.role}:${ordinal}:${s.move}`);
       const ctx = {
         gsap,
         plugins: env.plugins ?? {},
         role: s.role,
         beat,
         from,
+        prev: beats[index - 1],
+        next: beats[index + 1],
+        camera: s.role === 'camera' ? camera : undefined,
         stage,
         viewport: stage.viewport,
         reduce: !!env.reduce,
         start: s.start,
         duration: s.end - s.start,
-        skipParts: [],
-        overlay: stage.overlayFor(`${m.id}-${s.role}-${s.move}`),
+        skipParts: s.role === 'enter' || s.role === 'step' ? (skip?.skipParts ?? []) : [],
+        skipNodes: s.role === 'enter' || s.role === 'step' ? (skip?.skipNodes ?? []) : [],
+        step:
+          s.role === 'step'
+            ? {
+                name:
+                  beat.data.steps?.[m.spans.filter((x) => x.role === 'step').indexOf(s)]?.name ?? String(1),
+                index: m.spans.filter((x) => x.role === 'step').indexOf(s),
+              }
+            : undefined,
+        overlay,
         tokens: env.concept.tokens ?? {},
         ease: (n) => env.concept.eases?.[n] ?? n,
         initial: (nodes, vars) => initial.push([nodes, vars]),
         rng: createRng(hashSeed(`${deck.id}:${beat.id}:${s.role}:${move.id}`)),
+        textMask: (text, options) => maskUrl(beat, text, options),
       };
-      if (from && s.role === 'link') {
-        ctx.handoff = { from: from.anchor(), to: beat.anchor() };
-        ctx.skipParts = [ctx.handoff.to.part];
-      }
-      move.build(local, ctx, fallback ? { duration: ctx.duration } : s.params);
+      if (from && s.role === 'link') ctx.handoff = skip?.handoff;
+      if (sequence) sequence.build(local, ctx);
+      else move.build(local, ctx, fallback ? { duration: ctx.duration } : s.params);
       if (local.duration() > ctx.duration + 0.001)
         throw new Error(`${move.id} local timeline exceeds planned duration`);
       master.add(local, s.start);
+      gsap.set(overlay, { autoAlpha: 0 });
+      master.set(overlay, { autoAlpha: 1 }, s.start);
+      if (index < beats.length - 1 && !beat.data.persist)
+        master.set(overlay, { autoAlpha: 0 }, beat.span.end);
     }
   initial.forEach(([nodes, vars]) => gsap.set(nodes, vars));
   map.stops.forEach((stop) => master.addLabel(stop.label, stop.t));
   beats.forEach((b, i) => {
     gsap.set(b.root, { autoAlpha: 0 });
     master.set(b.root, { autoAlpha: 1 }, b.span.start);
-    if (i < beats.length - 1) master.set(b.root, { autoAlpha: 0 }, b.span.end);
+    if (i < beats.length - 1 && !b.data.persist) master.set(b.root, { autoAlpha: 0 }, b.span.end);
   });
   if (master.duration() < map.duration)
     master.to({}, { duration: map.duration - master.duration() }, master.duration());

@@ -1,4 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+vi.mock('./handoff.js', async (importOriginal) => {
+  const actual = await importOriginal();
+  return { ...actual, anchorOf: vi.fn(actual.anchorOf) };
+});
 import simple from './__fixtures__/decks/simple.json';
 import linked from './__fixtures__/decks/link.json';
 import rich from './__fixtures__/decks/steps-camera-ambient.json';
@@ -6,6 +10,7 @@ import { plan } from './timeline.js';
 import { build } from './timeline.js';
 import { createRegistry } from './registry.js';
 import { gsap } from 'gsap';
+import { anchorOf } from './handoff.js';
 
 const move = (id, role, duration = 1, stops = []) => ({
   id,
@@ -108,5 +113,120 @@ describe('plan', () => {
         measureFn: () => ({ x: 0, y: 0, w: 1, h: 1 }),
       }),
     ).toThrow(/exceeds/);
+  });
+
+  it('plans sequence enter spans and does not add a default exit to the final beat', () => {
+    const sequence = {
+      primary: 'ground',
+      timing: (data) => ({ duration: data.duration, stops: [{ name: 'inside', at: 0.25 }] }),
+      render: () => ({
+        root: document.createElement('section'),
+        parts: { ground: [document.createElement('i')] },
+      }),
+      build: () => {},
+    };
+    const deck = {
+      id: 'sequence',
+      lang: 'en',
+      beats: [{ id: 'atlas', type: 'sequence', use: 'atlas', data: { duration: 1 } }],
+    };
+    const map = plan(deck, { ...env, sequences: { atlas: sequence } });
+    expect(map.beats[0].spans).toEqual([{ role: 'enter', move: 'seq:atlas', start: 0, end: 1, params: {} }]);
+    expect(map.stops.map((stop) => stop.name)).toEqual(['atlas/inside', 'atlas']);
+  });
+
+  it('build supplies v2 view, handoff, camera, overlay, and persist behavior', () => {
+    const calls = [];
+    const handoff = {
+      ...move('handoff', 'link'),
+      handoff: () => ({ from: { part: 'block', index: 1 }, to: { part: 'block', index: 1 } }),
+      build: (_tl, ctx) => calls.push(ctx),
+    };
+    const entering = { ...move('enter-v2', 'enter'), build: (_tl, ctx) => calls.push(ctx) };
+    const stepping = { ...move('step-v2', 'step'), build: (_tl, ctx) => calls.push(ctx) };
+    const camera = { ...move('camera', 'camera'), build: (_tl, ctx) => calls.push(ctx) };
+    const leaving = move('exit-v2', 'exit');
+    const r = createRegistry([handoff, entering, stepping, leaving, camera]);
+    const deck = {
+      id: 'v2',
+      lang: 'en',
+      sources: [{ id: 's1', title: 'Source' }],
+      beats: [
+        {
+          id: 'a',
+          type: 'text',
+          place: { world: { x: 2, y: 1, s: 0.5 } },
+          persist: true,
+          enter: { move: 'engine:none' },
+          camera: { move: 'camera' },
+          link: { move: 'handoff' },
+        },
+        {
+          id: 'b',
+          type: 'text',
+          tone: 2,
+          enter: { move: 'enter-v2' },
+          steps: [{ name: 'next', move: 'step-v2' }],
+        },
+      ],
+    };
+    const map = plan(deck, { ...env, registry: r });
+    const root = document.createElement('div');
+    const overlays = [];
+    const stage = {
+      root,
+      viewport: { w: 100, h: 100 },
+      placeBeat: (node) => root.append(node),
+      overlayFor: (key) => {
+        const node = document.createElement('div');
+        node.dataset.overlay = key;
+        overlays.push(node);
+        return node;
+      },
+    };
+    const beatTypes = {
+      text: {
+        primary: 'block',
+        render: (_data, rc) => {
+          const node = document.createElement('section');
+          const parts = { block: [document.createElement('span'), document.createElement('span')] };
+          parts.block.forEach((part) => node.append(part));
+          expect(rc.sources.s1.title).toBe('Source');
+          expect(rc.mode).toBe('live');
+          return { root: node, parts, media: { seq: { fake: true } } };
+        },
+      },
+    };
+    const built = build(map, {
+      stage,
+      deck,
+      registry: r,
+      concept,
+      beatTypes,
+      gsap,
+      measureFn: () => ({ x: 0, y: 0, w: 1, h: 1 }),
+    });
+    expect(built.byId.get('b').root.dataset.tone).toBe('2');
+    expect(built.byId.get('a').media.seq.fake).toBe(true);
+    expect(built.byId.get('b').part('block')[0].className).toContain('sl-text__block');
+    const enterCtx = calls.find((ctx) => ctx.role === 'enter');
+    expect(enterCtx.skipParts).toEqual([]);
+    expect(enterCtx.skipNodes).toEqual([built.byId.get('b').part('block')[1]]);
+    expect(anchorOf).toHaveBeenCalledWith(expect.anything(), 'block', expect.any(Map), 'block', 1);
+    expect(enterCtx.prev.id).toBe('a');
+    expect(enterCtx.camera).toBeUndefined();
+    expect(calls.find((ctx) => ctx.role === 'step').step).toEqual({ name: 'next', index: 0 });
+    expect(calls.find((ctx) => ctx.role === 'camera').camera).toEqual({
+      x: 2.25,
+      y: 1.25,
+      s: 2,
+      rx: 0,
+      ry: 0,
+    });
+    expect(overlays.map((node) => node.dataset.overlay)).toEqual(
+      expect.arrayContaining(['b:step:0:step-v2']),
+    );
+    built.tl.pause(map.beats[0].end + 0.001);
+    expect(Number(gsap.getProperty(built.byId.get('a').root, 'opacity'))).toBe(1);
   });
 });

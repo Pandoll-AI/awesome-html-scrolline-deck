@@ -111,4 +111,43 @@ describe('move testing harness', () => {
     expect(result.timing.duration).toBe(1);
     expect(Number(result.ctx.gsap.getProperty(result.ctx.beat.part('block')[0], 'x'))).toBe(0);
   });
+
+  it('v2 rect index, media, and context fields are available to moves', () => {
+    const h = createHarness({
+      beats: [
+        {
+          id: 'a',
+          type: 'text',
+          data: {},
+          place: { world: { x: 2, y: 1, s: 0.5 } },
+          media: { seq: { id: 'fake' } },
+        },
+        { id: 'b', type: 'text', data: {} },
+      ],
+      rects: { 'a.block#0': { x: 0, y: 0, w: 10, h: 10 }, 'a.block#1': { x: 20, y: 0, w: 10, h: 10 } },
+    });
+    harnesses.push(h);
+    const select = {
+      ...link,
+      handoff: () => ({ from: { part: 'block', index: -1 }, to: { part: 'block', index: 0 } }),
+    };
+    const linked = h.runMove(select, { role: 'link', beat: 'b', from: 'a' });
+    const camera = h.runMove({ ...enter, role: 'camera' }, { role: 'camera', beat: 'a' });
+    const stepped = h.runMove(enter, {
+      role: 'step',
+      beat: 'b',
+      step: { name: 'reveal', index: 3 },
+      skipNodes: [h.beats.get('b').part('block')[0]],
+    });
+    expect(linked.ctx.handoff.from.index).toBe(1);
+    expect(linked.ctx.skipParts).toEqual([]);
+    expect(linked.ctx.skipNodes).toEqual([linked.ctx.handoff.to.node]);
+    expect(camera.ctx.camera).toEqual({ x: 2.25, y: 1.25, s: 2, rx: 0, ry: 0 });
+    expect(stepped.ctx.step).toEqual({ name: 'reveal', index: 3 });
+    expect(stepped.ctx.skipNodes).toHaveLength(1);
+    expect(h.beats.get('a').media.seq.id).toBe('fake');
+    expect(stepped.ctx.textMask('MASK', { rect: { x: 0, y: 0, w: 40, h: 20 } })).toMatch(
+      /^data:image\/svg\+xml/,
+    );
+  });
 });
