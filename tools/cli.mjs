@@ -12,11 +12,13 @@ const option = (args, name) => {
   return index < 0 ? undefined : args[index + 1];
 };
 
-export function deckTemplate(id, concept) {
+/** `layout` = 컨셉에 concepts/<id>/layout.css가 있으면 true(C11 v2.2, tokens.css 다음에 import). */
+export function deckTemplate(id, concept, layout = false) {
+  const layoutImport = layout ? `import '../../concepts/${concept}/layout.css';\n` : '';
   return {
     yaml: `id: ${id}\ntitle: "${id}"\nlang: ko\nconcept: ${concept}\nsample: false\nsources: []\nbeats: []\n`,
     html: `<!doctype html>\n<html lang="ko"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>${id}</title></head><body><div id="app"></div><script type="module" src="./main.js"></script></body></html>\n`,
-    main: `import { boot } from '../../engine/index.js';\nimport '../../engine/engine.css';\nimport moves from '../../moves/index.js';\nimport concept from '../../concepts/${concept}/index.js';\nimport '../../concepts/${concept}/tokens.css';\nimport deck from './deck.yaml';\n\nboot({ host: document.getElementById('app'), deck, concept, moves, assetBase: new URL("./", document.baseURI).href });\n`,
+    main: `import { boot } from '../../engine/index.js';\nimport '../../engine/engine.css';\nimport moves from '../../moves/index.js';\nimport concept from '../../concepts/${concept}/index.js';\nimport '../../concepts/${concept}/tokens.css';\n${layoutImport}import deck from './deck.yaml';\n\nboot({ host: document.getElementById('app'), deck, concept, moves, assetBase: new URL("./", document.baseURI).href });\n`,
   };
 }
 
@@ -24,7 +26,7 @@ export function createDeck(id, concept, root = ROOT) {
   if (!ID.test(id) || !ID.test(concept)) throw new Error('deck and concept ids must be lowercase kebab-case');
   const dir = path.join(root, 'decks', id);
   if (fs.existsSync(dir)) throw new Error(`Deck already exists: ${id}`);
-  const files = deckTemplate(id, concept);
+  const files = deckTemplate(id, concept, fs.existsSync(path.join(root, 'concepts', concept, 'layout.css')));
   fs.mkdirSync(path.join(dir, 'assets'), { recursive: true });
   for (const [name, body] of Object.entries(files))
     fs.writeFileSync(

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * npm run check = check-deps + check-tests + check-state + check-moves (+ --hat <range>면 check-hat).
+ * npm run check = check-deps + check-tests + check-state + check-moves + check-concepts (+ --hat <range>면 check-hat).
  * 하나라도 실패하면 exit 1. W3에서 check-moves, W5에서 check-diversity가 여기에 붙는다.
  */
 import path from 'node:path';
@@ -10,6 +10,7 @@ import { checkTests } from './check-tests.mjs';
 import { checkState } from './check-state.mjs';
 import { checkHat } from './check-hat.mjs';
 import { checkMoves } from './check-moves.mjs';
+import { checkConcepts } from './check-concepts.mjs';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
@@ -40,6 +41,13 @@ const moves = checkMoves(root);
 for (const x of moves.violations) console.log(`  ${x.rule} ${x.file} '${x.token}' ${x.message}`);
 console.log(`${moves.violations.length ? 'FAIL' : 'ok  '} moves  파일 ${moves.files}, 위반 ${moves.violations.length}`);
 fail += moves.violations.length;
+
+const concepts = checkConcepts(root);
+for (const x of concepts.violations) console.log(`  ${x.rule} ${x.file}${x.line ? `:${x.line}` : ''} '${x.token}' ${x.message}`);
+console.log(
+  `${concepts.violations.length ? 'FAIL' : 'ok  '} concepts 컨셉 ${concepts.concepts}, layout ${concepts.layouts}, 위반 ${concepts.violations.length}`,
+);
+fail += concepts.violations.length;
 
 const hatAt = args.indexOf('--hat');
 if (hatAt >= 0) {

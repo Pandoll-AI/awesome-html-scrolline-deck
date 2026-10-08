@@ -18,7 +18,7 @@ const RESOLVABLE_EXT = /\.(m?js|css|json|ya?ml|svg|png|jpe?g|webp|avif|mp4|woff2
 function isPublicEntry(rel, fromTest) {
   if (rel === 'engine/index.js' || rel === 'engine/engine.css' || rel === 'moves/index.js') return true;
   if (rel === 'engine/testing.js') return fromTest;
-  return /^concepts\/[^/]+\/(index\.js|tokens\.css)$/.test(rel);
+  return /^concepts\/[^/]+\/(index\.js|tokens\.css|layout\.css)$/.test(rel);
 }
 
 /** 외부 패키지 허용 위치(R5). true = 허용 */

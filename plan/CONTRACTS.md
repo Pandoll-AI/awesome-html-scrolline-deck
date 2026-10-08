@@ -38,6 +38,7 @@
 | `moves/<family>/index.js` | 그 family 잡 | family의 move 배열 export |
 | `moves/index.js` | 메인 | family index 묶음 + registry |
 | `concepts/<id>/{concept.json,tokens.css,index.js}` | W2 컨셉 잡(opus) → W3 | 컨셉 팩 |
+| `concepts/<id>/layout.css` (+ `layout.test.js`) | 그 컨셉(덱 통합 담당) | **v2.2** 컨셉 고유 배치 CSS(C11, #49). 선택 |
 | `decks/<id>/{deck.yaml,index.html,main.js,assets/,sequences/}` | W4 덱 잡 | 덱 |
 | `tools/check*.mjs` | 메인 | 게이트 |
 | `state/board.json`, `state/runs.jsonl` | 메인만 씀 | 상태 정본 |
@@ -55,7 +56,7 @@
 - **R2 공개 진입점만**: 다른 층에서 들어올 때 대상은 다음 중 하나여야 함.
   - `engine/index.js`, `engine/engine.css`, `engine/testing.js`(`*.test.js`에서만)
   - `moves/index.js`
-  - `concepts/<id>/index.js`, `concepts/<id>/tokens.css`
+  - `concepts/<id>/index.js`, `concepts/<id>/tokens.css`, `concepts/<id>/layout.css`(v2.2)
 - **R3 순환 금지**: 파일 단위 import 그래프 전체에 cycle 0.
 - **R4 형제 격리**: `concepts/a` ↛ `concepts/b`, `decks/a` ↛ `decks/b`, `moves/famA` ↛ `moves/famB`(`moves/_shared/`만 예외로 모든 family가 import 가능).
 - **R5 외부 패키지**:
@@ -502,6 +503,13 @@ validateSchema(schema, value, path) → Array<{ path: string, message: string }>
   - `slots`: `{ <slot>: { x?, y?, ax?, ay?, w? } }`(C8 v2). 기존 `{x, y}`만 쓴 컨셉은 그대로 유효하지만 `left`·`lower-third`의 기준점이 왼쪽 끝으로 바뀐다(이미 그렇게 의도한 값들: kinetic·data·rail·canvas·launch).
   - `tone`: tokens.css는 `.sl-concept-<id> [data-tone="N"] { … }`(N = 0..5)에서 위 표의 변수만 재정의할 수 있다(새 변수 금지). 정의 안 한 tone은 기본 색.
   - beat type별 기본 레이아웃 CSS는 engine.css가 맡는다(C4 v2 class 규칙, E2-2). tokens.css는 계속 변수만.
+- **v2.2 변경 (#49 layout.css)**: 컨셉 고유 배치는 `concepts/<id>/layout.css`(선택, 컨셉당 1개)에 둔다. engine.css는 모든 컨셉 공통 중립 기본값만(컨셉 범위·`[data-tone]`·`[data-now]` 배치 금지, `engine/engine-css.neutral.test.js`).
+  - 범위: 모든 선택자가 `.sl-concept-<id>`로 시작(`@media`·`@supports`·`@container` 안도 같음). `@keyframes` 이름은 `<id>-`로 시작. 그 밖 at-rule(`@import`·`@layer`·`@font-face` 등) 금지.
+  - 색: 값에 16진·색 함수(`rgb(` `hsl(` `oklch(` …)·색 이름 금지 → `var(--sl-*)`(tokens.css·tone이 정의)만. `transparent`·`currentColor`는 허용.
+  - 변수: `--sl-*` 정의 금지(tokens.css·엔진·렌더러 몫). 컨셉 고유 변수는 `--<id>-*`.
+  - `!important` 금지(move가 쓰는 inline 값을 이기면 안 됨). 렌더러가 내놓는 배치 변수(`--sl-position-x`·`--sl-span`·`--sl-now`·`--sl-lane`·`--sl-ratio` 등)는 읽기만.
+  - 덱 `main.js`는 그 컨셉에 layout.css가 있으면 `tokens.css` 다음 줄에 import, 다른 컨셉 layout.css는 import 금지. `tools/cli.mjs new`가 자동으로 넣는다.
+  - 강제: `tools/check-concepts.mjs`(`node tools/check.mjs`의 concepts 항목). 같은 type을 두 컨셉이 다르게 배치하려면 각자 layout.css로, 공통으로 필요한 구조(예: 숫자 릴 1em 창)만 engine.css.
 
 ---
 
@@ -660,7 +668,7 @@ Registry = { get(id): MoveDef /* 없으면 throw */, has(id): boolean, ids(): st
 | 명령 | 내용 | 통과 기준 |
 |---|---|---|
 | `npm test` | `vitest run` (환경 happy-dom, 대상 `{engine,moves,concepts,decks,tools}/**/*.test.{js,mjs}`) | 전부 녹색 |
-| `npm run check` | `node tools/check.mjs` = check-deps + check-tests(모듈마다 테스트) + check-state(board·runs 스키마) | exit 0 |
+| `npm run check` | `node tools/check.mjs` = check-deps + check-tests(모듈마다 테스트) + check-state(board·runs 스키마) + check-moves(C5·C10) + check-concepts(C11 layout.css, v2.2) | exit 0 |
 | `npm run ci` | `npm test && npm run check` | main 병합 조건 |
 | `npm install --cache /mnt/d/_cache/npm` | `.npmrc`의 `legacy-peer-deps=true` 전제(npm 10.9 arborist가 vitest 5·vite 8 peer 묶음에서 죽음) | 워커는 설치 금지, 메인만 |
 | `node tools/check.mjs --hat <base>..<head>` | 두 모자 검사 | feature: 테스트 파일 추가·수정 1개 이상 / refactor: 기존 `*.test.js` 수정 0(이름 변경만 허용) |

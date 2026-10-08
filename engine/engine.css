@@ -145,11 +145,6 @@
   color: var(--sl-fg);
   font-size: var(--sl-size-caption);
 }
-/* 시대 tone을 쓰는 덱(rail)의 영상 caption은 그 화면의 유일한 문장이라 L2 크기 */
-.sl-beat[data-tone] .sl-video__caption {
-  font-size: var(--sl-size-m);
-  line-height: 1.35;
-}
 .sl-video__credit {
   position: absolute;
   right: var(--sl-gutter);
@@ -218,56 +213,33 @@
   position: absolute;
 }
 
-/* tone이 있는 chronology 밖 beat(숫자·인용·영상): 시대 종이를 화면 전체에 깐다(chronology는 ground가 맡음). */
-.sl-beat[data-tone]:not(.sl-beat--chronology) {
-  background: var(--sl-bg);
-  box-shadow: 0 0 0 200vmax var(--sl-bg);
-}
-
-/* chronology(axis x) = 가로 레일. 레일 선은 화면 높이 66%, 사건은 날짜 비례(--sl-position-x) 위치에 점을 찍고
-   위로 줄기·제목·설명, 아래로 날짜·출처. `now`가 있으면 트랙이 「지금」 선에서 출발하고 길이 = 개월 × 64px,
-   없으면(전체 레일) 좌우 여백 안에 맞춘다. 크기는 1920 기준 px × --px. */
+/* chronology(axis x) 중립 기본값: 트랙 선은 화면 가운데, 사건은 날짜 비례(--sl-position-x) 자리에 점을 찍고
+   위로 줄기·제목·설명, 아래로 날짜·출처. 컨셉 고유 배치(레일 높이·길이·「지금」 출발·전체 레일 단 나누기 등)는
+   concepts/<id>/layout.css가 덮는다(C11). 크기는 1920 기준 px × --px. */
 .sl-chronology__track {
   position: absolute;
-  top: 66%;
+  top: 50%;
   left: var(--sl-gutter);
   width: calc(100% - 2 * var(--sl-gutter));
   height: 0;
   border-block-start: 1px solid var(--sl-rule);
 }
-[data-now] > .sl-chronology__track {
-  left: var(--sl-now);
-  width: calc(var(--sl-span) * 64 * var(--px) * 1px);
-  border: 0;
-}
-[data-now] > .sl-chronology__track::before {
-  position: absolute;
-  top: 0;
-  left: -200vw;
-  right: -200vw;
-  border-block-start: 1px solid var(--sl-rule);
-  content: '';
-}
 .sl-chronology__event {
   position: absolute;
-  bottom: calc(-9 * var(--px) * 1px);
-  left: calc(var(--sl-position-x) - 9 * var(--px) * 1px);
+  bottom: calc(-6 * var(--px) * 1px);
+  left: calc(var(--sl-position-x) - 6 * var(--px) * 1px);
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  width: calc(840 * var(--px) * 1px);
+  width: calc(480 * var(--px) * 1px);
   color: var(--sl-fg);
-}
-[data-now] :is(.sl-chronology__media, .sl-chronology__title, .sl-chronology__note) {
-  margin-inline-start: calc(24 * var(--px) * 1px);
 }
 .sl-chronology__media {
   order: 1;
-  outline: 1px solid var(--sl-rule);
   display: block;
-  width: calc(320 * var(--px) * 1px);
-  height: calc(180 * var(--px) * 1px);
-  margin-block-end: calc(28 * var(--px) * 1px);
+  width: calc(240 * var(--px) * 1px);
+  height: calc(135 * var(--px) * 1px);
+  margin-block-end: calc(16 * var(--px) * 1px);
   object-fit: cover;
 }
 .sl-chronology__title {
@@ -275,18 +247,16 @@
   margin: 0;
   color: var(--sl-fg);
   font-family: var(--sl-font-display);
-  font-size: var(--sl-size-l);
+  font-size: var(--sl-size-m);
   font-weight: var(--sl-weight-display);
   line-height: var(--sl-leading-display);
-  letter-spacing: var(--sl-tracking-display);
-  white-space: nowrap;
 }
 .sl-chronology__note {
   order: 3;
-  max-width: calc(840 * var(--px) * 1px);
-  margin: calc(16 * var(--px) * 1px) 0 0;
-  color: var(--sl-fg);
-  font-size: var(--sl-size-m);
+  max-width: calc(480 * var(--px) * 1px);
+  margin: calc(8 * var(--px) * 1px) 0 0;
+  color: var(--sl-fg-muted);
+  font-size: var(--sl-size-s);
   line-height: 1.35;
   word-break: keep-all;
 }
@@ -294,66 +264,55 @@
   order: 4;
   display: block;
   width: 0;
-  height: calc(150 * var(--px) * 1px);
-  margin-block-start: calc(24 * var(--px) * 1px);
-  margin-inline-start: calc(9 * var(--px) * 1px - 0.5px);
-  border-inline-start: 1px solid var(--sl-accent);
+  height: calc(64 * var(--px) * 1px);
+  margin-block-start: calc(16 * var(--px) * 1px);
+  margin-inline-start: calc(6 * var(--px) * 1px - 0.5px);
+  border-inline-start: 1px solid var(--sl-rule);
 }
 .sl-chronology__dot {
   order: 5;
   display: block;
-  width: calc(18 * var(--px) * 1px);
-  height: calc(18 * var(--px) * 1px);
-  border-radius: 50%;
-  background: var(--sl-accent);
-}
-.sl-chronology__event[data-weight='minor'] .sl-chronology__title {
-  font-size: var(--sl-size-m);
-}
-.sl-chronology__event[data-weight='minor'] .sl-chronology__stem {
-  height: calc(93 * var(--px) * 1px);
-}
-.sl-chronology__event[data-weight='minor'] .sl-chronology__dot {
   width: calc(12 * var(--px) * 1px);
   height: calc(12 * var(--px) * 1px);
-  margin-inline-start: calc(3 * var(--px) * 1px);
-  margin-block-end: calc(3 * var(--px) * 1px);
+  border-radius: 50%;
+  background: var(--sl-accent);
 }
 .sl-chronology__date,
 .sl-chronology__source {
   position: absolute;
-  left: calc(24 * var(--px) * 1px);
-  top: calc(100% + 18 * var(--px) * 1px);
+  left: 0;
+  top: calc(100% + 12 * var(--px) * 1px);
   color: var(--sl-fg-muted);
   font-family: var(--sl-font-mono);
   font-size: var(--sl-size-caption);
   white-space: nowrap;
 }
 .sl-chronology__source {
-  top: calc(100% + 46 * var(--px) * 1px);
+  top: calc(100% + 36 * var(--px) * 1px);
 }
 .sl-chronology__label {
   position: absolute;
-  top: calc(140 * var(--px) * 1px);
+  top: var(--sl-gutter);
   left: var(--sl-gutter);
   margin: 0;
   color: var(--sl-fg);
   font-family: var(--sl-font-display);
   font-size: var(--sl-size-m);
-  font-weight: 600;
+  font-weight: var(--sl-weight-display);
 }
 .sl-chronology__caption {
   position: absolute;
-  top: calc(66% + 40 * var(--px) * 1px);
+  top: calc(50% + 40 * var(--px) * 1px);
   right: var(--sl-gutter);
   margin: 0;
   color: var(--sl-fg-muted);
   font-family: var(--sl-font-mono);
   font-size: var(--sl-size-caption);
 }
+/* 숫자 릴: 자리마다 0–9 세로 스택을 1em 창으로 자른다(동작에 필요한 구조라 컨셉이 바꾸지 않는다). */
 .sl-chronology__counter {
   position: absolute;
-  top: calc(96 * var(--px) * 1px);
+  top: var(--sl-gutter);
   left: var(--sl-gutter);
   display: flex;
   align-items: flex-start;
@@ -362,7 +321,6 @@
   color: var(--sl-accent);
   font-family: var(--sl-font-mono);
   font-size: var(--sl-size-s);
-  font-weight: 700;
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
@@ -382,24 +340,19 @@
 }
 .sl-chronology__ghost {
   position: absolute;
-  top: calc(66% - 200 * var(--px) * 1px);
-  left: calc(
-    var(--sl-now, var(--sl-gutter)) + var(--sl-ratio, 0) * var(--sl-span) * 64 * var(--px) * 1px -
-      24 * var(--px) * 1px
-  );
+  top: calc(50% - 160 * var(--px) * 1px);
+  left: calc(var(--sl-gutter) + var(--sl-ratio, 0) * (100% - 2 * var(--sl-gutter)));
   color: var(--sl-fg);
-  opacity: 0.05;
+  opacity: 0.06;
   font-family: var(--sl-font-display);
-  font-size: calc(240 * var(--px) * 1px);
-  font-weight: 800;
+  font-size: var(--sl-size-xl);
+  font-weight: var(--sl-weight-display);
   line-height: 1;
-  letter-spacing: -0.04em;
 }
 .sl-chronology__now {
   position: absolute;
   inset-block: 0;
   border-inline-start: 1px solid var(--sl-accent);
-  opacity: 0.55;
 }
 .sl-chronology__tick {
   position: absolute;
@@ -413,52 +366,6 @@
 .sl-place-world.sl-beat--chronology {
   width: 100%;
   height: 100%;
-}
-.sl-beat--chronology:not([data-now]) .sl-chronology__ghost {
-  display: none;
-}
-
-/* 전체 레일(now 없음): 결론 문장이 L1, 주요 사건 제목만 3단 높이로, 설명·날짜·출처는 접는다. */
-.sl-beat--chronology:not([data-now]) .sl-chronology__label {
-  top: calc(150 * var(--px) * 1px);
-  max-width: calc(1500 * var(--px) * 1px);
-  font-size: calc(72 * var(--px) * 1px);
-  font-weight: var(--sl-weight-display);
-  line-height: 1.2;
-  letter-spacing: var(--sl-tracking-display);
-  word-break: keep-all;
-}
-.sl-beat--chronology:not([data-now]) .sl-chronology__event {
-  width: auto;
-  align-items: center;
-  left: calc(var(--sl-position-x) - 120 * var(--px) * 1px);
-  width: calc(240 * var(--px) * 1px);
-}
-.sl-beat--chronology:not([data-now]) .sl-chronology__title {
-  padding: 0 calc(6 * var(--px) * 1px);
-  background: var(--sl-bg);
-  font-size: var(--sl-size-s);
-}
-.sl-beat--chronology:not([data-now]) .sl-chronology__stem {
-  height: calc((56 + var(--sl-lane, 0) * 64) * var(--px) * 1px);
-  margin: calc(8 * var(--px) * 1px) 0 0;
-  border-color: var(--sl-rule);
-}
-.sl-beat--chronology:not([data-now]) .sl-chronology__event[data-weight='minor'] .sl-chronology__stem {
-  height: 0;
-  margin: 0;
-}
-.sl-beat--chronology:not([data-now]) .sl-chronology__dot {
-  margin: 0;
-}
-.sl-beat--chronology:not([data-now]) :is(.sl-chronology__note, .sl-chronology__date, .sl-chronology__source, .sl-chronology__media) {
-  display: none;
-}
-/* 양 끝 날짜만 남겨 10년의 처음과 끝을 읽게 한다. */
-.sl-beat--chronology:not([data-now]) .sl-chronology__event:is(:first-child, :last-child) .sl-chronology__date {
-  display: block;
-  left: 50%;
-  translate: -50% 0;
 }
 
 .sl-compare__item {
