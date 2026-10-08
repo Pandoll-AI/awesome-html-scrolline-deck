@@ -21,14 +21,7 @@
     "type": "steps(1)"
   },
   "beats": {
-    "allow": [
-      "text",
-      "prompt",
-      "video",
-      "number",
-      "quote",
-      "compare"
-    ]
+    "allow": ["text", "prompt", "video", "number", "quote", "compare"]
   },
   "moves": {
     "allow": [
@@ -59,11 +52,7 @@
       "engine:none",
       "mask-word-in"
     ],
-    "signature": [
-      "word-door",
-      "slot-pick",
-      "phrase-fold"
-    ]
+    "signature": ["word-door", "slot-pick", "phrase-fold"]
   },
   "defaults": {
     "enter": "tracking-close",
@@ -93,11 +82,13 @@
     },
     "left": {
       "x": 0.1,
-      "y": 0.46
+      "y": 0.36
     },
     "bottom": {
-      "x": 0.5,
-      "y": 0.72
+      "x": 0.1,
+      "y": 0.58,
+      "ax": 0,
+      "ay": 0.5
     },
     "full": {
       "x": 0.5,

@@ -3,6 +3,7 @@ import '../../engine/engine.css';
 import moves from '../../moves/index.js';
 import concept from '../../concepts/kinetic/index.js';
 import '../../concepts/kinetic/tokens.css';
+import '../../concepts/kinetic/layout.css';
 import deck from './deck.yaml';
 
 boot({

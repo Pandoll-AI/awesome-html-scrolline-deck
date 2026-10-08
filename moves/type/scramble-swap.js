@@ -29,10 +29,26 @@ export default {
       Math.max(2, Math.ceil((d * 0.5) / 0.05)),
       p.glyphs,
     );
+    // The wrong word is shorter or longer than the right one: close the line up around it so the
+    // first stop reads naturally, then let the line breathe back to its authored layout during the swap.
+    const original = node.textContent;
+    node.dataset.slText = to;
+    node.textContent = p.from;
+    const fromW = node.getBoundingClientRect?.().width || rect.w;
+    node.textContent = original;
+    const delta = rect.w - fromW;
+    const words = ctx.beat.part('word'),
+      sameLine = (i) => Math.abs(ctx.beat.anchor('word', i).rect.y - rect.y) < rect.h * 0.5;
+    const block = ctx.beat.part('block')[0];
+    const centred = block && globalThis.getComputedStyle?.(block).textAlign === 'center';
+    const shiftOf = (i) =>
+      i < p.word || i === p.word ? (centred ? delta / 2 : 0) : centred ? -delta / 2 : -delta;
+    const moved = words.map((w, i) => ({ w, i })).filter(({ w, i }) => w && sameLine(i) && shiftOf(i));
+    const x0 = rect.x + shiftOf(p.word);
     const svg = svgLayer(ctx),
-      stroke = line(svg, rect.x, rect.y + rect.h / 2, rect.x + rect.w, rect.y + rect.h / 2, {
+      stroke = line(svg, x0, rect.y + rect.h * 0.55, x0 + fromW, rect.y + rect.h * 0.55, {
         stroke: colorOf(ctx, 'accent'),
-        'stroke-width': 2,
+        'stroke-width': Math.max(3, rect.h * 0.05),
       });
     const proxy = { p: 0 };
     const paint = () => {
@@ -41,11 +57,22 @@ export default {
     ctx.initial(node, {
       autoAlpha: 1,
       color: colorOf(ctx, 'fg'),
-      minWidth: `${rect.w}px`,
       display: 'inline-block',
+      whiteSpace: 'nowrap',
+      // box + margin always = the right word's width, so the line never reflows while the text changes
+      width: fromW,
+      marginRight: rect.w - fromW,
     });
+    moved.forEach(({ w, i }) => ctx.initial(w, { x: shiftOf(i) }));
     ctx.initial(stroke, { scaleX: 0, transformOrigin: 'left center' });
     paint();
+    if (moved.length)
+      tl.to(
+        moved.map(({ w }) => w),
+        { x: 0, duration: d * 0.5, ease: ctx.ease('inout') },
+        d * 0.35,
+      );
+    tl.to(node, { width: rect.w, marginRight: 0, duration: d * 0.5, ease: ctx.ease('inout') }, d * 0.35);
     tl.to(stroke, { scaleX: 1, duration: d * 0.25, ease: ctx.ease('inout') }, 0);
     tl.to(node, { autoAlpha: 0.45, duration: d * 0.1, ease: ctx.ease('out') }, d * 0.25);
     tl.to(proxy, { p: 1, duration: d * 0.5, ease: 'none', onUpdate: paint }, d * 0.35);

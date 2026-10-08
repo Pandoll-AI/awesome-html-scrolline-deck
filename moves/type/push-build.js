@@ -18,14 +18,17 @@ export default {
     const d = p.duration,
       count = words.length,
       block = ctx.beat.anchor('block').rect;
-    const centers = words.map((_, i) => {
-      const rect = ctx.beat.anchor('word', i).rect;
-      return rect.x + rect.w / 2;
-    });
+    const rects = words.map((_, i) => ctx.beat.anchor('word', i).rect);
+    // Lines are centred on their own, so the half-built phrase is re-centred within its line only.
+    const lineOf = rects.map((r) => Math.round(r.y));
+    const center = block.x + block.w / 2;
     const groupShift = (last) => {
-      const used = centers.slice(0, last + 1);
-      return used.length ? block.x + block.w / 2 - (used[0] + used.at(-1)) / 2 : 0;
+      const used = rects.filter((_, i) => i <= last && lineOf[i] === lineOf[last]);
+      const lo = Math.min(...used.map((r) => r.x)),
+        hi = Math.max(...used.map((r) => r.x + r.w));
+      return used.length ? center - (lo + hi) / 2 : 0;
     };
+    const sameLine = (i) => words.filter((_, j) => j < i && lineOf[j] === lineOf[i]);
     const incoming = Math.min(d * 0.18, 0.18),
       interval = count > 1 ? (d * 0.85 - incoming) / (count - 1) : 0;
     words.forEach((node, i) => {
@@ -34,7 +37,8 @@ export default {
       ctx.initial(node, { x: centeredX + px(ctx, 80), autoAlpha: 0 });
       tl.to(node, { x: centeredX, autoAlpha: 1, duration: incoming, ease: ctx.ease('out') }, at);
       // All already placed words receive the same group translation at this beat.
-      if (i) tl.to(words.slice(0, i), { x: centeredX, duration: incoming, ease: ctx.ease('inout') }, at);
+      if (sameLine(i).length)
+        tl.to(sameLine(i), { x: centeredX, duration: incoming, ease: ctx.ease('inout') }, at);
       if (p.accentWords.includes(i)) {
         ctx.initial(node, { color: colorOf(ctx, 'fg') });
         tl.to(

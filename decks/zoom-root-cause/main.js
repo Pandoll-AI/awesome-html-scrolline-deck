@@ -11,4 +11,5 @@ boot({
   concept,
   moves,
   assetBase: new URL('./', document.baseURI).href,
+  mode: import.meta.env.SCROLLINE_MODE,
 });

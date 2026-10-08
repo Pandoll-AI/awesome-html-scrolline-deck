@@ -14,6 +14,8 @@ const scenario = (fold) => ({
     'a.word#2': { x: 270, y: 200, w: 90, h: 40 },
     'a.word#3': { x: 370, y: 200, w: 80, h: 40 },
     'b.block': { x: 600, y: 300, w: 300, h: 80 },
+    'b.word#0': { x: 600, y: 300, w: 140, h: 80 },
+    'b.word#1': { x: 760, y: 300, w: 140, h: 80 },
   },
   run: {
     role: 'link',

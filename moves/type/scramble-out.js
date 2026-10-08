@@ -19,7 +19,7 @@ export default {
     const d = p.duration,
       words = ctx.skipParts.includes('word') ? [] : ctx.beat.part('word');
     const nodes = words.length ? words : [block];
-    const originals = nodes.map((node) => node.textContent ?? '');
+    const originals = nodes.map((node) => node.dataset?.slText ?? node.textContent ?? '');
     const tables = originals.map((text) =>
       scrambleTable(ctx.rng, text.length, Math.max(2, Math.ceil((d * 0.75) / 0.05)), p.glyphs),
     );
@@ -29,7 +29,7 @@ export default {
         node.textContent = scrambleAt(originals[index], '', proxy.p, tables[index]);
       });
     ctx.initial(block, { autoAlpha: 1 });
-    paint();
+    // no paint at build: an earlier step (scramble-swap) may own the text before this exit starts
     if (!ctx.reduce) tl.to(proxy, { p: 1, duration: d * 0.75, ease: 'none', onUpdate: paint }, 0);
     tl.to(block, { autoAlpha: 0, duration: d * 0.4, ease: ctx.ease('in') }, d * 0.6);
     tl.call(

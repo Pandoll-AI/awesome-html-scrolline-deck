@@ -21,7 +21,7 @@ beats:
     mode: loop
     mask: { type: text, text: "AI" }
     place: { slot: full }
-    enter: { move: mask-word-in, params: { duration: 1.4 } }
+    enter: { move: glyph-rise, params: { duration: 1.4 } }
     repeat: intended
     steps:
       - { name: open, move: word-door, params: { split: 1, duration: 2.4 } }
@@ -39,14 +39,15 @@ beats:
     repeat: intended
     steps:
       - { name: answer, move: result-stream, params: { duration: 2.2 } }
-    link: { move: phrase-fold, params: { fromPart: result, toPart: block, keepFrom: 0, keepTo: 3, fold: right, caret: true } }
+    link: { move: phrase-fold, params: { fromPart: word, toPart: word, keepFrom: 0, keepTo: 3, fold: right, caret: true } }
     exportHold: 2.8
 
   # 3. 되감긴 앞부분 + 커서
   - id: b-rewind
     type: text
     text: "새로운 동료가 되신 것을"
-    size: m
+    lines: ["새로운 동료가 되신", "것을"]
+    size: l
     place: { slot: left }
     enter: { move: "engine:none" }
     ambient: [ { move: caret-blink, params: { after: -1 } } ]
@@ -58,7 +59,8 @@ beats:
   - id: b-pick1
     type: text
     text: "새로운 동료가 되신 것을 진심으로"
-    size: m
+    lines: ["새로운 동료가 되신", "것을 진심으로"]
+    size: l
     place: { slot: left }
     at: 0
     enter:
@@ -80,14 +82,15 @@ beats:
   - id: b-pick2
     type: text
     text: "새로운 동료가 되신 것을 진심으로 환영합니다"
-    size: m
+    lines: ["새로운 동료가 되신", "것을 진심으로 환영합니다"]
+    size: l
     place: { slot: left }
     at: 0
     enter:
       move: slot-pick
       params:
         word: 5
-        speed: 0.7
+        speed: 1.4
         candidates:
           - { word: "환영합니다", p: 71 }
           - { word: "축하드립니다", p: 13 }
@@ -106,8 +109,9 @@ beats:
     emphasis: ["다음 단어"]
     size: l
     place: { slot: center }
+    at: 0.6
     enter: { move: push-build, params: { accentWords: [0, 1] } }
-    link: { move: phrase-fold, params: { fromPart: word, toPart: block, keepFrom: 0, keepTo: 1, fold: both, appendIn: true } }
+    link: { move: phrase-fold, params: { fromPart: word, toPart: word, keepFrom: 0, keepTo: 1, fold: both, appendIn: true } }
     repeat: intended
 
   # 7. 강의 제목이 여기서 처음 뜸
@@ -127,6 +131,7 @@ beats:
     lines: ["이 확률은 수많은 글을 읽고", "맞춰 둔 숫자들이 계산한다"]
     size: l
     place: { slot: center }
+    at: 0.7
     enter: { move: tracking-close }
     exit: { move: sweep-out }
     repeat: intended
@@ -139,6 +144,7 @@ beats:
     label: "GPT-3(2020)가 다음 단어의 확률을 계산하는 데 쓰는 숫자, 파라미터"
     source: s1
     place: { slot: center }
+    at: 0.75
     enter: { move: count-roll }
     exit: { move: sweep-out }
     repeat: intended
@@ -151,6 +157,7 @@ beats:
     emphasis: ["그럴듯한"]
     size: xl
     place: { slot: center }
+    at: 0.75
     enter: { move: word-slam }
     steps:
       - { name: swap, move: scramble-swap, params: { word: 1, from: "맞는" } }
@@ -163,6 +170,7 @@ beats:
     label: "같은 글을 다섯 번 보냈다"
     text: "신입사원 환영 메일 첫 문장을 한 문장만 써 줘. 설명 없이 문장만."
     place: { slot: bottom }
+    at: 0.7
     enter: { move: type-on, params: { speed: 60 } }
     repeat: intended
     link: { move: field-burst }
@@ -198,6 +206,7 @@ beats:
     lines: ["맥락을 먼저 준다", "사실은 따로 확인한다", "여러 번 받아 보고 고른다"]
     size: l
     place: { slot: center }
+    at: 0.6
     enter: { move: line-focus, params: { perLine: 1.1 } }
     exit: { move: half-split }
     repeat: intended
@@ -213,6 +222,7 @@ beats:
     mode: loop
     mask: { type: text, text: "다음" }
     place: { slot: full }
-    enter: { move: mask-word-in, params: { duration: 1.4 } }
+    at: 0.7
+    enter: { move: glyph-rise, params: { duration: 1.6, maskScale: 0.6, maskY: 0.42 } }
     repeat: intended
     exportHold: 3.0

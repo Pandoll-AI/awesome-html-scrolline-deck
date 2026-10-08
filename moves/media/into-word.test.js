@@ -9,7 +9,8 @@ const scenario = {
   ],
   rects: { 'a.frame': { x: 0, y: 0, w: 400, h: 200 }, 'b.word#0': { x: 200, y: 300, w: 80, h: 30 } },
   run: { role: 'link', from: 'a', beat: 'b', params: { duration: 1.6, word: 0 } },
-  carry: (h, ctx) => ctx.overlay.querySelector('[data-sl-rect]'),
+  // the frame is clipped in place onto the word (no carried copy), so no carry rect to compare
+  carry: null,
 };
 it('meets the link contract and lands on the target word', () => {
   expect(checkMove(move, scenario, createHarness)).toEqual([]);

@@ -32,7 +32,7 @@ describe('kinetic-next-word deck', () => {
     const map = plan(deck, env);
     expect({ stops: map.stops.length, duration: Number(map.duration.toFixed(1)) }).toEqual({
       stops: 24,
-      duration: 49.1,
+      duration: 51.1,
     });
   });
 

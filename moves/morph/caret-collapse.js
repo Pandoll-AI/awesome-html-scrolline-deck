@@ -1,8 +1,10 @@
-/** Collapses a source frame into the receiving prompt caret. */
+/**
+ * Collapses a full-bleed frame into the receiving prompt caret: the footage narrows to a vertical
+ * slit, the slit turns into an accent bar, and the bar shrinks onto the spot where typing starts.
+ */
 import { transferVars } from '../../engine/index.js';
 import { colorOf } from '../_shared/color.js';
 import { finishLink } from '../_shared/link.js';
-import { seg } from '../_shared/timeline.js';
 
 export default {
   id: 'caret-collapse',
@@ -22,63 +24,63 @@ export default {
   build(tl, ctx, p) {
     const { from, to } = ctx.handoff,
       d = p.duration,
-      part = (a, b) => ({ duration: d * (b - a) }),
       field = ctx.beat.part('field'),
       label = ctx.beat.part('label');
-    const shade = document.createElement('i');
-    shade.className = 'sl-caret-collapse__ink';
-    ctx.overlay.append(shade);
-    Object.assign(shade.style, {
+    // Where the caret waits before the first character is typed (falls back to the caret itself).
+    const first = ctx.beat.part('char').length ? ctx.beat.anchor('char', 0).rect : null;
+    const caretH = (first ?? to.rect).h * 0.86;
+    const land = first
+      ? { x: first.x, y: first.y + first.h * 0.07, w: Math.max(2, to.rect.w), h: caretH }
+      : to.rect;
+    const slit = Math.max(4, from.rect.w * 0.004);
+    const bar = document.createElement('i');
+    bar.className = 'sl-caret-collapse__bar';
+    ctx.overlay.append(bar);
+    Object.assign(bar.style, {
       position: 'absolute',
-      left: `${from.rect.x}px`,
-      top: `${from.rect.y}px`,
-      width: `${from.rect.w}px`,
-      height: `${from.rect.h}px`,
+      left: '0px',
+      top: '0px',
+      width: '1px',
+      height: '1px',
       backgroundColor: colorOf(ctx, 'accent'),
+      transformOrigin: '0 0',
     });
+    const barAt = (r) => ({ x: r.x, y: r.y, scaleX: r.w, scaleY: r.h });
+    const slitRect = {
+      x: from.rect.x + from.rect.w / 2 - slit / 2,
+      y: from.rect.y,
+      w: slit,
+      h: from.rect.h,
+    };
     ctx.initial(from.node, {
-      clipPath: 'inset(0% 0% 0% 0%)',
+      clipPath: 'inset(0px 0px 0px 0px)',
       transformOrigin: '0 0',
       filter: 'brightness(1)',
       autoAlpha: 1,
     });
-    ctx.initial(shade, { autoAlpha: 0, transformOrigin: '0 0' });
-    ctx.initial(to.node, { autoAlpha: 0 });
+    ctx.initial(bar, { autoAlpha: 0, ...barAt(slitRect) });
     if (field.length) ctx.initial(field, { scaleX: 0, transformOrigin: '0 50%' });
     if (label.length) ctx.initial(label, { autoAlpha: 0 });
+    const side = (from.rect.w - slit) / 2;
     tl.to(
       from.node,
       {
-        clipPath: 'inset(0% calc(50% - 3px) 0% calc(50% - 3px))',
-        filter: 'brightness(0.6)',
-        ...part(0, 0.4),
+        clipPath: `inset(0px ${side}px 0px ${side}px)`,
+        filter: 'brightness(0.7)',
+        duration: d * 0.42,
         ease: ctx.ease('inout'),
       },
       0,
     );
-    tl.to(
-      shade,
-      {
-        autoAlpha: 1,
-        height: to.rect.h,
-        y: to.point.y - from.rect.y - to.rect.h / 2,
-        ...part(0.35, 0.55),
-        ease: ctx.ease('inout'),
-      },
-      d * 0.35,
-    );
-    tl.to(
-      from.node,
-      { ...transferVars(from.rect, to.rect), ...part(0.55, 0.85), ease: ctx.ease('inout') },
-      d * 0.55,
-    );
-    tl.to(
-      shade,
-      { ...transferVars(from.rect, to.rect), ...part(0.55, 0.85), ease: ctx.ease('inout') },
-      d * 0.55,
-    );
-    if (field.length) tl.to(field, { scaleX: 1, ...part(0.55, 0.85), ease: ctx.ease('out') }, d * 0.55);
-    if (label.length) tl.to(label, { autoAlpha: 1, ...part(0.85, 1), ease: ctx.ease('out') }, d * 0.85);
-    finishLink(tl, ctx, { at: d, cross: Math.min(0.15, d * 0.15), from: [from.node, shade] });
+    tl.to(bar, { autoAlpha: 1, duration: d * 0.1, ease: ctx.ease('out') }, d * 0.36);
+    tl.set(from.node, { autoAlpha: 0 }, d * 0.46);
+    tl.to(bar, { ...barAt(land), duration: d * 0.38, ease: ctx.ease('inout') }, d * 0.48);
+    // The footage node itself is carried onto the caret (invisible by now) so the handoff closes.
+    const { transformOrigin, ...carry } = transferVars(from.rect, to.rect);
+    tl.set(from.node, { ...carry, clipPath: 'inset(0px 0px 0px 0px)' }, d * 0.47);
+    if (field.length) tl.to(field, { scaleX: 1, duration: d * 0.3, ease: ctx.ease('out') }, d * 0.6);
+    if (label.length) tl.to(label, { autoAlpha: 1, duration: d * 0.14, ease: ctx.ease('out') }, d * 0.84);
+    tl.set(bar, { autoAlpha: 0 }, d);
+    finishLink(tl, ctx, { at: d, cross: Math.min(0.08, d * 0.06), from: [from.node] });
   },
 };

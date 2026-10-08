@@ -1,8 +1,6 @@
-/** Stream prompt-result words through an overlay, leaving the authored result intact. */
+/** Stream the prompt's answer word by word in place; the prompt recedes, a caret rides the last word. */
 import { colorOf } from '../_shared/color.js';
-import { ghost } from '../_shared/link.js';
 import { slots } from '../_shared/timeline.js';
-import { ghostWords } from '../_shared/words.js';
 
 export default {
   id: 'result-stream',
@@ -19,59 +17,58 @@ export default {
   build(tl, ctx, p) {
     const result = ctx.skipParts.includes('result') ? [] : ctx.beat.part('result');
     if (!result.length) return;
-    const source = result[0],
-      rect = ctx.beat.anchor('result').rect;
-    const words = ctx.beat.part('word').length ? ctx.beat.part('word') : ghostWords(ctx, source, rect);
-    const overlayWords = words.map((word) =>
-      word.parentElement === ctx.overlay ? word : ghost(ctx, word, rect),
+    const words = ctx.skipParts.includes('word') ? [] : ctx.beat.part('word');
+    const d = p.duration,
+      fg = colorOf(ctx, 'fg'),
+      accent = colorOf(ctx, 'accent');
+    const prompt = ['char', 'label'].flatMap((name) =>
+      ctx.skipParts.includes(name) ? [] : ctx.beat.part(name),
     );
+    // The question steps back so the answer is the only thing moving.
+    tl.to(prompt, { color: colorOf(ctx, 'fg-muted'), duration: d * 0.12, ease: ctx.ease('out') }, 0);
+    tl.to(ctx.beat.part('caret'), { autoAlpha: 0, duration: d * 0.06 }, 0);
+    if (!words.length) {
+      tl.fromTo(
+        result,
+        { autoAlpha: 0 },
+        { autoAlpha: 1, duration: d * 0.9, ease: ctx.ease('out'), immediateRender: false },
+        0,
+      );
+      return;
+    }
+    const rects = words.map((_, i) => ctx.beat.anchor('word', i).rect);
     const caret = document.createElement('i');
     caret.className = 'sl-result-stream__caret';
-    caret.textContent = '▍';
     Object.assign(caret.style, {
       position: 'absolute',
-      left: `${rect.x}px`,
-      top: `${rect.y}px`,
-      color: colorOf(ctx, 'accent'),
+      left: '0px',
+      top: '0px',
+      width: `${Math.max(2, rects[0].h * 0.05)}px`,
+      height: `${rects[0].h * 0.8}px`,
+      background: accent,
     });
     ctx.overlay.append(caret);
-    ctx.initial(source, { autoAlpha: 0 });
-    ctx.initial(overlayWords, { autoAlpha: 0, color: colorOf(ctx, 'fg') });
-    ctx.initial(caret, { autoAlpha: 1 });
-    const times = slots(overlayWords.length, {
-      start: 0,
-      span: p.duration * 0.9,
+    const caretAt = (r) => ({ x: r.x + r.w + r.h * 0.1, y: r.y + r.h * 0.12 });
+    // type-on keeps the result hidden until this step; the step only reveals the box, words come one by one
+    // (words are hidden by a set, not an initial: a following link may own their resting state)
+    tl.set(result, { autoAlpha: 1 }, 0);
+    tl.set(words, { autoAlpha: 0, y: rects[0].h * 0.12, color: fg }, 0);
+    ctx.initial(caret, { autoAlpha: 0, x: rects[0].x, y: rects[0].y + rects[0].h * 0.12 });
+    tl.set(caret, { autoAlpha: 1 }, d * 0.04);
+    const times = slots(words.length, {
+      start: d * 0.06,
+      span: d * 0.74,
       compress: p.compress,
       minRatio: 0.4,
     });
-    overlayWords.forEach((node, i) => {
+    const pop = Math.min(0.12, d * 0.06);
+    words.forEach((node, i) => {
       const at = times[i].at;
-      tl.to(
-        node,
-        {
-          autoAlpha: 1,
-          color: colorOf(ctx, 'accent'),
-          duration: Math.min(0.04, p.duration * 0.04),
-          ease: ctx.ease('out'),
-        },
-        at,
-      );
-      if (i)
-        tl.to(
-          overlayWords[i - 1],
-          { color: colorOf(ctx, 'fg'), duration: Math.min(0.08, p.duration * 0.08), ease: ctx.ease('out') },
-          at,
-        );
-      const anchor = ctx.beat.anchor('word', Math.min(i, ctx.beat.part('word').length - 1)).rect;
-      tl.set(caret, { x: anchor.x + anchor.w - rect.x }, at);
+      tl.to(node, { autoAlpha: 1, y: 0, color: accent, duration: pop, ease: ctx.ease('out') }, at);
+      if (i) tl.to(words[i - 1], { color: fg, duration: pop, ease: ctx.ease('out') }, at);
+      tl.set(caret, caretAt(rects[i]), at);
     });
-    if (overlayWords.length)
-      tl.to(
-        overlayWords.at(-1),
-        { color: colorOf(ctx, 'fg'), duration: Math.min(0.08, p.duration * 0.08), ease: ctx.ease('out') },
-        p.duration * 0.9,
-      );
-    tl.set(overlayWords, { autoAlpha: 0 }, p.duration);
-    tl.set(source, { autoAlpha: 1 }, p.duration);
+    // Only the last word keeps the accent; the caret blinks off before the fold.
+    tl.to(caret, { autoAlpha: 0, duration: d * 0.04 }, d * 0.9);
   },
 };
