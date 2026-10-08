@@ -39,3 +39,14 @@ it('accepts --out for a run that must not overwrite the deck owner shots', () =>
   expect(parseArgs(['rail-ai-decade', '--shots', '--out', '/tmp/x'])).toMatchObject({ out: '/tmp/x', driver: 'chrome' });
   expect(parseArgs(['rail-ai-decade']).out).toBeNull();
 });
+
+// 회귀(canvas 통합): 부팅이 15초를 넘으면 맨 engine.boot로 대신 띄워 덱의 sequences가 빠져 검증 실패했다.
+it('waits for the page boot and retries main.js instead of a bare engine boot', async () => {
+  const { probeSource, BOOT_WAIT_MS } = await import('./smoke.mjs');
+  const src = probeSource('canvas-pitch');
+  expect(BOOT_WAIT_MS).toBeGreaterThanOrEqual(60000);
+  expect(src).toContain(`const BOOT_WAIT_MS = ${BOOT_WAIT_MS};`);
+  expect(src).toContain("'/decks/' + DECK + '/main.js'");
+  expect(src).not.toContain('engine.boot(');
+  expect(() => new Function(src)).not.toThrow();
+});

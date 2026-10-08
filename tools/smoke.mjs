@@ -20,6 +20,8 @@ const DECK_ID = /^_?[a-z0-9][a-z0-9-]*$/;
 export const usage =
   'node tools/smoke.mjs <deckId> [--port 5190] [--host localhost] [--shots] [--driver aside|chrome] [--out dir]';
 export const SHEET_COLUMNS = 6;
+/** How long the probe waits for the page's own boot (vite module loading under load took 20–48 s). */
+export const BOOT_WAIT_MS = 60000;
 
 /** @param {string[]} argv */
 export function parseArgs(argv) {
@@ -96,16 +98,14 @@ export function probeSource(deckId) {
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const frame = () => new Promise((r) => { const t = setTimeout(r, 120); requestAnimationFrame(() => { clearTimeout(t); r(); }); });
   const DECK = ${JSON.stringify(deckId)};
-  async function manualBoot() {
+  const BOOT_WAIT_MS = ${BOOT_WAIT_MS};
+  // The page's own main.js boots the deck (with its sequences and layout CSS). If window.__deck is still missing
+  // after the wait, import main.js again: a module that failed rethrows its error here, so the report shows it.
+  async function retryMain(waitMs) {
     const load = new Function('u', 'return im' + 'port(u)');
-    const O = location.origin;
-    const [engine, moves, concept, deck] = await Promise.all(
-      ['/engine/index.js', '/moves/index.js', null, '/decks/' + DECK + '/deck.yaml'].map((u) => u && load(O + u)),
-    );
-    const c = await load(O + '/concepts/' + deck.default.concept + '/index.js');
-    const host = document.getElementById('app');
-    host.innerHTML = '';
-    await engine.boot({ host, deck: deck.default, concept: c.default, moves: moves.default, assetBase: '/decks/' + DECK + '/' });
+    await load(location.origin + '/decks/' + DECK + '/main.js');
+    const until = Date.now() + waitMs;
+    while (!window.__deck && Date.now() < until) await sleep(150);
   }
   function opacityOf(el) {
     let o = 1;
@@ -191,12 +191,15 @@ export function probeSource(deckId) {
   }
   window.__smoke = {
     pageErrors,
-    async boot(waitMs = 9000) {
+    async boot(waitMs = BOOT_WAIT_MS) {
       const until = Date.now() + waitMs;
       while (!window.__deck && Date.now() < until) await sleep(150);
       if (!window.__deck) {
-        try { await manualBoot(); } catch (e) { return { bootError: String(e?.stack || e) }; }
-        if (!window.__deck) return { bootError: 'boot() returned without window.__deck' };
+        try { await retryMain(waitMs / 2); } catch (e) { return { bootError: String(e?.stack || e) }; }
+        if (!window.__deck) {
+          const last = pageErrors.at(-1);
+          return { bootError: 'window.__deck missing after ' + Math.round((waitMs * 1.5) / 1000) + 's' + (last ? ': ' + last : '') };
+        }
       }
       await (document.fonts?.ready ?? Promise.resolve());
       await sleep(600);
@@ -267,7 +270,7 @@ try {
   // openTab can return while the tab is still about:blank (origin "null"); wait for the deck URL.
   for (let i = 0; i < 60 && !String(await smokeTab.evaluate(() => location.href).catch(() => '')).startsWith('http'); i += 1) await sleep(250);
   await smokeTab.evaluate(${JSON.stringify(probeSource(opts.deck))});
-  const smokeBoot = await smokeTab.evaluate(() => window.__smoke.boot(15000));
+  const smokeBoot = await smokeTab.evaluate(() => window.__smoke.boot());
   const smokeOut = { ...smokeBoot, stops: [] };
   if (!smokeBoot.bootError) {
     for (let i = 0; i < smokeBoot.stops.length; i += 1) smokeOut.stops.push(await smokeTab.evaluate((n) => window.__smoke.at(n), i));
@@ -373,7 +376,7 @@ async function runChrome(opts, outDir) {
     while (Date.now() < until && (await cdp.evaluate('document.readyState').catch(() => '')) !== 'complete')
       await new Promise((r) => setTimeout(r, 200));
     await cdp.evaluate(probeSource(opts.deck));
-    const boot = await cdp.evaluate('window.__smoke.boot(15000)');
+    const boot = await cdp.evaluate('window.__smoke.boot()');
     const out = { ...boot, stops: [] };
     if (!boot.bootError) {
       for (let i = 0; i < boot.stops.length; i += 1) {
