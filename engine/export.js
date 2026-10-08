@@ -1,7 +1,8 @@
-/**
- * @stub W2-E7 구현 대상. 구현 시 이 줄 삭제 + export.test.js 작성
- * 덱 → MP4 발표 경로(CONTRACTS C14). 기본값 = constants.EXPORT_DEFAULTS.
- */
+/** 덱 → MP4 발표 경로(CONTRACTS C14). */
+import { EXPORT_DEFAULTS } from './constants.js';
+
+const finite = (value, fallback) => (Number.isFinite(value) ? value : fallback);
+const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
 /**
  * 순수. lead → (travel → hold)* → travel → tail.
@@ -11,7 +12,48 @@
  * @returns {import('./types.js').ExportPath}
  */
 export function exportPath(map, opts, holds) {
-  throw new Error('TODO(E7): exportPath');
+  if (!map || !Number.isFinite(map.duration) || map.duration < 0 || !Array.isArray(map.stops)) {
+    throw new TypeError('exportPath requires a TimelineMap with duration and stops');
+  }
+  const options = { ...EXPORT_DEFAULTS, ...opts };
+  const segments = [];
+  const stopAt = {};
+  let clock = 0;
+  let position = 0;
+  const add = (kind, from, to, seconds) => {
+    const start = clock;
+    const end = start + seconds;
+    segments.push({ kind, from, to, start, end });
+    clock = end;
+  };
+
+  add('lead', 0, 0, Math.max(0, finite(options.lead, EXPORT_DEFAULTS.lead)));
+  for (const stop of map.stops) {
+    const target = finite(stop.t, position);
+    if (target < position) throw new RangeError(`TimelineMap stops must be ascending: ${stop.name}`);
+    if (target !== position) {
+      const seconds = clamp(
+        (target - position) * options.secondsPerUnit,
+        options.travelMin,
+        options.travelMax,
+      );
+      add('travel', position, target, seconds);
+    }
+    const hold = Math.max(0, finite(holds?.[stop.name], options.stopHold));
+    stopAt[stop.name] = clock + hold / 2;
+    add('hold', target, target, hold);
+    position = target;
+  }
+  if (map.duration !== position) {
+    const seconds = clamp(
+      Math.abs(map.duration - position) * options.secondsPerUnit,
+      options.travelMin,
+      options.travelMax,
+    );
+    add('travel', position, map.duration, seconds);
+  }
+  add('tail', map.duration, map.duration, Math.max(0, finite(options.tail, EXPORT_DEFAULTS.tail)));
+  return { duration: clock, segments, stopAt };
 }
 
 /**
@@ -22,7 +64,23 @@ export function exportPath(map, opts, holds) {
  * @returns {object}
  */
 export function buildExportTimeline(master, path, gsap) {
-  throw new Error('TODO(E7): buildExportTimeline');
+  if (!master?.tweenFromTo || !gsap?.timeline) throw new TypeError('master and gsap timeline are required');
+  const wrapper = gsap.timeline({ paused: true });
+  for (const segment of path.segments) {
+    // Holds are deliberately timeline gaps: an empty tween would make their
+    // static state dependent on a synthetic target. Lead/tail are real master
+    // tweens at a fixed time, which also makes the wrapper seekable through
+    // the path's full advertised duration.
+    if (segment.kind === 'hold' || segment.end <= segment.start) continue;
+    wrapper.add(
+      master.tweenFromTo(segment.from, segment.to, {
+        duration: segment.end - segment.start,
+        ease: EXPORT_DEFAULTS.ease,
+      }),
+      segment.start,
+    );
+  }
+  return wrapper;
 }
 
 /**
@@ -32,5 +90,20 @@ export function buildExportTimeline(master, path, gsap) {
  * @returns {number}
  */
 export function toExportSeconds(path, t) {
-  throw new Error('TODO(E7): toExportSeconds');
+  const segments = path?.segments ?? [];
+  if (!segments.length) return 0;
+  const time = finite(t, 0);
+  for (const segment of segments) {
+    if (segment.kind === 'hold' && time === segment.from) return segment.start;
+    if (segment.kind === 'travel') {
+      const lo = Math.min(segment.from, segment.to);
+      const hi = Math.max(segment.from, segment.to);
+      if (time >= lo && time <= hi) {
+        const ratio = segment.from === segment.to ? 0 : (time - segment.from) / (segment.to - segment.from);
+        return segment.start + ratio * (segment.end - segment.start);
+      }
+    }
+  }
+  if (time <= segments[0].from) return 0;
+  return path.duration;
 }

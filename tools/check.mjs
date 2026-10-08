@@ -16,17 +16,23 @@ let fail = 0;
 
 const deps = checkDeps(root);
 for (const x of deps.violations) console.log(`  ${x.rule} ${x.file} '${x.spec}' ${x.message}`);
-console.log(`${deps.violations.length ? 'FAIL' : 'ok  '} deps   파일 ${deps.files}, 간선 ${deps.edges}, 위반 ${deps.violations.length}`);
+console.log(
+  `${deps.violations.length ? 'FAIL' : 'ok  '} deps   파일 ${deps.files}, 간선 ${deps.edges}, 위반 ${deps.violations.length}`,
+);
 fail += deps.violations.length;
 
 const tests = checkTests(root);
 for (const m of tests.missing) console.log(`  테스트 없음: ${m}`);
-console.log(`${tests.missing.length ? 'FAIL' : 'ok  '} tests  모듈 ${tests.checked}, 스텁 ${tests.stubs.length}, 누락 ${tests.missing.length}`);
+console.log(
+  `${tests.missing.length ? 'FAIL' : 'ok  '} tests  모듈 ${tests.checked}, 스텁 ${tests.stubs.length}, 누락 ${tests.missing.length}`,
+);
 fail += tests.missing.length;
 
 const state = checkState(root);
 for (const m of [...state.board, ...state.runs]) console.log(`  ${m}`);
-console.log(`${state.board.length + state.runs.length ? 'FAIL' : 'ok  '} state  board 오류 ${state.board.length}, runs ${state.runLines}줄 오류 ${state.runs.length}`);
+console.log(
+  `${state.board.length + state.runs.length ? 'FAIL' : 'ok  '} state  board 오류 ${state.board.length}, runs ${state.runLines}줄 오류 ${state.runs.length}`,
+);
 fail += state.board.length + state.runs.length;
 
 const hatAt = args.indexOf('--hat');

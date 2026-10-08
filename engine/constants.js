@@ -15,7 +15,17 @@ export const ROLES = Object.freeze(['enter', 'exit', 'link', 'step', 'camera', '
 
 /** beat type(C4) */
 export const BEAT_TYPES = Object.freeze([
-  'text', 'photo', 'video', 'number', 'chart', 'chronology', 'compare', 'quote', 'prompt', 'code', 'sequence',
+  'text',
+  'photo',
+  'video',
+  'number',
+  'chart',
+  'chronology',
+  'compare',
+  'quote',
+  'prompt',
+  'code',
+  'sequence',
 ]);
 
 /** 화면 slot(C8) */
@@ -23,15 +33,33 @@ export const SLOTS = Object.freeze(['center', 'left', 'right', 'top', 'bottom', 
 
 /** move family. 'engine'은 내장 move 전용(C6) */
 export const FAMILIES = Object.freeze([
-  'reveal', 'type', 'morph', 'camera', 'rail', 'data', 'media', 'assemble', 'emphasis', 'engine',
+  'reveal',
+  'type',
+  'morph',
+  'camera',
+  'rail',
+  'data',
+  'media',
+  'assemble',
+  'emphasis',
+  'engine',
 ]);
 
 /** 내장 move id(C6). registry가 항상 포함 */
-export const ENGINE_MOVES = Object.freeze(['engine:fade-in', 'engine:fade-out', 'engine:crossfade', 'engine:none']);
+export const ENGINE_MOVES = Object.freeze([
+  'engine:fade-in',
+  'engine:fade-out',
+  'engine:crossfade',
+  'engine:none',
+]);
 
 /** reduced-motion 'fade' 대체표(C6) */
 export const REDUCE_FALLBACK = Object.freeze({
-  enter: 'engine:fade-in', exit: 'engine:fade-out', link: 'engine:crossfade', step: 'engine:fade-in', ambient: 'engine:none',
+  enter: 'engine:fade-in',
+  exit: 'engine:fade-out',
+  link: 'engine:crossfade',
+  step: 'engine:fade-in',
+  ambient: 'engine:none',
 });
 
 /** timing 기본값(C6). 순서: 이것 → concept.timing → deck.timing */
@@ -45,7 +73,14 @@ export const MAX_TILT = 12;
 
 /** 3D 속성: camera family 밖 사용 금지(C10) */
 export const CAMERA_ONLY_PROPS = Object.freeze([
-  'rotationX', 'rotationY', 'rotateX', 'rotateY', 'z', 'translateZ', 'transformPerspective', 'perspective',
+  'rotationX',
+  'rotationY',
+  'rotateX',
+  'rotateY',
+  'z',
+  'translateZ',
+  'transformPerspective',
+  'perspective',
 ]);
 
 /** window CustomEvent 이름(C12) */
@@ -69,7 +104,14 @@ export const PRESENTER_KEYS = Object.freeze({
 });
 
 /** 발표 키 이동 규칙(C12) */
-export const PRESENTER_TRAVEL = Object.freeze({ minGap: 0.01, base: 0.9, perScreen: 0.35, max: 2.6, settleMs: 150, stopEps: 0.02 });
+export const PRESENTER_TRAVEL = Object.freeze({
+  minGap: 0.01,
+  base: 0.9,
+  perScreen: 0.35,
+  max: 2.6,
+  settleMs: 150,
+  stopEps: 0.02,
+});
 
 /** resize 재빌드 규칙(C12) */
 export const RESIZE = Object.freeze({ debounceMs: 200, heightTolerance: 0.15 });
@@ -78,13 +120,29 @@ export const RESIZE = Object.freeze({ debounceMs: 200, heightTolerance: 0.15 });
 export const CSS_VARS = Object.freeze({
   engine: Object.freeze(['--px', '--vw-px', '--vh-px', '--sl-portrait']),
   concept: Object.freeze([
-    '--sl-bg', '--sl-fg', '--sl-fg-muted', '--sl-accent', '--sl-accent-2', '--sl-rule', '--sl-scrim',
-    '--sl-font-display', '--sl-font-text', '--sl-font-mono',
-    '--sl-weight-display', '--sl-weight-text',
-    '--sl-size-xl', '--sl-size-l', '--sl-size-m', '--sl-size-s', '--sl-size-caption',
-    '--sl-leading-display', '--sl-leading-text', '--sl-tracking-display',
+    '--sl-bg',
+    '--sl-fg',
+    '--sl-fg-muted',
+    '--sl-accent',
+    '--sl-accent-2',
+    '--sl-rule',
+    '--sl-scrim',
+    '--sl-font-display',
+    '--sl-font-text',
+    '--sl-font-mono',
+    '--sl-weight-display',
+    '--sl-weight-text',
+    '--sl-size-xl',
+    '--sl-size-l',
+    '--sl-size-m',
+    '--sl-size-s',
+    '--sl-size-caption',
+    '--sl-leading-display',
+    '--sl-leading-text',
+    '--sl-tracking-display',
     '--sl-perspective',
-    '--sl-gutter', '--sl-radius',
+    '--sl-gutter',
+    '--sl-radius',
   ]),
 });
 
@@ -107,9 +165,16 @@ export const PLACEHOLDER_PATTERNS = Object.freeze([
 
 /** 덱 → MP4 발표 경로 기본값(C14) */
 export const EXPORT_DEFAULTS = Object.freeze({
-  width: 1920, height: 1080, fps: 30,
-  secondsPerUnit: 0.5, stopHold: 1.6, travelMin: 0.6, travelMax: 5,
-  lead: 0.4, tail: 1.2, ease: 'power1.inOut',
+  width: 1920,
+  height: 1080,
+  fps: 30,
+  secondsPerUnit: 0.5,
+  stopHold: 1.6,
+  travelMin: 0.6,
+  travelMax: 5,
+  lead: 0.4,
+  tail: 1.2,
+  ease: 'power1.inOut',
   compositionId: 'scrolline',
 });
 

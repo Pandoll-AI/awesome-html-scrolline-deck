@@ -14,7 +14,10 @@ export function checkState(root) {
   const boardPath = path.join(root, 'state/board.json');
   if (fs.existsSync(boardPath)) {
     try {
-      res.board = validate(read('state/schema/board.schema.json'), JSON.parse(fs.readFileSync(boardPath, 'utf8')));
+      res.board = validate(
+        read('state/schema/board.schema.json'),
+        JSON.parse(fs.readFileSync(boardPath, 'utf8')),
+      );
     } catch (e) {
       res.board = [`board.json 파싱 실패: ${e.message}`];
     }
@@ -22,15 +25,17 @@ export function checkState(root) {
   const runsPath = path.join(root, 'state/runs.jsonl');
   if (fs.existsSync(runsPath)) {
     const schema = read('state/schema/runs.schema.json');
-    fs.readFileSync(runsPath, 'utf8').split('\n').forEach((line, i) => {
-      if (!line.trim()) return;
-      res.runLines++;
-      try {
-        res.runs.push(...validate(schema, JSON.parse(line), `line${i + 1}`));
-      } catch (e) {
-        res.runs.push(`line${i + 1}: JSON 파싱 실패 ${e.message}`);
-      }
-    });
+    fs.readFileSync(runsPath, 'utf8')
+      .split('\n')
+      .forEach((line, i) => {
+        if (!line.trim()) return;
+        res.runLines++;
+        try {
+          res.runs.push(...validate(schema, JSON.parse(line), `line${i + 1}`));
+        } catch (e) {
+          res.runs.push(`line${i + 1}: JSON 파싱 실패 ${e.message}`);
+        }
+      });
   }
   return res;
 }

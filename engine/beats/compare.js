@@ -1,9 +1,9 @@
 /**
- * @stub W2-E5 구현 대상. 구현 시 이 줄 삭제 + compare.test.js 작성
  * beat 'compare'(CONTRACTS C4). parts: item, label, value, text, divider, verdict. primary: item.
  * 렌더 = 정지점 완성 상태 DOM. 움직임 0. 루트 <section class="sl-beat sl-beat--compare" data-beat="<id>">는 build가 id를 채운다.
  */
 
+import { add, asset, node, root } from './helpers.js';
 /** @type {import('../types.js').BeatTypeDef} */
 export default {
   type: 'compare',
@@ -20,29 +20,56 @@ export default {
           label: {
             type: 'string',
             required: true,
-            doc: '이름'
+            doc: '이름',
           },
           value: {
             type: 'number',
-            doc: '수치'
+            doc: '수치',
           },
           text: {
             type: 'string',
-            doc: '한 줄'
+            doc: '한 줄',
           },
           media: {
             type: 'asset',
-            doc: '이미지'
-          }
-        }
-      }
+            doc: '이미지',
+          },
+        },
+      },
     },
     verdict: {
       type: 'string',
-      doc: '결론 한 줄'
-    }
+      doc: '결론 한 줄',
+    },
   },
   render(data, rc) {
-    throw new Error('TODO(E5): render compare');
+    const parts = {};
+    const view = root('compare', rc);
+    const list = node(rc, 'div', 'sl-compare', view);
+    data.items.forEach((item, index) => {
+      if (index) add(parts, 'divider', node(rc, 'span', 'sl-compare__divider', list, 'vs'));
+      const card = add(parts, 'item', node(rc, 'article', 'sl-compare__item', list));
+      add(parts, 'label', node(rc, 'h3', 'sl-compare__label', card, item.label));
+      if (item.value != null)
+        add(
+          parts,
+          'value',
+          node(
+            rc,
+            'strong',
+            'sl-compare__value',
+            card,
+            new Intl.NumberFormat(rc.lang ?? 'ko').format(item.value),
+          ),
+        );
+      if (item.text) add(parts, 'text', node(rc, 'p', 'sl-compare__text', card, item.text));
+      if (item.media) {
+        const img = node(rc, 'img', 'sl-compare__media', card);
+        img.src = asset(rc, item.media);
+        img.alt = item.label;
+      }
+    });
+    if (data.verdict) add(parts, 'verdict', node(rc, 'p', 'sl-compare__verdict', view, data.verdict));
+    return { root: view, parts };
   },
 };

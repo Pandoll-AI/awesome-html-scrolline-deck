@@ -1,4 +1,100 @@
-/*
- * @stub W2-E1 구현 대상(stage·slot·world·overlay·sr-only·blackout 기본 CSS).
- * 색·글꼴은 concepts/<id>/tokens.css의 --sl-* 만 소비한다(CONTRACTS C11).
- */
+.sl-stage {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--sl-bg);
+  color: var(--sl-fg);
+  font-family: var(--sl-font-text);
+}
+.sl-viewport,
+.sl-camera,
+.sl-world,
+.sl-screen,
+.sl-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.sl-viewport {
+  overflow: hidden;
+  perspective: var(--sl-perspective);
+}
+.sl-camera {
+  transform-style: preserve-3d;
+}
+.sl-world {
+  transform-style: preserve-3d;
+  pointer-events: none;
+}
+.sl-screen {
+  pointer-events: none;
+}
+.sl-overlay {
+  z-index: 10;
+  pointer-events: none;
+}
+.sl-beat {
+  position: absolute;
+  box-sizing: border-box;
+}
+.sl-place-world {
+  transform: translateZ(var(--sl-world-z)) scale(var(--sl-world-scale));
+  transform-origin: 0 0;
+}
+.sl-slot-center {
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+.sl-slot-left {
+  left: var(--sl-gutter);
+  top: 50%;
+  transform: translateY(-50%);
+}
+.sl-slot-right {
+  right: var(--sl-gutter);
+  top: 50%;
+  transform: translateY(-50%);
+}
+.sl-slot-top {
+  left: 50%;
+  top: var(--sl-gutter);
+  transform: translateX(-50%);
+}
+.sl-slot-bottom {
+  left: 50%;
+  bottom: var(--sl-gutter);
+  transform: translateX(-50%);
+}
+.sl-slot-full {
+  inset: 0;
+}
+.sl-slot-lower-third {
+  left: 50%;
+  bottom: var(--sl-gutter);
+  transform: translateX(-50%);
+}
+.sl-move-overlay {
+  position: absolute;
+  inset: 0;
+}
+.sl-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.sl-blackout {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  background: #000;
+}

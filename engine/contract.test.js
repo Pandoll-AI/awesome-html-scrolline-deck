@@ -4,16 +4,66 @@ import * as api from './index.js';
 import { beatTypes } from './beats/index.js';
 
 const FUNCTIONS = [
-  'createStage', 'computeViewport', 'el', 'words', 'chars', 'createRng', 'hashSeed', 'resolveParams', 'validateSchema',
-  'prefersReducedMotion', 'createA11y', 'plan', 'build', 'resolveTiming', 'createRegistry', 'validateDeck',
-  'createScrollDriver', 'createPresenter', 'measure', 'defaultMeasure', 'anchorOf', 'rectIn', 'toInset', 'transferVars',
-  'frameSequence', 'videoClip', 'textMask', 'preloadImages', 'pickTier', 'loadOrder',
-  'exportPath', 'buildExportTimeline', 'toExportSeconds', 'boot',
+  'createStage',
+  'computeViewport',
+  'el',
+  'words',
+  'chars',
+  'createRng',
+  'hashSeed',
+  'resolveParams',
+  'validateSchema',
+  'prefersReducedMotion',
+  'createA11y',
+  'plan',
+  'build',
+  'resolveTiming',
+  'createRegistry',
+  'validateDeck',
+  'createScrollDriver',
+  'createPresenter',
+  'measure',
+  'defaultMeasure',
+  'anchorOf',
+  'rectIn',
+  'toInset',
+  'transferVars',
+  'frameSequence',
+  'videoClip',
+  'textMask',
+  'preloadImages',
+  'pickTier',
+  'loadOrder',
+  'exportPath',
+  'buildExportTimeline',
+  'toExportSeconds',
+  'boot',
 ];
 const CONSTANTS = [
-  'VERSION', 'STOP_PREFIX', 'ID_PATTERN', 'ROLES', 'BEAT_TYPES', 'SLOTS', 'FAMILIES', 'ENGINE_MOVES', 'REDUCE_FALLBACK',
-  'ENGINE_TIMING_DEFAULTS', 'VIEWPORT', 'MAX_TILT', 'CAMERA_ONLY_PROPS', 'EVENTS', 'PRESENTER_KEYS', 'PRESENTER_TRAVEL',
-  'RESIZE', 'CSS_VARS', 'PLACEHOLDER_PATTERNS', 'EXPORT_DEFAULTS', 'FRAMES', 'ENGINE_MOVE_DEFS', 'SchemaError', 'beatTypes',
+  'VERSION',
+  'STOP_PREFIX',
+  'ID_PATTERN',
+  'ROLES',
+  'BEAT_TYPES',
+  'SLOTS',
+  'FAMILIES',
+  'ENGINE_MOVES',
+  'REDUCE_FALLBACK',
+  'ENGINE_TIMING_DEFAULTS',
+  'VIEWPORT',
+  'MAX_TILT',
+  'CAMERA_ONLY_PROPS',
+  'EVENTS',
+  'PRESENTER_KEYS',
+  'PRESENTER_TRAVEL',
+  'RESIZE',
+  'CSS_VARS',
+  'PLACEHOLDER_PATTERNS',
+  'EXPORT_DEFAULTS',
+  'FRAMES',
+  'ENGINE_MOVE_DEFS',
+  'SchemaError',
+  'beatTypes',
 ];
 
 describe('engine 공개 API', () => {
@@ -31,19 +81,50 @@ describe('engine 공개 API', () => {
 describe('계약 상수', () => {
   it('timing 기본값', () => {
     expect(api.ENGINE_TIMING_DEFAULTS).toEqual({ unit: 0.55, hold: 0.6, overlap: 0.2, tail: 0.8 });
-    expect(api.resolveTiming({ hold: 1 }, { unit: 0.4 })).toEqual({ unit: 0.4, hold: 1, overlap: 0.2, tail: 0.8 });
+    expect(api.resolveTiming({ hold: 1 }, { unit: 0.4 })).toEqual({
+      unit: 0.4,
+      hold: 1,
+      overlap: 0.2,
+      tail: 0.8,
+    });
   });
   it('이벤트 이름', () => {
     expect(Object.values(api.EVENTS)).toEqual([
-      'scrolline:ready', 'scrolline:rebuild', 'scrolline:stop', 'scrolline:active', 'scrolline:blackout', 'scrolline:export-ready',
+      'scrolline:ready',
+      'scrolline:rebuild',
+      'scrolline:stop',
+      'scrolline:active',
+      'scrolline:blackout',
+      'scrolline:export-ready',
     ]);
   });
   it('자리표 패턴 13종이 대표 문자열을 잡고 정상 문장은 통과', () => {
     expect(api.PLACEHOLDER_PATTERNS).toHaveLength(13);
-    const bad = ['', '  ', 'TODO 채우기', 'TBD', 'Lorem', 'ipsum', 'xxx', '「x」', '???', '{{name}}', '<placeholder>', '자리표', '예시 문구입니다'];
-    for (const s of bad) expect(api.PLACEHOLDER_PATTERNS.some((p) => p.test(s)), s).toBe(true);
+    const bad = [
+      '',
+      '  ',
+      'TODO 채우기',
+      'TBD',
+      'Lorem',
+      'ipsum',
+      'xxx',
+      '「x」',
+      '???',
+      '{{name}}',
+      '<placeholder>',
+      '자리표',
+      '예시 문구입니다',
+    ];
+    for (const s of bad)
+      expect(
+        api.PLACEHOLDER_PATTERNS.some((p) => p.test(s)),
+        s,
+      ).toBe(true);
     for (const s of ['매출이 3년 만에 두 배', 'Q4 revenue doubled', 'todo 앱 출시']) {
-      expect(api.PLACEHOLDER_PATTERNS.some((p) => p.test(s)), s).toBe(false);
+      expect(
+        api.PLACEHOLDER_PATTERNS.some((p) => p.test(s)),
+        s,
+      ).toBe(false);
     }
   });
   it('id 형식', () => {

@@ -48,7 +48,8 @@ function walk(dir, out = []) {
 export function specifiers(code) {
   const src = code.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"`])\/\/.*$/gm, '$1');
   const out = [];
-  const re = /\bimport\s+(?:[\w*{}\s,$]+\s+from\s+)?['"]([^'"]+)['"]|\bexport\s+[\w*{}\s,$]+\s+from\s+['"]([^'"]+)['"]|\bimport\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
+  const re =
+    /\bimport\s+(?:[\w*{}\s,$]+\s+from\s+)?['"]([^'"]+)['"]|\bexport\s+[\w*{}\s,$]+\s+from\s+['"]([^'"]+)['"]|\bimport\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
   let m;
   while ((m = re.exec(src))) out.push(m[1] ?? m[2] ?? m[3]);
   return out;
@@ -58,7 +59,8 @@ const layerOf = (rel) => {
   const top = rel.split('/')[0];
   return top in RANK ? top : null;
 };
-const packageName = (spec) => (spec.startsWith('@') ? spec.split('/').slice(0, 2).join('/') : spec.split('/')[0]);
+const packageName = (spec) =>
+  spec.startsWith('@') ? spec.split('/').slice(0, 2).join('/') : spec.split('/')[0];
 
 /**
  * @param {string} root 레포 루트
@@ -83,10 +85,20 @@ export function checkDeps(root) {
           v(rel, spec, 'R0', '상대 import는 확장자를 명시해야 함');
           continue;
         }
-        const target = path.relative(root, path.resolve(path.dirname(abs), spec.replace(/\?.*$/, ''))).split(path.sep).join('/');
+        const target = path
+          .relative(root, path.resolve(path.dirname(abs), spec.replace(/\?.*$/, '')))
+          .split(path.sep)
+          .join('/');
         const tLayer = layerOf(target);
         if (!tLayer) {
-          v(rel, spec, 'R1', target.startsWith('tools/') ? '층 안에서 tools/ import 금지' : `층 밖 파일 import 금지: ${target}`);
+          v(
+            rel,
+            spec,
+            'R1',
+            target.startsWith('tools/')
+              ? '층 안에서 tools/ import 금지'
+              : `층 밖 파일 import 금지: ${target}`,
+          );
           continue;
         }
         if (RANK[tLayer] > RANK[layer]) {
@@ -100,7 +112,12 @@ export function checkDeps(root) {
           const b = target.split('/');
           const atLayerRoot = a.length === 2; // moves/index.js 같은 층 루트 파일
           const sibling = a[1] !== b[1];
-          if (sibling && !atLayerRoot && ['concepts', 'decks', 'moves'].includes(layer) && !(layer === 'moves' && b[1] === '_shared')) {
+          if (
+            sibling &&
+            !atLayerRoot &&
+            ['concepts', 'decks', 'moves'].includes(layer) &&
+            !(layer === 'moves' && b[1] === '_shared')
+          ) {
             v(rel, spec, 'R4', `형제 격리 위반: ${a.slice(0, 2).join('/')} → ${b.slice(0, 2).join('/')}`);
           }
         }
@@ -149,7 +166,8 @@ export function checkDeps(root) {
         comp.push(w);
       } while (w !== n);
       const selfLoop = comp.length === 1 && (graph.get(n) || []).includes(n);
-      if (comp.length > 1 || selfLoop) v(comp.sort()[0], comp.sort().join(' → '), 'R3', `순환 의존 ${comp.length}개 파일`);
+      if (comp.length > 1 || selfLoop)
+        v(comp.sort()[0], comp.sort().join(' → '), 'R3', `순환 의존 ${comp.length}개 파일`);
     }
   };
   for (const n of graph.keys()) if (!idx.has(n)) strong(n);
@@ -160,7 +178,9 @@ export function checkDeps(root) {
 const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (isMain) {
   const args = process.argv.slice(2);
-  const root = path.resolve(args.find((a) => !a.startsWith('--')) || path.join(path.dirname(fileURLToPath(import.meta.url)), '..'));
+  const root = path.resolve(
+    args.find((a) => !a.startsWith('--')) || path.join(path.dirname(fileURLToPath(import.meta.url)), '..'),
+  );
   const res = checkDeps(root);
   if (args.includes('--json')) console.log(JSON.stringify(res, null, 2));
   else {

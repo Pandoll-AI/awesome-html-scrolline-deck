@@ -25,12 +25,19 @@ export function checkHat(root, range) {
       continue;
     }
     const changes = git(root, ['diff-tree', '--no-commit-id', '--root', '-r', '-M', '--name-status', c])
-      .split('\n').filter(Boolean).map((l) => l.split('\t'));
+      .split('\n')
+      .filter(Boolean)
+      .map((l) => l.split('\t'));
     const tests = changes.filter((p) => TEST.test(p.at(-1)));
-    if (hat === 'feature' && !tests.some(([s]) => s === 'A' || s === 'M')) out.push({ commit: c, message: 'feature인데 테스트 추가·수정 없음' });
+    if (hat === 'feature' && !tests.some(([s]) => s === 'A' || s === 'M'))
+      out.push({ commit: c, message: 'feature인데 테스트 추가·수정 없음' });
     if (hat === 'refactor') {
       const bad = tests.filter(([s]) => s === 'M' || s === 'D' || (s.startsWith('R') && s !== 'R100'));
-      if (bad.length) out.push({ commit: c, message: `refactor인데 기존 테스트 변경: ${bad.map((p) => p.at(-1)).join(', ')}` });
+      if (bad.length)
+        out.push({
+          commit: c,
+          message: `refactor인데 기존 테스트 변경: ${bad.map((p) => p.at(-1)).join(', ')}`,
+        });
     }
   }
   return out;

@@ -1,7 +1,11 @@
 /**
- * @stub W2-E4 구현 대상. 구현 시 이 줄 삭제 + handoff.test.js 작성
  * 측정 스냅샷·anchor·좌표 변환(CONTRACTS C7).
  */
+
+function px(value) {
+  const parsed = Number.parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
 
 /**
  * node의 root 기준 layout rect(getBoundingClientRect 차이). transform은 측정 전에 없어야 한다.
@@ -10,7 +14,21 @@
  * @returns {import('./types.js').Rect}
  */
 export function defaultMeasure(node, root) {
-  throw new Error('TODO(E4): defaultMeasure');
+  if (!node?.getBoundingClientRect || !root?.getBoundingClientRect)
+    throw new TypeError('defaultMeasure expects Elements');
+  const transformed = [];
+  for (let current = node; current; current = current.parentElement) {
+    transformed.push([current.style, current.style.transform]);
+    current.style.transform = 'none';
+    if (current === root) break;
+  }
+  try {
+    const box = node.getBoundingClientRect();
+    const base = root.getBoundingClientRect();
+    return { x: box.left - base.left, y: box.top - base.top, w: box.width, h: box.height };
+  } finally {
+    for (const [style, transform] of transformed) style.transform = transform;
+  }
 }
 
 /** rectIn = defaultMeasure 별칭(J조 dom.js 이름 계승) */
@@ -26,7 +44,13 @@ export function rectIn(node, root) {
  * @returns {import('./types.js').MeasureSnapshot}
  */
 export function measure(root, beats, measureFn = defaultMeasure) {
-  throw new Error('TODO(E4): measure');
+  const snapshot = new Map();
+  for (const beat of beats)
+    for (const nodes of Object.values(beat.parts ?? {}))
+      for (const node of nodes) {
+        if (!snapshot.has(node)) snapshot.set(node, { ...measureFn(node, root) });
+      }
+  return snapshot;
 }
 
 /**
@@ -37,7 +61,25 @@ export function measure(root, beats, measureFn = defaultMeasure) {
  * @returns {import('./types.js').Handoff}
  */
 export function anchorOf(beat, part, snapshot, primary) {
-  throw new Error('TODO(E4): anchorOf');
+  const name = part || primary || beat.primary || Object.keys(beat.parts ?? {})[0];
+  const node = beat.parts?.[name]?.[0];
+  if (!name || !node) throw new Error(`Beat "${beat.id}" has no anchor part "${name ?? ''}"`);
+  const rect = snapshot.get(node);
+  if (!rect) throw new Error(`Anchor "${beat.id}.${name}" was not measured`);
+  const computed = globalThis.getComputedStyle?.(node);
+  return {
+    beat: beat.id,
+    part: name,
+    kind: node.getAttribute?.('data-handoff-kind') === 'point' ? 'point' : 'rect',
+    rect: { ...rect },
+    point: { x: rect.x + rect.w / 2, y: rect.y + rect.h / 2 },
+    node,
+    style: {
+      color: computed?.color ?? '',
+      radius: px(computed?.borderRadius),
+      fontSize: px(computed?.fontSize),
+    },
+  };
 }
 
 /**
@@ -47,7 +89,7 @@ export function anchorOf(beat, part, snapshot, primary) {
  * @returns {string}
  */
 export function toInset(rect, viewport) {
-  throw new Error('TODO(E4): toInset');
+  return `inset(${rect.y}px ${viewport.w - rect.x - rect.w}px ${viewport.h - rect.y - rect.h}px ${rect.x}px)`;
 }
 
 /**
@@ -57,5 +99,11 @@ export function toInset(rect, viewport) {
  * @returns {{ x: number, y: number, scaleX: number, scaleY: number, transformOrigin: string }}
  */
 export function transferVars(fromRect, toRect) {
-  throw new Error('TODO(E4): transferVars');
+  return {
+    x: toRect.x - fromRect.x,
+    y: toRect.y - fromRect.y,
+    scaleX: fromRect.w === 0 ? 1 : toRect.w / fromRect.w,
+    scaleY: fromRect.h === 0 ? 1 : toRect.h / fromRect.h,
+    transformOrigin: '0 0',
+  };
 }

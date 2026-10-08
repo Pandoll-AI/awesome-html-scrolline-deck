@@ -13,4 +13,15 @@ import prompt from './prompt.js';
 import code from './code.js';
 
 /** @type {Record<string, import('../types.js').BeatTypeDef>} */
-export const beatTypes = Object.freeze({ text, photo, video, number, chart, chronology, compare, quote, prompt, code });
+export const beatTypes = Object.freeze({
+  text,
+  photo,
+  video,
+  number,
+  chart,
+  chronology,
+  compare,
+  quote,
+  prompt,
+  code,
+});

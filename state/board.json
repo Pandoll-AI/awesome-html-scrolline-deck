@@ -1,14 +1,14 @@
 {
   "version": 1,
-  "updated": "2026-10-08T04:56:45.848Z",
+  "updated": "2026-10-08T05:19:16+00:00",
   "waves": {
     "W1": {
       "root_run_id": null,
-      "status": "running"
+      "status": "pass"
     },
     "W2": {
       "root_run_id": null,
-      "status": "todo"
+      "status": "running"
     }
   },
   "engine": {
@@ -21,8 +21,8 @@
         "engine/a11y.js",
         "engine/engine.css"
       ],
-      "stage": "spec",
-      "status": "todo",
+      "stage": "merged",
+      "status": "pass",
       "runs": []
     },
     "E2": {
@@ -31,8 +31,8 @@
         "engine/registry.js",
         "engine/deck-schema.js"
       ],
-      "stage": "spec",
-      "status": "todo",
+      "stage": "merged",
+      "status": "pass",
       "runs": []
     },
     "E3": {
@@ -40,8 +40,8 @@
         "engine/scroll.js",
         "engine/presenter.js"
       ],
-      "stage": "spec",
-      "status": "todo",
+      "stage": "merged",
+      "status": "pass",
       "runs": []
     },
     "E4": {
@@ -49,16 +49,16 @@
         "engine/handoff.js",
         "engine/testing.js"
       ],
-      "stage": "spec",
-      "status": "todo",
+      "stage": "merged",
+      "status": "pass",
       "runs": []
     },
     "E5": {
       "files": [
         "engine/beats/"
       ],
-      "stage": "spec",
-      "status": "todo",
+      "stage": "merged",
+      "status": "pass",
       "runs": []
     },
     "E6": {
@@ -66,8 +66,8 @@
         "engine/media.js",
         "tools/media/extract-frames.mjs"
       ],
-      "stage": "spec",
-      "status": "todo",
+      "stage": "merged",
+      "status": "pass",
       "runs": []
     },
     "E7": {
@@ -76,8 +76,8 @@
         "tools/export.mjs",
         "tools/capture.mjs"
       ],
-      "stage": "spec",
-      "status": "todo",
+      "stage": "merged",
+      "status": "pass",
       "runs": []
     },
     "E8": {
@@ -86,8 +86,8 @@
         "decks/_smoke/",
         "tools/cli.mjs"
       ],
-      "stage": "spec",
-      "status": "todo",
+      "stage": "merged",
+      "status": "pass",
       "runs": []
     }
   },

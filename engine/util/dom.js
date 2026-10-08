@@ -1,9 +1,4 @@
 /**
- * @stub W2-E1 구현 대상. 구현 시 이 줄 삭제 + dom.test.js 작성
- * 작은 DOM 도우미(CONTRACTS C4). J조 scroll-v2 core/dom.js·type.js 계승.
- */
-
-/**
  * @param {string} tag
  * @param {string|null} [cls]
  * @param {Element|null} [parent]
@@ -11,7 +6,11 @@
  * @returns {HTMLElement}
  */
 export function el(tag, cls, parent, text) {
-  throw new Error('TODO(E1): el');
+  const node = document.createElement(tag);
+  if (cls) node.className = cls;
+  if (text !== null && text !== undefined) node.textContent = text;
+  if (parent) parent.append(node);
+  return node;
 }
 
 /**
@@ -21,7 +20,17 @@ export function el(tag, cls, parent, text) {
  * @returns {HTMLElement[]}
  */
 export function words(parent, text) {
-  throw new Error('TODO(E1): words');
+  const result = [];
+  for (const token of String(text).split(/(\s+)/)) {
+    if (!token) continue;
+    if (/^\s+$/.test(token)) parent.append(document.createTextNode(token));
+    else {
+      const node = el('span', 'sl-word', parent, token);
+      node.dataset.part = 'word';
+      result.push(node);
+    }
+  }
+  return result;
 }
 
 /**
@@ -31,5 +40,15 @@ export function words(parent, text) {
  * @returns {HTMLElement[]}
  */
 export function chars(parent, text) {
-  throw new Error('TODO(E1): chars');
+  const result = [];
+  for (const char of Array.from(String(text))) {
+    if (char === '\n') {
+      parent.append(document.createElement('br'));
+      continue;
+    }
+    const node = el('span', 'sl-char', parent, char);
+    node.dataset.part = 'char';
+    result.push(node);
+  }
+  return result;
 }

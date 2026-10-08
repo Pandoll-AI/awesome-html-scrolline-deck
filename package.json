@@ -5,7 +5,9 @@
   "description": "Scroll-driven continuous presentation decks: one stage, one master timeline, handoff moves, concept packs",
   "type": "module",
   "license": "MIT",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -26,6 +28,7 @@
   },
   "devDependencies": {
     "happy-dom": "20.14.5",
+    "prettier": "^3.9.9",
     "vite": "8.3.0",
     "vitest": "5.0.1",
     "yaml": "2.9.1"

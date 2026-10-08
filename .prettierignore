@@ -1,0 +1,7 @@
+node_modules
+dist
+research
+state
+plan
+*.md
+*.yaml

@@ -5,3 +5,5 @@ dist/
 state/tmp/
 out/
 NOTES-*.md
+state/notes/
+state/tmp/
