@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>일하는 에이전트</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      :root { background: #e2ece5; color: #17140f; }
+      * { box-sizing: border-box; }
+      html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+      body { font-family: "JetBrains Mono", monospace; font-weight: 500; }
+      #root { position: relative; width: 100%; height: 100%; overflow: hidden; background: #e2ece5; }
+      .grain { position: absolute; inset: 0; opacity: .32; background-image: radial-gradient(rgba(23,20,15,.12) .7px, transparent .8px); background-size: 7px 7px; }
+      .terminal { position: absolute; left: 120px; right: 120px; top: 128px; bottom: 128px; border: 2px solid #17140f; background: #f8f4eb; box-shadow: 12px 14px 0 rgba(14,122,75,.13); }
+      .topline { height: 72px; border-bottom: 2px solid #17140f; display: flex; align-items: center; padding: 0 30px; font-size: 19px; letter-spacing: .025em; }
+      .signal { display: flex; gap: 10px; margin-right: 19px; }
+      .signal i { display: block; width: 10px; height: 10px; border: 1.5px solid #17140f; border-radius: 50%; }
+      .signal i:last-child { background: #0e7a4b; border-color: #0e7a4b; }
+      .title { color: #0e7a4b; }
+      .stamp { margin-left: auto; color: #6b6457; font-size: 16px; }
+      .workspace { display: grid; grid-template-columns: 1.02fr 1.18fr; height: calc(100% - 72px); }
+      .tasks { border-right: 2px solid #17140f; padding: 68px 58px; }
+      .label { color: #6b6457; font-size: 18px; letter-spacing: .12em; }
+      .task-list { margin-top: 42px; display: grid; gap: 29px; }
+      .task { display: flex; align-items: center; min-height: 42px; font-size: 29px; letter-spacing: -.035em; }
+      .check { position: relative; width: 30px; height: 30px; margin-right: 21px; border: 2px solid #17140f; flex: 0 0 auto; }
+      .check .tick { position: absolute; left: 6px; top: 7px; width: 14px; height: 8px; border-left: 3px solid #f8f4eb; border-bottom: 3px solid #f8f4eb; transform: rotate(-45deg); opacity: 0; }
+      .task.done .check { background: #0e7a4b; border-color: #0e7a4b; }
+      .task.done .task-text { color: #0e7a4b; }
+      .task.done .tick { opacity: 1; }
+      .task-text { display: inline-block; }
+      .workmark { margin-top: 100px; padding-top: 22px; border-top: 1px solid rgba(23,20,15,.25); color: #0e7a4b; font-size: 17px; opacity: .9; }
+      .workmark b { display: inline-block; margin-right: 12px; font-size: 23px; vertical-align: -2px; }
+      .diff { padding: 68px 62px; }
+      .diff-head { display: flex; align-items: baseline; }
+      .diff-head .label { color: #0e7a4b; }
+      .file { margin-left: auto; color: #6b6457; font-size: 16px; }
+      .code { margin-top: 44px; padding: 26px 28px; border-left: 3px solid #0e7a4b; background: rgba(14,122,75,.055); font-size: 23px; line-height: 2.08; letter-spacing: -.035em; white-space: nowrap; }
+      .line { display: block; overflow: hidden; height: 48px; }
+      .line-inner { display: inline-block; }
+      .minus { color: #ba3e35; }
+      .plus { color: #0e7a4b; }
+      .prefix { display: inline-block; width: 28px; font-weight: 700; }
+      .result { margin-top: 70px; display: flex; align-items: center; gap: 17px; color: #0e7a4b; font-size: 31px; font-weight: 700; letter-spacing: -.05em; opacity: 0; }
+      .result-check { width: 31px; height: 31px; border-radius: 50%; background: #0e7a4b; position: relative; }
+      .result-check:after { content: ""; position: absolute; left: 8px; top: 8px; width: 13px; height: 7px; border-left: 3px solid #f8f4eb; border-bottom: 3px solid #f8f4eb; transform: rotate(-45deg); }
+      .cursor { display: inline-block; width: 11px; height: 25px; margin-left: 8px; background: #0e7a4b; vertical-align: -4px; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="v3-agent" data-start="0" data-width="1920" data-height="1080" data-duration="10" data-fps="30">
+      <div class="grain" aria-hidden="true"></div>
+      <main class="terminal" aria-label="가상 작업 에이전트의 진행 화면">
+        <header class="topline"><span class="signal"><i></i><i></i><i></i></span><span class="title">WORKER / PATCH-07</span><span class="stamp">작업 진행 중</span></header>
+        <div class="workspace">
+          <section class="tasks" aria-label="할 일 목록">
+            <div class="label">TASKS / 04</div>
+            <div class="task-list">
+              <div class="task" id="task-1"><span class="check"><i class="tick"></i></span><span class="task-text">테스트 실행</span></div>
+              <div class="task" id="task-2"><span class="check"><i class="tick"></i></span><span class="task-text">실패 2건 확인</span></div>
+              <div class="task" id="task-3"><span class="check"><i class="tick"></i></span><span class="task-text">파일 2곳 수정</span></div>
+              <div class="task" id="task-4"><span class="check"><i class="tick"></i></span><span class="task-text">다시 실행</span></div>
+            </div>
+            <div class="workmark"><b>✳</b><span id="work-status">실행을 준비합니다</span></div>
+          </section>
+          <section class="diff" aria-label="가상 변경 사항">
+            <div class="diff-head"><span class="label">PATCH / 03</span><span class="file">module/relay.unit</span></div>
+            <div class="code" aria-label="변경된 가상 코드">
+              <span class="line minus"><span class="line-inner" id="line-1"><b class="prefix">−</b>route = wait_for(signal)</span></span>
+              <span class="line plus"><span class="line-inner" id="line-2"><b class="prefix">+</b>route = await_signal(signal)</span></span>
+              <span class="line plus"><span class="line-inner" id="line-3"><b class="prefix">+</b>return relay.commit(route)</span></span>
+            </div>
+            <div class="result" id="result"><span class="result-check"></span><span>통과 12/12</span></div>
+          </section>
+        </div>
+      </main>
+    </div>
+    <script>
+      document.fonts.ready.then(() => {
+        const tasks = [1, 2, 3, 4].map((n) => document.getElementById(`task-${n}`));
+        const lines = ["line-1", "line-2", "line-3"].map((id) => document.getElementById(id));
+        const status = document.getElementById("work-status");
+        const result = document.getElementById("result");
+        gsap.set(lines, { x: -42, opacity: 0 });
+        gsap.set(result, { y: 14, opacity: 0, scale: .96, transformOrigin: "left center" });
+        const tl = gsap.timeline({ paused: true });
+        const markDone = (index, phrase, at) => {
+          tl.call(() => { tasks[index].classList.add("done"); status.textContent = phrase; }, [], at);
+          tl.fromTo(tasks[index], { x: -12 }, { x: 0, duration: .24, ease: "power3.out" }, at);
+        };
+        markDone(0, "테스트 결과를 읽습니다", 1.45);
+        tl.to(lines[0], { x: 0, opacity: 1, duration: .42, ease: "power2.out" }, 2.05);
+        markDone(1, "실패한 경로를 확인합니다", 3.35);
+        tl.to(lines[1], { x: 0, opacity: 1, duration: .42, ease: "power2.out" }, 4.05);
+        markDone(2, "두 곳을 고칩니다", 5.25);
+        tl.to(lines[2], { x: 0, opacity: 1, duration: .42, ease: "power2.out" }, 6.02);
+        markDone(3, "수정 후 다시 실행합니다", 7.15);
+        tl.call(() => { status.textContent = "검증이 끝났습니다"; }, [], 8.04);
+        tl.to(result, { y: 0, opacity: 1, scale: 1, duration: .34, ease: "power3.out" }, 8.04);
+        tl.call(() => { status.textContent = "실행을 준비합니다"; tasks.forEach((task) => task.classList.remove("done")); }, [], 9.08);
+        tl.to(result, { y: 14, opacity: 0, scale: .96, duration: .18, ease: "power1.in" }, 9.08);
+        tl.to(lines, { x: -42, opacity: 0, duration: .3, stagger: .08, ease: "power1.in" }, 9.26);
+        window.__timelines["v3-agent"] = tl;
+      });
+    </script>
+  </body>
+</html>

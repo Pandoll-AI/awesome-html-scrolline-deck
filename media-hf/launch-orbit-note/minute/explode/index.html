@@ -1,0 +1,48 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+  html, body, [data-composition-id], canvas, #match-frame { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #050506; }
+  canvas { display: block; }
+  #match-frame { position: absolute; inset: 0; object-fit: cover; z-index: 2; pointer-events: none; }
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.181.2/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.181.2/examples/jsm/"}}</script>
+</head><body>
+<div data-composition-id="minute-explode" data-no-timeline data-width="1920" data-height="1080" data-duration="4"><canvas id="three-layer"></canvas><img id="match-frame" src="./reference-f120.webp" alt=""></div>
+<script type="module">
+import * as THREE from 'three';
+import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
+import { createMinute, END_STATE } from './scene.js';
+
+RectAreaLightUniformsLib.init();
+const canvas = document.querySelector('#three-layer');
+const matchFrame = document.querySelector('#match-frame');
+const minute = createMinute({ THREE, canvas, width: 1920, height: 1080 });
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const smooth = (p) => { const q = clamp(p, 0, 1); return q * q * (3 - 2 * q); };
+const progress = (frame, first, last) => smooth((frame - first) / (last - first));
+
+function stateAt(time) {
+  // HyperFrames seeks at frame starts. Frame 1 deliberately is END_STATE, matching V1 f_0120.
+  // The beginframe exporter samples the first video frame at 1 / fps; ceil keeps that
+  // physical first sample at authored frame 1, exactly at the V1 end state.
+  const frame = clamp(Math.ceil(time * 24), 1, 96);
+  const elev = 6 + (28 - 6) * progress(frame, 1, 16);
+  const topHalo = progress(frame, 17, 40);
+  const mics = progress(frame, 41, 64);
+  const boardBattery = progress(frame, 65, 88);
+  return {
+    ...END_STATE,
+    elev,
+    explode: [topHalo, topHalo, mics, boardBattery, boardBattery, 0],
+  };
+}
+
+window.addEventListener('hf-seek', (event) => {
+  // Keep the source V1 terminal pixel plate for capture frame one, then reveal the
+  // shared Three scene. This is a deterministic join plate, not a different scene.
+  matchFrame.style.opacity = event.detail.time <= (1 / 24) ? '1' : '0';
+  minute.renderAt(stateAt(event.detail.time));
+});
+minute.renderAt(stateAt(window.__hfThreeTime || 0));
+</script>
+</body></html>

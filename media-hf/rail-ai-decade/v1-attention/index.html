@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@600&display=swap" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      @font-face { font-family: 'Noto Serif KR'; src: local('Noto Serif KR'); font-weight: 400 900; }
+      :root { background: #efe9dd; }
+      * { box-sizing: border-box; }
+      html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #efe9dd; }
+      #attention-loop { position: relative; width: 100%; height: 100%; overflow: hidden; background: #efe9dd; }
+      .paper-grain { position: absolute; inset: 0; opacity: .15; background-image: radial-gradient(rgba(23,20,15,.16) .55px, transparent .65px); background-size: 9px 9px; }
+      .arc-layer { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+      .arc { fill: none; stroke: #8a5a1f; stroke-linecap: round; opacity: 0; vector-effect: non-scaling-stroke; }
+      .tokens { position: absolute; inset: 0; z-index: 1; }
+      .token { position: absolute; color: #17140f; font-family: 'Hahmlet', 'Noto Serif KR', serif; font-size: 105px; font-weight: 600; line-height: 1; letter-spacing: -.055em; white-space: nowrap; transform: translate(-50%, -50%); }
+      .t0 { left: 8%; top: 29%; } .t1 { left: 25%; top: 29%; } .t2 { left: 43%; top: 29%; }
+      .t3 { left: 55%; top: 29%; } .t4 { left: 70%; top: 29%; } .t5 { left: 89%; top: 29%; }
+      .t6 { left: 11%; top: 70%; } .t7 { left: 32%; top: 70%; } .t8 { left: 48%; top: 70%; }
+      .t9 { left: 61%; top: 70%; } .t10 { left: 77%; top: 70%; } .t11 { left: 91%; top: 70%; }
+    </style>
+  </head>
+  <body>
+    <div id="attention-loop" data-composition-id="attention-loop" data-width="1920" data-height="1080" data-duration="8" data-fps="30">
+      <div class="paper-grain" aria-hidden="true"></div>
+      <svg class="arc-layer" viewBox="0 0 1920 1080" aria-hidden="true">
+        <!-- Query 1: the -->
+        <path class="arc q1 a" d="M154 313 C314 120 663 120 826 313" />
+        <path class="arc q1 b" d="M154 313 C416 510 863 540 1056 756" />
+        <path class="arc q1 c" d="M154 313 C495 222 1318 190 1709 313" />
+        <!-- Query 2: because -->
+        <path class="arc q2 a" d="M211 756 C363 480 656 516 826 313" />
+        <path class="arc q2 b" d="M211 756 C508 931 989 917 1171 756" />
+        <path class="arc q2 c" d="M211 756 C495 922 1255 883 1478 756" />
+        <!-- Query 3: it — the classic coreference arc is deliberately heaviest -->
+        <path class="arc q3 core" d="M922 756 C797 18 456 18 480 313" />
+        <path class="arc q3 b" d="M922 756 C1005 567 1170 504 1344 313" />
+        <path class="arc q3 c" d="M922 756 C1114 927 1514 921 1747 756" />
+        <path class="arc q3 d" d="M922 756 C867 551 814 492 730 313" />
+        <!-- Query 4: tired -->
+        <path class="arc q4 a" d="M1478 756 C1301 561 1174 504 1056 313" />
+        <path class="arc q4 b" d="M1478 756 C1240 932 744 928 614 756" />
+        <path class="arc q4 c" d="M1478 756 C1554 554 1632 496 1709 313" />
+      </svg>
+      <div class="tokens" aria-label="the animal didn't cross the street because it was tired.">
+        <span class="token t0">the</span><span class="token t1">animal</span><span class="token t2">didn</span><span class="token t3">'t</span><span class="token t4">cross</span><span class="token t5">the</span>
+        <span class="token t6">street</span><span class="token t7">because</span><span class="token t8">it</span><span class="token t9">was</span><span class="token t10">tired</span><span class="token t11">.</span>
+      </div>
+    </div>
+    <script>
+      document.fonts.ready.then(() => {
+        const tl = gsap.timeline({ paused: true, defaults: { ease: 'sine.inOut' } });
+        const beats = [
+          { at: 0, arcs: [['.q1.a', 2.2], ['.q1.b', 1.1], ['.q1.c', .7]] },
+          { at: 2, arcs: [['.q2.a', 1.3], ['.q2.b', 2.6], ['.q2.c', .8]] },
+          { at: 4, arcs: [['.q3.core', 4], ['.q3.b', 1.4], ['.q3.c', .9], ['.q3.d', 2.2]] },
+          { at: 6, arcs: [['.q4.a', 1.7], ['.q4.b', 2.8], ['.q4.c', .8]] },
+        ];
+        beats.forEach(({ at, arcs }) => arcs.forEach(([selector, weight], index) => {
+          const target = document.querySelector(selector);
+          const rise = at + .08 + index * .055;
+          tl.fromTo(target, { opacity: 0, strokeWidth: .5 }, { opacity: .82, strokeWidth: weight, duration: .32 }, rise);
+          tl.to(target, { opacity: 0, strokeWidth: .5, duration: .42 }, at + 1.48 + index * .04);
+        }));
+        window.__timelines['attention-loop'] = tl;
+      });
+    </script>
+  </body>
+</html>
