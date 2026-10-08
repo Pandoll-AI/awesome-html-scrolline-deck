@@ -50,3 +50,17 @@ it('waits for the page boot and retries main.js instead of a bare engine boot', 
   expect(src).not.toContain('engine.boot(');
   expect(() => new Function(src)).not.toThrow();
 });
+
+// 회귀(rail 보고): 부하 때 media가 그려지기 전에 찍어 시트에 가짜 빈 칸이 나왔다.
+it('waits for visible media before measuring and reports what never painted', async () => {
+  const { probeSource, MEDIA_WAIT_MS, summarize, formatReport } = await import('./smoke.mjs');
+  const src = probeSource('rail-ai-decade');
+  expect(MEDIA_WAIT_MS).toBeGreaterThanOrEqual(10000);
+  expect(src).toContain('mediaSettled(MEDIA_WAIT_MS)');
+  expect(src).toContain('readyState < 2');
+  expect(src).toContain("c.dataset.drawn !== c.dataset.frame");
+  const stop = { index: 0, name: 'b-title', beat: 'b-title', t: 1, errors: [], visibleBeats: ['b-title'], overlaps: [], clipped: [], minFont: 20, mediaPending: ['video a.mp4'] };
+  const report = { deck: 'd', driver: 'chrome', viewport: { w: 1920, h: 1080 }, stops: [stop] };
+  expect(summarize(report)).toMatchObject({ errors: 0, mediaPending: ['b-title'] });
+  expect(formatReport(report)).toContain('media wait video a.mp4');
+});

@@ -39,6 +39,8 @@ it('keeps a progress set before the manifest arrives and draws that frame once l
   resolve({ ok: true, json: async () => manifest });
   await seq.ready();
   expect(drawn.at(-1).url).toBe('/frames/960/f_0013.webp');
+  // 캡처 도구용: 원하는 프레임과 실제 그린 프레임
+  expect(seq.canvas.dataset).toMatchObject({ frame: '12', drawn: '12' });
   expect(requested[0]).toBe('/frames/poster.webp');
   seq.destroy();
   globalThis.Image = original;

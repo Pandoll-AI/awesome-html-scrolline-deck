@@ -22,6 +22,8 @@ export const usage =
 export const SHEET_COLUMNS = 6;
 /** How long the probe waits for the page's own boot (vite module loading under load took 20–48 s). */
 export const BOOT_WAIT_MS = 60000;
+/** Per-stop bound for visible <video>/<img>/frame-sequence canvases to paint before measuring. */
+export const MEDIA_WAIT_MS = 20000;
 
 /** @param {string[]} argv */
 export function parseArgs(argv) {
@@ -60,6 +62,8 @@ export function summarize(report) {
     overlaps: stops.reduce((n, s) => n + s.overlaps.length, 0),
     clipped: stops.reduce((n, s) => n + s.clipped.length, 0),
     tinyText: stops.filter((s) => s.minFont !== null && s.minFont < 14).map((s) => s.name),
+    // 대기 한도 안에 그려지지 않은 media가 있는 정지점: 그 shot의 빈 칸은 덱 문제가 아닐 수 있다
+    mediaPending: stops.filter((s) => s.mediaPending?.length).map((s) => s.name),
   };
 }
 
@@ -74,13 +78,15 @@ export function formatReport(report) {
       !s.visibleBeats.length && 'EMPTY',
       s.overlaps.length && `overlap ${s.overlaps.length}`,
       s.clipped.length && `clip ${s.clipped.length}`,
+      s.mediaPending?.length && `media wait ${s.mediaPending.join(',')}`,
     ].filter(Boolean);
     lines.push(
       `${String(s.index + 1).padStart(2)} ${s.name.padEnd(26)} t=${s.t.toFixed(2).padStart(6)} beats=${s.visibleBeats.join(',')}${flags.length ? `  ${flags.join(' · ')}` : ''}`,
     );
   }
   lines.push(
-    `stops ${sum.stops} · errors ${sum.errors} · empty ${sum.empty.length} · overlaps ${sum.overlaps} · clipped ${sum.clipped} · tiny ${sum.tinyText.length}`,
+    `stops ${sum.stops} · errors ${sum.errors} · empty ${sum.empty.length} · overlaps ${sum.overlaps} · clipped ${sum.clipped} · tiny ${sum.tinyText.length}` +
+      (sum.mediaPending?.length ? ` · media-pending ${sum.mediaPending.length}` : ''),
   );
   return lines.join('\n');
 }
@@ -99,6 +105,7 @@ export function probeSource(deckId) {
   const frame = () => new Promise((r) => { const t = setTimeout(r, 120); requestAnimationFrame(() => { clearTimeout(t); r(); }); });
   const DECK = ${JSON.stringify(deckId)};
   const BOOT_WAIT_MS = ${BOOT_WAIT_MS};
+  const MEDIA_WAIT_MS = ${MEDIA_WAIT_MS};
   // The page's own main.js boots the deck (with its sequences and layout CSS). If window.__deck is still missing
   // after the wait, import main.js again: a module that failed rethrows its error here, so the report shows it.
   async function retryMain(waitMs) {
@@ -106,6 +113,27 @@ export function probeSource(deckId) {
     await load(location.origin + '/decks/' + DECK + '/main.js');
     const until = Date.now() + waitMs;
     while (!window.__deck && Date.now() < until) await sleep(150);
+  }
+  // Visible media must have painted before a stop is measured or shot; on a loaded box a 60 KB image or a
+  // frame sequence takes 10–40 s, and the sheet showed false blanks. Returns what was still pending.
+  async function mediaSettled(waitMs) {
+    const until = Date.now() + waitMs;
+    const pending = () => {
+      const out = [];
+      const shown = (el) => opacityOf(el) > 0.02 && area(meet(clippedRect(el), { l: 0, t: 0, r: innerWidth, b: innerHeight })) > 0;
+      for (const v of document.querySelectorAll('video')) if (shown(v) && v.readyState < 2) out.push('video ' + (v.currentSrc || v.src).split('/').pop());
+      for (const i of document.querySelectorAll('img')) if (shown(i) && !(i.complete && i.naturalWidth > 0)) out.push('img ' + i.src.split('/').pop());
+      for (const c of document.querySelectorAll('canvas.sl-frame-sequence'))
+        if (shown(c) && c.dataset.frame !== undefined && c.dataset.drawn !== c.dataset.frame) out.push('frames ' + c.dataset.drawn + '/' + c.dataset.frame);
+      return out;
+    };
+    let now = pending();
+    while (now.length && Date.now() < until) {
+      await sleep(250);
+      now = pending();
+    }
+    if (now.length === 0) await frame();
+    return now;
   }
   function opacityOf(el) {
     let o = 1;
@@ -209,6 +237,7 @@ export function probeSource(deckId) {
       const errors = [];
       const before = pageErrors.length;
       const stop = window.__deck.stops()[index];
+      let mediaPending = [];
       try {
         window.__deck.seek(stop.t);
         const until = Date.now() + 2500;
@@ -222,13 +251,14 @@ export function probeSource(deckId) {
         window.__deck.tl.seek(stop.t);
         await (document.fonts?.ready ?? Promise.resolve());
         await frame();
+        mediaPending = await mediaSettled(MEDIA_WAIT_MS);
       } catch (e) {
         errors.push(String(e?.stack || e));
       }
       errors.push(...pageErrors.slice(before));
       let probe;
       try { probe = measureNow(); } catch (e) { errors.push('probe ' + String(e?.stack || e)); probe = { visibleBeats: [], texts: 0, overlaps: [], clipped: [], minFont: null, textSample: [] }; }
-      return { index, name: stop.name, beat: stop.beat, t: stop.t, time: window.__deck.time(), errors, ...probe };
+      return { index, name: stop.name, beat: stop.beat, t: stop.t, time: window.__deck.time(), errors, mediaPending, ...probe };
     },
   };
 })();`;

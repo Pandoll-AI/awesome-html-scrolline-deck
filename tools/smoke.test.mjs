@@ -44,7 +44,7 @@ describe('smoke report', () => {
         stop({ index: 2, name: 'b-c', clipped: [{ text: 't', rect: {}, visible: 0.5 }] }),
       ],
     };
-    expect(summarize(report)).toEqual({ stops: 3, errors: 2, empty: ['b-b'], overlaps: 1, clipped: 1, tinyText: ['b-b'] });
+    expect(summarize(report)).toEqual({ stops: 3, errors: 2, empty: ['b-b'], overlaps: 1, clipped: 1, tinyText: ['b-b'], mediaPending: [] });
     const text = formatReport(report);
     expect(text).toContain('EMPTY');
     expect(text).toContain('stops 3 · errors 2 · empty 1 · overlaps 1 · clipped 1 · tiny 1');

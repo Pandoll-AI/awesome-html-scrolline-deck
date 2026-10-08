@@ -64,12 +64,16 @@ export function frameSequence(host, source, opts = {}) {
   let posterImage;
   const loaded = new Map();
   let started;
+  // canvas.dataset.frame = 원하는 프레임, dataset.drawn = 실제로 그린 프레임(-1 = poster). 캡처 도구가 둘이 같아질 때까지 기다린다.
   const draw = (wanted) => {
+    canvas.dataset.frame = String(wanted);
     if (!manifest || destroyed) return;
     let image;
+    let drawn = -1;
     for (let i = Math.min(wanted, manifest.count - 1); i >= 0; i -= 1)
       if (loaded.has(i)) {
         image = loaded.get(i);
+        drawn = i;
         break;
       }
     image ??= posterImage;
@@ -83,6 +87,7 @@ export function frameSequence(host, source, opts = {}) {
     const w = image.width * scale;
     const h = image.height * scale;
     context.drawImage(image, (canvas.width - w) / 2, (canvas.height - h) / 2, w, h);
+    canvas.dataset.drawn = String(drawn);
   };
   const start = async () => {
     if (typeof source === 'string') {
