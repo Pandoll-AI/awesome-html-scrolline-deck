@@ -1,5 +1,6 @@
 /** Draws line series together from left to right, optionally carrying their names. */
 import { colorOf } from '../_shared/color.js';
+import { driveValue } from '../_shared/drive.js';
 import { pointOnPolyline } from '../_shared/stroke.js';
 import { px } from '../_shared/timeline.js';
 
@@ -62,20 +63,14 @@ export default {
         label.style.position = 'absolute';
         ctx.overlay.append(label);
         ctx.initial(label, { autoAlpha: 0 });
-        const state = { p: 0 };
-        tl.to(
-          state,
-          {
-            p: 1,
-            duration: d * 0.7,
-            ease: 'none',
-            onUpdate() {
-              const q = pointOnPolyline(pts, state.p);
-              label.style.left = `${Math.round(q.x * 1000) / 1000}px`;
-              label.style.top = `${Math.round(q.y * 1000) / 1000}px`;
-            },
+        driveValue(
+          tl,
+          (p) => {
+            const q = pointOnPolyline(pts, p);
+            label.style.left = `${Math.round(q.x * 1000) / 1000}px`;
+            label.style.top = `${Math.round(q.y * 1000) / 1000}px`;
           },
-          d * 0.15,
+          { from: 0, to: 1, at: d * 0.15, duration: d * 0.7, ease: 'none' },
         );
         tl.to(
           label,
