@@ -1,5 +1,7 @@
 # Scrolline v2 — 인터페이스 계약 정본 (CONTRACTS)
 
+- **계약 판 v2 (2026-10-08)**: W2 병합 뒤 개정 요청 27건 반영(결정 원장 `plan/CONTRACT-REQUESTS.md`, 엔진 반영 잡 `plan/WORK-SPLIT-v2.md`). 바뀐 절마다 「v2 변경」 줄로 표시. 「v2 변경」이 붙은 기능은 해당 E2 잡 병합 전까지 엔진에 없을 수 있음(잡 id 병기).
+
 - 이 문서가 워커 지시서의 인용 원본. 코드가 이 문서와 다르면 코드가 틀린 것.
 - 계약 변경은 메인만 한다(이 파일 + `engine/types.js` + `engine/constants.js` 동시 수정, 커밋 1개, `Hat: refactor`).
 - 표기: `u` = timeline 단위(GSAP 초와 같은 수, 의미는 「스크롤 거리 단위」). `px` = CSS px. 좌표는 전부 **stage-local**(stage 루트 왼쪽 위 = 0,0).
@@ -42,6 +44,7 @@
 
 - 테스트 파일은 대상 옆에 `<name>.test.js`. 다른 위치 금지.
 - 새 engine 파일 추가는 계약 변경(메인 승인).
+- **v2 변경**: 같은 모듈의 회귀 테스트를 `Hat: refactor` 커밋에서 더할 때는 기존 테스트를 고치지 않고 옆에 `<name>.<주제>.test.js`를 새로 만든다(예: `engine/deck-schema.fixes.test.js`). `engine/constants.js`에는 C19 밖 engine 내부 상수도 둘 수 있고, `engine/index.js`는 C19 이름만 골라 내보낸다.
 
 ---
 
@@ -82,7 +85,7 @@
 ## C3. deck.yaml 스키마
 
 ```yaml
-id: rail-history            # ^[a-z0-9][a-z0-9-]*$, 폴더 이름과 같음
+id: rail-history            # ^_?[a-z0-9][a-z0-9-]*$, 폴더 이름과 같음(v2: `_`로 시작 = 내부 덱)
 title: "…"
 lang: ko                    # ko | en
 concept: rail               # concepts/<id>
@@ -112,8 +115,18 @@ beats:
     at: 0                   # 선택. 앞 beat 기준 시작 오프셋(C6)
     exportHold: 2.0         # 선택. MP4 내보내기에서 이 정지점 머무는 초
     repeat: intended        # 선택. 같은 move 덱 안 2회 이상 허용 사유
+    persist: false          # 선택(v2). true면 beat 끝에 숨기지 않음. place.world beat만
+    tone: 2                 # 선택(v2). 0..5 정수 → 루트 data-tone. tokens.css가 C11 변수만 재정의
+    source: s1              # 수치·인용·실사 beat. v2: 문자열 또는 문자열 배열 [s3, s4]
 ```
 
+**v2 변경 (C3)**
+- deck `id`는 `DECK_ID_PATTERN = ^_?[a-z0-9][a-z0-9-]*$`. `_`로 시작하는 덱(`decks/_smoke`)은 내부 덱: 갤러리·다양성 게이트·export 일괄 대상에서 빠진다. beat id·move id는 그대로 `ID_PATTERN`(`_` 불가).
+- 공통 beat 필드 3개 추가: `persist`(C6 build ⑥), `tone`(C11), `source` 배열 허용. 이 셋과 C3 표의 공통 키는 beat type `fields`에 넣지 않고 validateDeck이 따로 검사한다(`source`만 예외: 출처를 화면에 그리는 type은 `fields.source`를 `type: 'any'`로 둔다).
+- `sources[]` 항목에 선택 `short`(화면 L3용 짧은 이름, 예 `arXiv`·`Reuters`) 추가. 렌더러 출처 표기는 `short ?? title`.
+- 마지막 beat에는 컨셉 기본 exit을 붙이지 않는다(직접 적은 `exit`만). C6 「마지막 beat가 그대로 남는 경우」가 기본이 됨(rail.md 8.2, E2-1·E2-6).
+- `at` 양수는 앞 beat 퇴장 시작 뒤 틈(빈 화면), 음수는 겹침. 결과 `s`는 `prev.start` 아래로 내려가지 않는다(C6 그대로).
+- `link`가 있는 beat의 `exit`(직접 적었든 컨셉 기본값이든)는 plan과 validateDeck 모두 무시한다.
 - `MoveRef = { move: string, params?: object, at?: number, override?: string }`
   - `override`: 컨셉 허용 목록 밖 move를 쓸 때 사유 문자열(없으면 검증 실패).
 - 기본값 해석 순서: beat 필드 → `concept.defaults.byType[type].{enter,exit,link}` → `concept.defaults.{enter,exit}` → 내장 `engine:fade-in` / `engine:fade-out`.
@@ -121,9 +134,11 @@ beats:
 
 ### 내용 감사 (`validateDeck`가 강제, luna 사건 대응)
 - 모든 문자열 필드에 대해 `PLACEHOLDER_PATTERNS`(engine/constants.js) 매치 시 오류: `TODO`, `TBD`, `lorem`, `ipsum`, `xxx`, `「x」`, `???`, `{{`, `}}`, `<placeholder>`, `자리표`, `예시 문구`, 빈 문자열, 공백만.
-- `number.value`, `chart.series[].values`, `quote`, `photo`(실사)에는 `source` 필수(`sample: true` 덱 제외). `source`는 `sources[].id` 중 하나.
-- 같은 move id가 덱 안에서 같은 role로 2회 이상 → `repeat: intended` 없으면 오류.
+  - v2 명시: 검사 범위 = 덱 객체 전체(move `params` 안 문자열·`states[]`·`notes[]` 포함).
+- `number`, `chart`, `quote`, `photo`(실사)에는 `source` 필수(`sample: true` 덱 제외). **v2**: `compare`도 `items[].value`가 하나라도 있으면 필수(`SOURCED_TYPES`). `source`는 `sources[].id` 하나 또는 그 배열(빈 배열·중복·없는 id 오류).
+- 같은 move id가 덱 안에서 같은 role로 2회 이상 → `repeat: intended` 없으면 오류. **v2**: `engine:none`(`NO_MOVE`)은 반복 검사 면제. 반복 키는 (role, move id) 쌍으로 비교(콜론 든 id를 자르지 않음, #15 수리).
 - 컨셉 `moves.allow` 밖 move → `override` 없으면 오류.
+- **v2 추가 검사**(E2-6): `persist: true`는 `place.world` beat만(screen beat면 오류) · `tone`은 `TONE_RANGE` 0..5 정수 · chart `states[].name`이 `base`(`BASE_STATE`)면 오류 · chart `states[].name`은 그 beat `steps[].name` 중 하나와 같아야 함 · chart `notes[].index`·`highlight.index`는 `0..categories.length-1` · link `accepts`는 **다음 beat** type으로 검사(#21 수리) · `engine:none`은 role 검사 면제(#22 수리).
 
 ---
 
@@ -135,24 +150,43 @@ beats:
 - 텍스트는 실제 DOM 글자(canvas 금지). 한국어는 어절 단위(`words`), 타이핑은 글자 단위(`chars`).
 - 숫자는 `Intl.NumberFormat(lang)` 포맷. 단위·접두는 별도 span.
 
+**v2 변경 (C4 공통)**
+- part 요소 class = `sl-<type>__<part>`(sequence는 `sl-seq-<use>__<part>`). **build(와 harness)가 render 직후 모든 part 요소에 이 class를 더한다**(렌더러가 이미 넣었으면 그대로, E2-1). 렌더러의 다른 class(`sl-chart` 등)는 자유. engine.css·move는 이 이름만 믿는다(E2-2 CSS가 이 규칙으로 씀).
+- `source` 표기: part `source` 1개, 글자 = 출처마다 `rc.sources[id].short ?? .title`(없으면 id)을 ` · `로 이음. `<a href>`는 넣지 않는다(발표 화면).
+- `BeatView.media?: { seq?: FrameSeq, clip?: Clip }` — video 렌더러가 만든 핸들. build가 `BeatInstance.media`(없으면 `{}`)로 옮긴다(#16·#20).
+- **상태 층**(`data-state`): 정지점 뒤 step이 바꿀 글자(chart `states[]`의 title·dek·note)는 렌더러가 미리 그린다. 기본 상태 요소 = `data-state="base"`, 상태 k 요소 = `data-state="<states[k].name>"`. base 아닌 층은 렌더 직후 `style.visibility = 'hidden'; style.opacity = '0'`. 상태가 어떤 글자 필드를 생략하면 앞 상태 값을 물려받아 그 층에 복제해 그린다(move는 층 하나만 켜고 끄면 됨). 같은 part 이름을 쓰므로 `part('title')`은 모든 층을 돌려준다(`[data-state]`로 거름).
+- 렌더러가 받는 `rc`(v2): `{ viewport, lang, asset, media: { frameSequence, videoClip }, el, words, chars, sources, mode }`. `sources` = `deck.sources`를 id로 묶은 객체, `mode` = `'live'|'export'`.
+
 | type | 필수 필드 | 선택 필드 | parts | primary |
 |---|---|---|---|---|
 | `text` | `text: string` | `emphasis: string[]`(부분 문자열), `size: xl\|l\|m`, `lines: string[]`(명시 줄) | `block`, `line`, `word`, `em` | `block` |
 | `photo` | `src: asset`, `alt: string` | `focus: {x,y}`(0..1), `caption`, `credit`, `source` | `frame`, `media`, `caption` | `frame` |
-| `video` | `src: asset`(mp4), `poster: asset`, `alt`, `mode: scrub\|play\|loop` | `frames: asset`(frames.json, scrub 필수), `caption`, `mask: {type: text\|shape, text?, shape?}`, `source` | `frame`, `media`, `caption` | `frame` |
+| `video` | `src: asset`(mp4), `poster: asset`, `alt`, `mode: scrub\|play\|loop` | `frames: asset`(frames.json, scrub 필수), `caption`, `mask: {type: text\|shape, text?, shape?}`, `source`, **v2** `credit` | `frame`, `media`, `caption`, **v2** `credit` | `frame` |
 | `number` | `value: number`, `label: string` | `format: {prefix, suffix, decimals, unit}`, `from: number`(count-up 시작), `source` | `value`, `digits`, `unit`, `label`, `source` | `value` |
-| `chart` | `kind: bar\|line\|area\|dot`, `categories: string[]`, `series: [{name, values: number[]}]` | `unit`, `highlight: {series?, index?}`, `states: [{name, kind?, series?}]`(steps용), `source` | `plot`, `axis`, `mark`, `label`, `legend`, `source` | `plot` |
-| `chronology` | `events: [{date, title}]`(2개 이상) | `events[].note`, `events[].media`, `scale: even\|time`, `axis: x\|y` | `track`, `event`, `date`, `title`, `note`, `media` | `track` |
-| `compare` | `items: [{label}]`(2~4개) | `items[].value`, `items[].text`, `items[].media`, `verdict` | `item`, `label`, `value`, `text`, `divider`, `verdict` | `item` |
+| `chart` | `kind: bar\|line\|area\|dot`, `categories: string[]`, `series: [{name, values: number[]}]` | `unit`, `highlight: {series?, index?}`, `states: [{name, kind?, series?, `**v2** `title?, dek?, notes?, unit?}]`(steps용), `source`, **v2** `title`(L1 결론), `dek`(L2 보충), `notes: [{index, series?, text}]`, `orient: v\|h` | `plot`, `axis`, `mark`, `label`, `legend`, `source`, **v2** `title`, `dek`, `note`, `baseline` | `plot` |
+| `chronology` | `events: [{date, title}]`(2개 이상) | `events[].note`, `events[].media`, `scale: even\|time`, `axis: x\|y`, **v2** `events[].weight: major\|minor`, `events[].source`, `label`, `caption`, `counter: none\|year\|month`, `ground: boolean`, `now: number`(0..1), `ticks: none\|year` | `track`, `event`, `date`, `title`, `note`, `media`, **v2** `dot`, `stem`, `source`(event 안), `label`, `caption`, `counter`, `reel`, `ground`, `ghost`, `now`, `tick` | `track` |
+| `compare` | `items: [{label}]`(2~4개) | `items[].value`, `items[].text`, `items[].media`, `verdict`, **v2** `source` | `item`, `label`, `value`, `text`, `divider`, `verdict`, **v2** `source` | `item` |
 | `quote` | `text`, `by` | `role`, `source` | `block`, `mark`, `word`, `by` | `block` |
-| `prompt` | `text` | `label`, `result: {type: photo\|text, src?, text?, alt?}` | `field`, `char`, `caret`, `label`, `result` | `field` |
+| `prompt` | `text` | `label`, `result: {type: photo\|text, src?, text?, alt?}` | `field`, `char`, `caret`, `label`, `result`, **v2** `word`(result 글 어절) | `field` |
 | `code` | `code`, `lang` | `highlight: [[from,to]]`(1-base 줄 범위), `caption` | `block`, `line`, `token`, `caret` | `block` |
 | `sequence` | `use: string`(덱 전용 sequence 이름) | `data: any` | sequence가 정의 | sequence가 정의 |
 
 - `chart` 렌더: SVG `viewBox="0 0 1600 900"`, mark마다 `data-series`, `data-index`. 축 눈금은 정적.
+  - **v2 변경 (chart, #9·#10·#11·#12, E2-3)**: 이름 통일 — L1 = `title`, L2 = `dek`, 표식 주석 = `notes[]`(part `note`). zoom 덱의 `note:`(단수 문자열)는 `dek:`로 바꾼다(별칭 없음).
+  - `title`·`dek`는 SVG 밖 HTML(`h2.sl-chart__title`, `p.sl-chart__dek`), plot 위. `notes[k]` → `p.sl-chart__note`에 `data-index`·`data-series`(생략 시 `0`), 위치 = 해당 mark 옆(viewBox 좌표를 % 위치로 환산한 inline `left/top`).
+  - `orient: h` = 가로 막대(범주가 y축 위→아래, 값이 x축). `bar`에서만 의미, 다른 kind는 무시.
+  - 음수: 값 영역 = `[min(0, 최소값), max(0, 최대값)]`(둘 다 0이면 `[0, 1]`). 막대는 0 기준선에서 위·아래(h면 좌·우)로. 0 기준선 = part `baseline`(`line.sl-chart__baseline`, 값 영역에 음수가 있을 때만). mark에 `data-sign="neg"|"pos"`.
+  - `states[]`: 글자 필드(`title`·`dek`·`notes`·`unit`)는 상태 층(C4 공통)으로 미리 렌더. `kind`·`series` 변화(모양·값)는 step move 몫(렌더러는 base 상태 mark만 그림). 상태 층 순서 = `states[]` 순서.
 - `chronology` 렌더: track 위 event를 `scale`대로 배치. `axis: x`면 가로 레일(rail 컨셉).
+  - **v2 변경 (chronology, #2·#3·#5·#6, E2-4)**: event마다 `dot`(점)·`stem`(점과 제목을 잇는 줄기) part를 늘 그림. `weight` → event `data-weight`(기본 `major`).
+  - `label` → `h2.sl-chronology__label`(장 이름). `caption` → `p.sl-chronology__caption`(L3 한 줄, track 끝 아래). `events[].source` → event 안 `small.sl-chronology__source`(C4 공통 표기, 출처 감사는 id 존재만 — chronology는 `SOURCED_TYPES` 밖).
+  - `counter: year|month` → `div.sl-chronology__counter` 안에 자리마다 `reel`(0–9 세로 스택 10칸, `data-place`=자리 순번, `data-digit`=정적 숫자). 정적 상태 = `events[0].date`의 숫자(`year` = YYYY 4자리, `month` = YYYY.MM 6자리, 구분 점은 part 아님). 정적 offset은 inline `transform: translateY(-<digit×10>%)`. move는 첫 tween 전에 `ctx.initial(reel, { y: 0, yPercent: -digit × 10 })`으로 GSAP 상태를 맞춘다. `none`(기본) = 없음.
+  - `ground: true` → `div.sl-chronology__ground`(`data-depth="0"`, track 뒤 배경층) 안에 event마다 연도 큰 글자 `ghost`. `now: 0..1` → `div.sl-chronology__now`(beat 루트 너비 기준 x 비율의 세로선). `ticks: year` → track 위 연도 경계마다 `tick`(scale time 기준, even이면 event마다).
 - `asset` = 덱 폴더 기준 상대 경로(`assets/…`). 렌더러는 `ctx.asset(path)`로 URL 변환.
 - `sequence`(덱 전용): `decks/<id>/sequences/<use>.js` default export = `BeatTypeDef & { timing(data), build(tl, ctx) }`(C5·C7과 같은 시그니처). 엔진은 이 beat의 enter를 sequence 자신의 `build`로 대신한다.
+  - **v2 명시 (E2-1)**: plan은 sequence beat의 enter span을 `{ role: 'enter', move: 'seq:<use>', params: {} }`로 기록하고 길이·내부 정지점은 `sequence.timing(data)`에서 얻는다(`beat.enter`를 적으면 validateDeck 오류). build는 그 span에서 `sequence.build(tl, ctx)`를 부른다. exit·link·steps·camera·ambient는 일반 beat와 같음.
+- **v2 변경 (그 밖 type)**: `video.credit`(스톡 라이선스 표기, part `credit`) · `compare.source`(part `source`) · `prompt.result.type: text`면 result 안 글을 어절 `word` part로 · `photo`·`number`·`quote`·`chart`·`compare`의 `source`는 문자열 또는 배열(C4 공통 표기 규칙).
+- **video 렌더(v2, #16·#17, E2-5)**: `mode: scrub` → `rc.media.frameSequence(host, asset(frames))`, canvas가 part `media`, `BeatView.media.seq` = 그 FrameSeq. `mode: play|loop` → `rc.media.videoClip(host, { src, poster, loop, mode }, { exportMode: rc.mode === 'export' })`, `clip.el`이 part `media`, `BeatView.media.clip` = 그 Clip. `mask.type: text`는 렌더러가 **적용하지 않는다**: media에 `class sl-mask`·`data-mask-text`만 표시(렌더 완성 상태 = 마스크 없는 영상). 마스크를 거는 것은 move(C5 `ctx.textMask`). `mask.type: shape`는 정적 clip이라 렌더러가 `clipPath` 적용(지금과 같음).
 
 ### BeatTypeDef (engine/beats/<type>.js default export)
 ```ts
@@ -162,13 +196,29 @@ beats:
   primary: string,                     // 기본 anchor part
   render(data: object, rc: RenderContext): BeatView
 }
-RenderContext = { viewport: Viewport, lang: 'ko'|'en', asset(p: string): string, media: MediaApi, el, words, chars }
-BeatView = { root: HTMLElement, parts: Record<string, Element[]> }
+RenderContext = { viewport: Viewport, lang: 'ko'|'en', asset(p: string): string, media: MediaApi, el, words, chars,
+                  sources: Record<string, Source>, mode: 'live'|'export' }          // v2: sources·mode
+MediaApi = { frameSequence, videoClip }                                             // v2: C13 함수 그대로
+BeatView = { root: HTMLElement, parts: Record<string, Element[]>, media?: { seq?: FrameSeq, clip?: Clip } }   // v2: media
 ```
 
 ---
 
 ## C5. move 계약
+
+> **v2 변경 요약 — move 라이브러리 설계자용(MOVES.md·moves/ 작업자는 이 상자만 읽어도 됨)**
+> 1. **anchor index**: `beat.anchor(part?, index = 0)`. 음수 index = 뒤에서(-1 = 마지막). `Handoff.index`는 양수로 정규화된 값. 「N번째 막대·사건」을 handoff 대상으로 쓸 수 있다(#7·#8).
+> 2. **link가 넘길 part 고르기**: MoveDef 선택 함수 `handoff(params, { from, to }) → { from?: { part?, index? }, to?: { part?, index? } }`(순수, link만). 생략하면 양쪽 primary·index 0. 엔진이 이것으로 `ctx.handoff`를 만든다.
+> 3. **skip 규칙**: `ctx.skipNodes: Element[]` 추가 — 이 요소들은 건드리지 않는다(enter·step 모두). `ctx.skipParts`는 통째로 넘어간 part 이름만(to.index를 지정한 link면 `[]`, 그 요소 하나만 skipNodes). move는 둘 다 지켜야 함.
+> 4. **영상 핸들**: `ctx.beat.media = { seq?: FrameSeq, clip?: Clip }`. 스크럽 move는 `tl.to(proxy, { p: 1, onUpdate: () => ctx.beat.media.seq.setProgress(proxy.p) })`처럼 tween onUpdate에서만 부른다(C13). link에서 A의 영상은 `ctx.from.media`(#16·#20).
+> 5. **글자 마스크**: 렌더러는 `data-mask-text`만 표시, 마스크 적용은 move. `ctx.textMask(text, { rect?, align? }) → data URL`(글꼴 = 컨셉 display 글꼴·굵기, rect 기본 = `ctx.beat.anchor('media').rect`). 적용은 `ctx.initial(media, { maskImage: url, webkitMaskImage: url, maskRepeat: 'no-repeat', … })` 후 `maskSize`·`maskPosition` tween(#17).
+> 6. **overlay 수명**: `ctx.overlay`는 span 시작에 보이고 **그 move를 가진 beat가 끝날 때**(`beat.span.end`, persist beat면 끝까지) 숨는다. step·ambient가 만든 링·주석은 beat 끝까지 남는다(#19). 먼저 지우고 싶으면 move가 자기 tween으로 지운다. link span은 받는 beat(B) 소유라 B 끝까지.
+> 7. **채워지는 ctx**: `prev`·`next`(앞뒤 BeatInstance), `camera`(camera role: place.world에서 계산, C8), `step: { name, index }`(step role). 
+> 8. **engine:none**은 모든 role에 쓸 수 있다(role·반복 검사 면제, #22). link가 B를 다 그리는 설계면 B enter = `engine:none`.
+> 9. **link accepts = 받는 beat(B) type**(validateDeck 수리, #21). 보내는 쪽 제한은 build에서 `ctx.from.type` 검사로.
+> 10. **상태 층**: chart `states[]`의 글자는 `[data-state="<name>"]` 층으로 미리 그려져 있다(C4). step move는 `ctx.step.name` 층을 켜고 다른 층을 끈다. **값·모양을 바꾸는 step move는 `reduce: 'self'` 필수**(reduce에서도 최종 값이 보여야 하므로 fade 대체 금지).
+> 11. **tone·persist**: beat 루트 `data-tone`(색 변수는 CSS가 바꿈, move는 색 tween 시 `ctx.tokens`나 계산값 사용), `persist` beat는 끝에 숨지 않으므로 그 beat의 exit move는 「물러남」(흐림·축소)으로 설계.
+> 12. **슬롯 배치는 CSS `translate` 속성**(C8). beat 루트·part의 `transform`은 move 전용이고 측정은 transform을 무시한다.
 
 ```ts
 // moves/<family>/<id>.js
@@ -195,7 +245,7 @@ export default {
   - 시작 전 상태는 `ctx.initial(targets, vars)`로만 선언(엔진이 측정 후 일괄 `gsap.set`). `tl.from()` 금지. `fromTo`는 `immediateRender: false` 필수.
   - tween 값에 `var(` 문자열 금지. 수치는 `ctx.tokens`에서.
   - beat 루트(`ctx.beat.root`) 의 `autoAlpha`·`visibility`·`display` 건드리지 않음(엔진 소유). part만 움직임.
-  - `ctx.skipParts`에 든 part는 건드리지 않음(link가 이미 넘겨준 part).
+  - `ctx.skipParts`에 든 part, `ctx.skipNodes`에 든 요소는 건드리지 않음(link가 이미 넘겨준 것). v2: skipNodes 추가.
   - 무작위는 `ctx.rng()`만. `Math.random`·`Date.now`·`performance.now` 금지.
   - DOM 추가가 필요하면 `ctx.overlay`(이 move 전용 컨테이너) 안에만. 엔진이 수명 관리.
   - 3D 규칙(C10) 준수.
@@ -209,17 +259,22 @@ export default {
   beat: BeatInstance,                 // 대상 beat(link면 to)
   from?: BeatInstance,                // link·exit에서 나가는 beat(link면 A, exit면 beat 자신과 같음)
   prev?: BeatInstance, next?: BeatInstance,
-  handoff?: { from: Handoff, to: Handoff },   // link만
-  camera?: CameraTarget,              // camera role만: beat.place.world → 목표
+  handoff?: { from: Handoff, to: Handoff },   // link만. v2: MoveDef.handoff()가 고른 part·index
+  camera?: CameraTarget,              // camera role만: beat.place.world → 목표(v2 식은 C8)
   stage: Stage, viewport: Viewport, reduce: boolean,
   start: number, duration: number,    // 절대 시작 u, 이 move 길이(fill 해석 후)
-  skipParts: string[],
-  overlay: HTMLElement,
+  skipParts: string[],                // 통째로 넘어간 part 이름
+  skipNodes: Element[],               // v2: 건드리지 않을 요소(link가 넘긴 요소)
+  step?: { name: string, index: number },   // v2: step role만(name = step.name ?? String(index+1))
+  overlay: HTMLElement,               // v2: 수명 = span.start ~ beat.span.end(persist면 끝까지)
   tokens: ConceptTokens,
   ease(alias: 'in'|'out'|'inout'|'scrub'|string): string,   // 컨셉 alias → gsap ease 문자열, 모르는 이름은 그대로
   initial(targets: Element|Element[], vars: object): void,
   rng(): number,                      // [0,1), seed = hashSeed(`${deck.id}:${beat.id}:${role}:${move.id}`)
+  textMask(text: string, opts?: { rect?: Rect, align?: 'center'|'left' }): string,   // v2: C13 textMask + 컨셉 display 글꼴
 }
+// v2: MoveDef 선택 필드
+handoff?(params, data: { from: object, to: object }): { from?: { part?: string, index?: number }, to?: { part?: string, index?: number } }   // link만, 순수
 ```
 
 ### BeatInstance
@@ -229,8 +284,9 @@ export default {
   root: HTMLElement,
   parts: Record<string, Element[]>,
   part(name: string): Element[],      // 없으면 []
-  anchor(part?: string): Handoff,     // 측정 스냅샷 기준. part 생략 = primary
+  anchor(part?: string, index?: number): Handoff,   // 측정 스냅샷 기준. part 생략 = primary, index 기본 0·음수 = 뒤에서(v2)
   span: { start, stop, end },         // TimelineMap 값
+  media: { seq?: FrameSeq, clip?: Clip },           // v2: BeatView.media(없으면 {})
 }
 ```
 
@@ -271,6 +327,8 @@ for each beat b (i = 0..n-1):
 duration = max(all span ends, all stop labels) + T.tail
 ```
 
+- **v2 변경 (plan, E2-1)**: sequence beat의 enter = `seq:<use>` span(C4). 내부 정지점은 지금처럼 **enter(와 sequence)만** 기록한다(step·camera의 `stops`는 무시 — 필요한 move는 enter로 설계). map 형식·불변식은 그대로(`version: 1` 유지: v2 필드는 map에 들어가지 않음).
+
 - `TimelineMap`:
 ```ts
 {
@@ -282,10 +340,21 @@ duration = max(all span ends, all stop labels) + T.tail
 ```
 - **map 불변식**(테스트 대상): ① stops t 오름차순·이름 유일 ② 모든 span `start <= end` ③ `beats[i].start` 비감소 ④ 같은 deck 입력 → JSON 동일 ⑤ **viewport·reduce·portrait와 무관**(그래서 resize 뒤 같은 t가 같은 내용).
 - `build(map, { stage, deck, registry, concept, beatTypes, sequences, reduce, gsap, measureFn? }) → BuiltDeck`
-  - 순서: ① 모든 beat `render` + `place` 적용 ② `document.fonts.ready` 뒤 `measure`(모든 beat의 모든 part rect 스냅샷, transform 없는 상태) ③ 모든 move의 `ctx.initial` 수집·적용 ④ master `gsap.timeline({ paused: true, defaults: { ease: 'none' } })`에 span별 local tl을 `add` ⑤ 라벨 추가 ⑥ beat 루트 가시성: `gsap.set(root, {autoAlpha:0})`, `tl.set(root, {autoAlpha:1}, start)`, 마지막 beat 아니면 `tl.set(root, {autoAlpha:0}, end)` ⑦ master 길이를 `map.duration`으로 맞춤.
+  - 순서: ① 모든 beat `render` + `place` 적용 ② `document.fonts.ready` 뒤 `measure`(모든 beat의 모든 part rect 스냅샷, transform 없는 상태) ③ 모든 move의 `ctx.initial` 수집·적용 ④ master `gsap.timeline({ paused: true, defaults: { ease: 'none' } })`에 span별 local tl을 `add` ⑤ 라벨 추가 ⑥ beat 루트 가시성: `gsap.set(root, {autoAlpha:0})`, `tl.set(root, {autoAlpha:1}, start)`, 마지막 beat 아니고 `persist`가 아니면 `tl.set(root, {autoAlpha:0}, end)` ⑦ master 길이를 `map.duration`으로 맞춤.
+  - **v2 변경 (build, E2-1)**
+    - ① render에 C4 v2 `rc` 전부(`media`·`sources`·`mode` 포함)를 넘기고, `beat.tone`이 있으면 루트 `data-tone`, `BeatView.media` → `BeatInstance.media`.
+    - ⑥ `persist: true` beat는 끝 숨김 `set` 생략(#1). plan·정지점 불변.
+    - overlay: span마다 `stage.overlayFor(`${beat}:${role}:${k}:${move}`)`(k = 같은 beat·role 안 순번, 키 충돌 방지). 가시성 = `gsap.set(ov, {autoAlpha:0})`, `tl.set(ov, {autoAlpha:1}, span.start)`, 마지막 beat도 persist도 아니면 `tl.set(ov, {autoAlpha:0}, beat.span.end)`(루트 ⑥과 같은 조건). (#19)
+    - ctx: `prev`·`next` = 앞뒤 BeatInstance, `camera` = C8 v2 식, `step` = `{ name, index }`, `skipNodes`, `textMask`, `handoff` = `MoveDef.handoff?.(params, {from: A.data, to: B.data})`로 고른 `A.anchor(from.part, from.index)`·`B.anchor(to.part, to.index)`.
+    - skip 전달: link가 `to.index`를 지정했으면 B의 enter·step에 `skipNodes = [handoff.to.node]`, `skipParts = []`. 지정 안 했으면 `skipParts = [to.part]`, `skipNodes = B.part(to.part)`.
+    - reduce 대체(`'fade'`)일 때도 skip·overlay 규칙은 같음.
   - reduce && move.reduce === 'fade' → 같은 duration의 내장 move로 대체: enter→`engine:fade-in`, exit→`engine:fade-out`, link→`engine:crossfade`, step→`engine:fade-in`(대상 part 없으면 no-op), ambient→no-op. camera move는 `reduce: 'self'` 필수.
   - `BuiltDeck = { tl, map, beats: BeatInstance[], byId: Map<string, BeatInstance>, destroy() }`.
 - 내장 move(`engine:*`): `engine:fade-in`(beat의 모든 최상위 part opacity 0→1), `engine:fade-out`(1→0), `engine:crossfade`(A 전체 1→0, B 1←0, 앞 40% 겹침), `engine:none`(duration 0). registry가 항상 포함.
+- **v2 변경 (내장 move, E2-1)**
+  - `engine:none`: 등록 role은 `ambient`지만 **모든 role**에 쓸 수 있다(validateDeck·build가 role 검사를 하지 않음). duration 0, build 없음. 반복 검사 면제.
+  - `engine:fade-in`: 대상 = beat의 part 요소 중 skipNodes 밖, **base 아닌 상태 층(`[data-state]:not([data-state="base"])`) 밖**. step role로 쓰이면(reduce 대체 포함) 상태 층 교대: `[data-state="<ctx.step.name>"]` 0→1, 그 밖 `[data-state]` 1→0. 대상이 없으면 no-op.
+  - `engine:fade-out`·`engine:crossfade`(A 쪽): 상태 층 포함 모든 part를 `tl.to(…, { autoAlpha: 0 })`(현재 값에서 0, 숨은 층은 변화 없음). crossfade B 쪽은 fade-in과 같은 대상 규칙.
 
 ### 정지점
 - 라벨 이름 = `STOP_PREFIX + name`, `STOP_PREFIX = 'stop:'`. 다른 라벨은 자유지만 `stop:`으로 시작하면 정지점으로 취급.
@@ -298,20 +367,23 @@ duration = max(all span ends, all stop labels) + T.tail
 ```ts
 Handoff = {
   beat: string, part: string,
+  index: number,           // v2: 그 part 안 요소 순번(음수 입력은 양수로 정규화)
   kind: 'rect' | 'point',
   rect: Rect,              // 측정 스냅샷(stage-local, transform 이전)
   point: Point,            // rect 중심(kind:'point'면 이것만 의미)
-  node: Element,           // 그 part의 첫 요소
+  node: Element,           // 그 part의 index번째 요소(v1: 첫 요소)
   style: { color: string, radius: number, fontSize: number },   // getComputedStyle 스냅샷(px 수치)
 }
 ```
 - 측정: `measure(stageRoot, beats, measureFn = defaultMeasure) → MeasureSnapshot`(`Map<Element, Rect>`). `defaultMeasure(node, root)` = getBoundingClientRect 차이. 측정은 build ②에서 한 번, 모든 transform 적용 전.
 - `anchorOf(beat, part?, snapshot) → Handoff`. `BeatInstance.anchor(part)`는 이것을 부른다.
+- **v2 변경 (#7·#8, E2-2)**: `anchorOf(beat, part, snapshot, primary?, index = 0)`. `index < 0`이면 `parts[part].length + index`. 범위 밖이면 throw(`Beat "<id>" has no <part>[<index>]`). `BeatInstance.anchor(part, index)`가 이것을 부른다.
+- link가 넘기는 대상 = `MoveDef.handoff?.(params, { from, to })`(C5 v2 2번). 생략 = 양쪽 primary·index 0(v1과 같음).
 - **소유권 규칙(link)**:
   - link 시작 시 A의 `handoff.from.node`를 움직여 `handoff.to.rect`로 보낸다(또는 overlay에 대역을 만들어 보냄).
   - link 끝 시각에: B의 대상 part(`handoff.to.part`)는 보임(`ctx.initial`로 숨겨 두었다가 끝에 `tl.set(…, {autoAlpha:1}, end)`), A의 대역·원본은 숨김.
   - 두 개가 동시에 보이는 구간은 crossfade 0.15u 이하.
-  - 엔진은 B의 enter move에 `skipParts = [handoff.to.part]`를 넘긴다.
+  - 엔진은 B의 enter move에 `skipParts = [handoff.to.part]`를 넘긴다. **v2**: to.index를 지정한 link면 `skipParts = []`, `skipNodes = [handoff.to.node]`(C6 v2 skip 전달).
 - 도우미(engine/handoff.js):
   - `rectIn(node, root) → Rect`
   - `toInset(rect, viewport) → string` (`inset(top right bottom left)` clip-path 값)
@@ -342,6 +414,13 @@ CameraTarget = { x: number, y: number, s: number, rx?: number, ry?: number }  //
 ```
 - slot은 CSS class `sl-slot-<slot>`. 위치는 concept tokens(C11)로 조정.
 - `cameraVars({x,y,s,rx,ry})` = 목표 world 점이 화면 중앙에 오도록 `.sl-camera`의 `x, y, scale, rotationX, rotationY, transformOrigin`. |rx|,|ry| ≤ 12 강제(clamp + dev 경고).
+
+**v2 변경 (C8, #18·#25, E2-2)**
+- slot 배치 = `SLOT_DEFAULTS[slot]`(engine/constants.js) 위에 `concept.slots[slot]`을 키 단위로 덮어쓴 `{ x, y, ax, ay, w? }`. `x·y` = 화면 비율 위치, `ax·ay` = 블록 안 기준점(0 = 왼쪽·위 끝, 0.5 = 가운데, 1 = 오른쪽·아래 끝), `w` = 최대 너비(화면 비율). 지금까지 stage는 `concept.slots`를 무시했다(수리).
+  - 적용: 루트 inline `left: x×100%; top: y×100%; translate: -ax×100% -ay×100%; max-width: w×100%`. **CSS `translate` 속성**을 쓰고 `transform`은 쓰지 않는다(transform = move 전용, `defaultMeasure`가 inline transform을 지우므로 slot 위치가 측정에서 빠지는 문제 방지). engine.css의 slot class는 `transform`을 쓰지 않는다.
+  - 기본값: `left`·`lower-third`는 `ax: 0`(블록 **왼쪽 끝**이 x에 고정 → 길이가 다른 어절이 와도 같은 자리 컷이 흔들리지 않음, #25), `right`는 `ax: 1`, `full`은 `inset: 0`(위치 키 무시).
+- world 배치도 `transform` 대신 개별 속성: `left: x×w px; top: y×h px; translate: 0 0 <z>px; scale: <s>`(transform-origin 0 0). camera의 transform만 move가 움직인다.
+- `ctx.camera`(camera role) = beat의 `place.world`가 화면을 꽉 채우는 목표: `{ x: wx + 0.5×s, y: wy + 0.5×s, s: 1/s, rx: 0, ry: 0 }`(wx·wy·s = place.world, s 기본 1). 즉 「타일 중심이 화면 중앙」(canvas.md 8.3 관례와 같음). move params가 덮어쓸 수 있음. screen beat의 camera move면 `ctx.camera` = 직전 camera 목표(없으면 `{x:0.5,y:0.5,s:1}`).
 
 ---
 
@@ -414,7 +493,13 @@ validateSchema(schema, value, path) → Array<{ path: string, message: string }>
 | `--sl-perspective` | `.sl-viewport` perspective(px) |
 | `--sl-gutter` `--sl-radius` | 여백·모서리 |
 
+| `--sl-caption-left` `--sl-caption-bottom` `--sl-caption-width` | **v2** 영상·사진 캡션 칼럼 위치(길이 값, 예 `8%`·`10%`·`36%`). engine.css의 `.sl-video__caption`·`.sl-photo__caption`이 소비(#18) |
+
 - engine이 정의하는 변수(컨셉이 덮어쓰지 않음): `--px`, `--vw-px`, `--vh-px`, `--sl-portrait`.
+- **v2 변경 (C11)**
+  - `slots`: `{ <slot>: { x?, y?, ax?, ay?, w? } }`(C8 v2). 기존 `{x, y}`만 쓴 컨셉은 그대로 유효하지만 `left`·`lower-third`의 기준점이 왼쪽 끝으로 바뀐다(이미 그렇게 의도한 값들: kinetic·data·rail·canvas·launch).
+  - `tone`: tokens.css는 `.sl-concept-<id> [data-tone="N"] { … }`(N = 0..5)에서 위 표의 변수만 재정의할 수 있다(새 변수 금지). 정의 안 한 tone은 기본 색.
+  - beat type별 기본 레이아웃 CSS는 engine.css가 맡는다(C4 v2 class 규칙, E2-2). tokens.css는 계속 변수만.
 
 ---
 
@@ -447,6 +532,8 @@ Presenter = { next(), prev(), first(), last(), goto(name: string), blackout(on?:
 - 메타·Ctrl·Alt 조합은 무시. 링크·버튼·input에 포커스가 있으면 Space·Enter 양보.
 - 다음 정지점 = 현재(진행 중 목표 우선) 시각보다 `0.01u` 이상 뒤의 첫 stop. 이동 시간(초) = `min(2.6, 0.9 + |Δy| / h × 0.35)`, easing = cubic inOut. reduce면 즉시 이동.
 - URL 파라미터: `?t=<u>`(시작 시각), `?stop=<name>`, `?motion=reduce`(강제 reduce), `?debug=1`(HUD: t·stop·beat).
+
+- **v2 명시 (E2-7)**: `scrolline:active` 발생 주체 = **boot**(지금은 아무도 안 냄 — 수리). master tl `onUpdate`와 boot가 부르는 seek 뒤에 현재 t로 beat별 `[span.start, span.end)` 안팎을 이전 값과 비교해 enter/leave를 낸다(같은 t 재계산은 이벤트 없음). `persist` beat도 span 끝에 leave(화면에는 남되 inert). video clip activate/deactivate도 같은 지점에서(C13 v2). export 모드에서는 내지 않음. 정지점·키 규칙 변화 없음.
 
 ### window 이벤트 (`EVENTS`, 전부 `CustomEvent`, detail 고정)
 | 이름 | detail | 발생 |
@@ -493,6 +580,10 @@ textMask(text: string, { font: string /* CSS font 축약 */, width: number, heig
 preloadImages(urls: string[]) → Promise<void>      // img.decode() 전부 대기
 ```
 - 영상 마스크: 대상 `.sl-mask` 요소에 `mask-image: url(...)` 또는 `clip-path`. 마스크 move는 `--sl-mask-*`가 아니라 GSAP으로 `clipPath`·`maskPosition`·`maskSize`를 tween.
+- **v2 변경 (C13, #16·#17)**
+  - 글자 마스크 적용 주체 = **move**. 렌더러는 `data-mask-text`만 남긴다. move는 `ctx.textMask(text, opts)`(C5)로 URL을 받아 `ctx.initial`로 `maskImage`·`webkitMaskImage`를 건다. `ctx.textMask` = `textMask(text, { font: '<--sl-weight-display> <크기>px <--sl-font-display>', width: rect.w, height: rect.h, align })`, 크기 = 글자 폭이 rect.w의 0.92가 되도록(엔진 계산, getComputedStyle 허용 — build는 순수 아님).
+  - `textMask` SVG = 배경 투명 + 흰 글자(mask는 alpha로 읽음. v1의 검정 배경 rect는 전체를 보이게 만드는 버그였음 — v2 커밋에서 수리). `videoClip`은 host 이벤트 리스너를 달지 않는다(v2 커밋에서 제거).
+  - video beat 핸들: `BeatInstance.media.seq`(scrub)·`.clip`(play·loop). live에서 clip `activate`/`deactivate`는 boot가 `scrolline:active` enter/leave에 맞춰 부른다(move는 부르지 않음). export에서는 boot가 `clip.bindExport({ start: toExportSeconds(path, span.start), duration: toExportSeconds(path, span.end) − start })`, seq는 `preloadAll()` 대기(C14 그대로).
 
 `tools/media/extract-frames.mjs`:
 ```
@@ -535,6 +626,7 @@ boot({
 DeckHandle = { map, built: BuiltDeck, driver?: ScrollDriver, presenter?: Presenter, rebuild(reason): Promise<void>, destroy(): void }
 ```
 - 순서: `validateDeck` 실패 시 화면에 오류 목록을 그리고 throw → `plan` → viewport → `createStage` → `build` → (live) driver·presenter·a11y·resize / (export) `buildExportTimeline` 등록.
+- **v2 변경 (C15, E2-7)**: boot가 build에 넘기는 것 = `asset`(`assetBase` + 덱 상대 경로, 이중 슬래시 없음), `media: { frameSequence, videoClip }`, `el`·`words`·`chars`(util/dom), `sources`(deck.sources를 id로), `mode`, `plugins`(SplitText·Flip·MorphSVGPlugin·DrawSVGPlugin·CustomEase 등록 후). 지금 boot는 이것들을 넘기지 않아 video scrub이 `<video>`로 떨어지고 asset 경로가 덱 기준으로 안 풀린다(수리 대상). clip·seq 연결은 C13 v2. export에서 모든 seq `preloadAll()`·이미지 `preloadImages` 뒤 wrapper 등록.
 - 덱 진입 파일 형태(`decks/<id>/main.js`):
 ```js
 import { boot } from '../../engine/index.js';
@@ -555,6 +647,7 @@ createRegistry(defs: MoveDef[]) → Registry
 Registry = { get(id): MoveDef /* 없으면 throw */, has(id): boolean, ids(): string[], byFamily(f): MoveDef[], byRole(r): MoveDef[] }
 ```
 - 생성 시 검사: id 유일·형식, family·role 유효, `params` 모든 키 `default`·`doc` 보유, `timing`·`build` 함수, `sources` 1개 이상. 위반 = throw.
+- **v2 변경 (E2-6)**: `handoff`가 있으면 함수여야 하고 `role: 'link'`여야 함. id는 `seq:`로 시작할 수 없음(sequence span 예약).
 - `engine:*` 내장 move 자동 포함.
 - `moves/index.js`(메인 소유): `import { createRegistry } from '../engine/index.js'; import reveal from './reveal/index.js'; … export default createRegistry([...reveal, ...]);`
 
@@ -580,6 +673,7 @@ Registry = { get(id): MoveDef /* 없으면 throw */, has(id): boolean, ids(): st
   - presenter: 키 → next/prev 선택 규칙, 포커스 양보, reduce 즉시 이동
   - media: tier 선택, 로딩 순서, 가장 가까운 앞 프레임 규칙(이미지는 가짜 객체)
   - export: path 합계 = duration, segment 연속, stopAt 위치, wrapper seek 결정론
+  - **v2 추가**: timeline — persist 끝 숨김 생략·overlay 수명·sequence span·skipNodes 전달·engine:fade-in 상태 층 교대 / handoff — anchor index(양수·음수·범위 밖) / stage — slot 기준점(ax·ay)·concept.slots 덮어쓰기·transform 미사용 / beats — C4 v2 새 part 전부 존재·상태 층 hidden·음수 막대 방향 / boot — rc 전달·clip activate/deactivate·export bindExport
 - **move 테스트 최소 항목**(`engine/testing.js`의 harness 사용)
   1. `createRegistry([move])` 통과(형식)
   2. timing 순수: 같은 입력 2회 → deepEqual, 기본 params로 duration > 0(ambient 제외)
@@ -588,6 +682,7 @@ Registry = { get(id): MoveDef /* 없으면 throw */, has(id): boolean, ids(): st
   5. 되감기: `seek(end)` → `seek(0)` 후 대상 inline style = `initial` 상태
   6. reduce: `reduce: true`에서 `filter`에 blur 없음, 3D 속성 없음(camera 제외)
   7. link만: 끝 시각에 to part 보임·from 숨김, 운반 노드 최종 rect ≈ `handoff.to.rect`(±1px, harness 가짜 측정)
+  8. **v2**: skipNodes에 든 요소의 inline style이 build 전후 같음(enter·step), `handoff()`가 있으면 순수(같은 입력 2회 deepEqual)
 
 ### engine/testing.js (harness)
 ```ts
@@ -601,6 +696,7 @@ Harness = {
 }
 ```
 - harness는 happy-dom 위에서 돌고, 측정은 `rects` 값으로 대체(happy-dom은 layout 없음). 기본 rect는 `{x:0,y:0,w:100,h:100}`.
+- **v2 변경 (E2-1)**: `rects` 키에 `${beatId}.${part}#${index}`(index번째 요소) 허용, `#` 없으면 index 0. `runMove`는 C5 v2 ctx(`skipNodes`·`step`·`textMask`·`prev`·`next`·`camera`)를 채우고 `{ …, step?, skipNodes? }` 옵션을 받는다. `beats` 항목에 `media?`(가짜 seq·clip) 허용.
 
 ---
 
@@ -623,3 +719,4 @@ Harness = {
 - 함수: `createStage` `computeViewport` `el` `words` `chars` `createRng` `hashSeed` `resolveParams` `validateSchema` `prefersReducedMotion` `createA11y` `plan` `build` `resolveTiming` `createRegistry` `validateDeck` `createScrollDriver` `createPresenter` `measure` `defaultMeasure` `anchorOf` `rectIn` `toInset` `transferVars` `frameSequence` `videoClip` `textMask` `preloadImages` `pickTier` `loadOrder` `exportPath` `buildExportTimeline` `toExportSeconds` `boot`
 - 상수·클래스: `VERSION` `STOP_PREFIX` `ID_PATTERN` `ROLES` `BEAT_TYPES` `SLOTS` `FAMILIES` `ENGINE_MOVES` `REDUCE_FALLBACK` `ENGINE_TIMING_DEFAULTS` `VIEWPORT` `MAX_TILT` `CAMERA_ONLY_PROPS` `EVENTS` `PRESENTER_KEYS` `PRESENTER_TRAVEL` `RESIZE` `CSS_VARS` `PLACEHOLDER_PATTERNS` `EXPORT_DEFAULTS` `FRAMES` `ENGINE_MOVE_DEFS` `SchemaError` `beatTypes`
 - `engine/contract.test.js`가 이 목록과 정확히 일치하는지 검사(메인 소유).
+- **v2 변경**: 공개 이름은 바꾸지 않는다. v2 상수(`CONTRACT_VERSION` `DECK_ID_PATTERN` `NO_MOVE` `SLOT_DEFAULTS` `TONE_RANGE` `BASE_STATE` `SOURCED_TYPES`)는 engine 내부 전용(`engine/constants.js`에서 직접 import, `index.js`는 내보내지 않음). moves·concepts·decks가 필요하면 문자열 값을 그대로 쓴다(`'engine:none'`, `'base'`).

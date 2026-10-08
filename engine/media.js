@@ -145,8 +145,7 @@ export function videoClip(host, spec, opts) {
     if (!opts.exportMode) void el.play().catch(() => {});
   };
   const deactivate = () => el.pause();
-  host.addEventListener('scrolline:active', activate);
-  host.addEventListener('scrolline:inactive', deactivate);
+  // C13 v2: activate/deactivate는 boot가 window `scrolline:active`에 맞춰 부른다(host 리스너 없음).
   return {
     el,
     activate,
@@ -157,8 +156,6 @@ export function videoClip(host, spec, opts) {
     },
     destroy() {
       deactivate();
-      host.removeEventListener('scrolline:active', activate);
-      host.removeEventListener('scrolline:inactive', deactivate);
       el.remove();
     },
   };
@@ -168,10 +165,13 @@ const xmlEscape = (value) =>
     /[&<>"']/g,
     (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' })[c],
   );
-/** @param {string} text @param {{ font: string, width: number, height: number, align?: 'center'|'left' }} opts */
+/**
+ * mask-image용 SVG data URL. 배경 투명·글자 흰색(불투명) — mask는 alpha로 읽으므로 글자 모양만 보인다.
+ * @param {string} text @param {{ font: string, width: number, height: number, align?: 'center'|'left' }} opts
+ */
 export function textMask(text, opts) {
   const center = (opts.align ?? 'center') === 'center';
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${opts.width}" height="${opts.height}" viewBox="0 0 ${opts.width} ${opts.height}"><rect width="100%" height="100%" fill="black"/><text x="${center ? '50%' : '0'}" y="50%" fill="white" text-anchor="${center ? 'middle' : 'start'}" dominant-baseline="middle" style="font:${xmlEscape(opts.font)}">${xmlEscape(text)}</text></svg>`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${opts.width}" height="${opts.height}" viewBox="0 0 ${opts.width} ${opts.height}"><text x="${center ? '50%' : '0'}" y="50%" fill="white" text-anchor="${center ? 'middle' : 'start'}" dominant-baseline="middle" style="font:${xmlEscape(opts.font)}">${xmlEscape(text)}</text></svg>`;
   return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }
 /** @param {string[]} urls */

@@ -4,11 +4,17 @@
 
 export const VERSION = 2;
 
+/** 계약 판(v2 = 2026-10-08 개정). VERSION은 window.__deck 판이라 따로 둔다 */
+export const CONTRACT_VERSION = 2;
+
 /** 정지점 라벨 접두(C6) */
 export const STOP_PREFIX = 'stop:';
 
 /** beat·move·stop 이름 형식(C3, C5) */
 export const ID_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
+
+/** deck id(C3 v2): `_`로 시작하면 내부 덱(갤러리·다양성 게이트 제외) */
+export const DECK_ID_PATTERN = /^_?[a-z0-9][a-z0-9-]*$/;
 
 /** move role(C5) */
 export const ROLES = Object.freeze(['enter', 'exit', 'link', 'step', 'camera', 'ambient']);
@@ -53,6 +59,9 @@ export const ENGINE_MOVES = Object.freeze([
   'engine:none',
 ]);
 
+/** 「움직임 없음」 내장 move(C6 v2): 모든 role에 쓸 수 있고 role·반복 검사 면제 */
+export const NO_MOVE = 'engine:none';
+
 /** reduced-motion 'fade' 대체표(C6) */
 export const REDUCE_FALLBACK = Object.freeze({
   enter: 'engine:fade-in',
@@ -67,6 +76,29 @@ export const ENGINE_TIMING_DEFAULTS = Object.freeze({ unit: 0.55, hold: 0.6, ove
 
 /** 뷰포트 기준(C2) */
 export const VIEWPORT = Object.freeze({ designW: 1920, portraitW: 760, aspect: 16 / 9, maxDpr: 2 });
+
+/**
+ * slot 기본 배치(C8 v2). x·y = 화면 비율 위치, ax·ay = 블록 안 기준점(0 = 왼쪽·위 끝, 1 = 오른쪽·아래 끝).
+ * concept.slots[slot]이 키 단위로 덮어씀. full은 inset 0(위치 무시)
+ */
+export const SLOT_DEFAULTS = Object.freeze({
+  center: Object.freeze({ x: 0.5, y: 0.5, ax: 0.5, ay: 0.5 }),
+  left: Object.freeze({ x: 0.0625, y: 0.5, ax: 0, ay: 0.5 }),
+  right: Object.freeze({ x: 0.9375, y: 0.5, ax: 1, ay: 0.5 }),
+  top: Object.freeze({ x: 0.5, y: 0.0625, ax: 0.5, ay: 0 }),
+  bottom: Object.freeze({ x: 0.5, y: 0.9375, ax: 0.5, ay: 1 }),
+  full: Object.freeze({ x: 0, y: 0, ax: 0, ay: 0 }),
+  'lower-third': Object.freeze({ x: 0.0625, y: 0.9, ax: 0, ay: 1 }),
+});
+
+/** beat tone(C3 v2): 루트 data-tone, tokens.css가 C11 변수만 재정의 */
+export const TONE_RANGE = Object.freeze({ min: 0, max: 5 });
+
+/** 상태 층 기본 이름(C4 v2 chart.states). states[].name으로 못 씀 */
+export const BASE_STATE = 'base';
+
+/** 출처 감사 대상 beat type(C3 v2). compare는 items[].value가 하나라도 있을 때만 */
+export const SOURCED_TYPES = Object.freeze(['number', 'quote', 'photo', 'chart', 'compare']);
 
 /** 카메라 tilt 상한(°)(C8, C10) */
 export const MAX_TILT = 12;
@@ -143,6 +175,9 @@ export const CSS_VARS = Object.freeze({
     '--sl-perspective',
     '--sl-gutter',
     '--sl-radius',
+    '--sl-caption-left',
+    '--sl-caption-bottom',
+    '--sl-caption-width',
   ]),
 });
 

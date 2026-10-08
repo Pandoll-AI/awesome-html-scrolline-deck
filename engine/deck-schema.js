@@ -1,5 +1,5 @@
 /** Deck shape validation and C3 content audit. */
-import { BEAT_TYPES, ID_PATTERN, PLACEHOLDER_PATTERNS, ROLES } from './constants.js';
+import { BEAT_TYPES, DECK_ID_PATTERN, ID_PATTERN, PLACEHOLDER_PATTERNS, NO_MOVE } from './constants.js';
 import { validateSchema } from './util/schema.js';
 
 const issue = (errors, path, message) => errors.push({ path, message });
@@ -33,7 +33,7 @@ export function validateDeck(deck, env) {
   if (!deck || typeof deck !== 'object')
     return { ok: false, errors: [{ path: 'deck', message: 'must be an object' }] };
   walkStrings(deck, 'deck', errors);
-  if (typeof deck.id !== 'string' || !ID_PATTERN.test(deck.id)) issue(errors, 'deck.id', 'invalid id');
+  if (typeof deck.id !== 'string' || !DECK_ID_PATTERN.test(deck.id)) issue(errors, 'deck.id', 'invalid id');
   if (!['ko', 'en'].includes(deck.lang)) issue(errors, 'deck.lang', 'must be ko or en');
   if (deck.concept !== env.concept.id) issue(errors, 'deck.concept', 'does not match concept');
   if (!Array.isArray(deck.beats) || !deck.beats.length)
@@ -73,6 +73,7 @@ export function validateDeck(deck, env) {
     }
     const refs = [];
     for (const role of ['enter', 'exit', 'link', 'camera']) {
+      if (role === 'exit' && beat.link) continue; // C3: link가 있으면 exit 무시(plan과 같게)
       const ref = defaultMove(beat, role, env.concept);
       if (ref) refs.push([role, ref]);
     }
@@ -88,18 +89,22 @@ export function validateDeck(deck, env) {
         continue;
       }
       const move = env.registry.get(ref.move);
+      // C6 v2: engine:none은 role 검사·반복 검사 면제(「움직임 없음」 표기).
+      if (ref.move === NO_MOVE) continue;
       if (move.role !== role) issue(errors, `${path}.${role}.move`, `must have ${role} role`);
-      if (!move.accepts.includes('*') && !move.accepts.includes(beat.type))
+      // C5: link accepts는 받는 beat(다음 beat) 기준.
+      const target = role === 'link' ? deck.beats[i + 1] : beat;
+      if (target && !move.accepts.includes('*') && !move.accepts.includes(target.type))
         issue(errors, `${path}.${role}.move`, 'does not accept beat type');
       if (!env.concept.moves?.allow?.includes(ref.move) && !ref.move.startsWith('engine:') && !ref.override)
         issue(errors, `${path}.${role}.override`, 'required for move outside concept allow list');
-      const key = `${role}:${ref.move}`;
+      const key = JSON.stringify([role, ref.move]);
       usage.set(key, (usage.get(key) ?? 0) + 1);
     }
   }
   for (const [key, count] of usage)
     if (count > 1) {
-      const [role, move] = key.split(':');
+      const [role, move] = JSON.parse(key);
       const allowed = (deck.beats ?? []).some(
         (beat) =>
           beat.repeat === 'intended' &&
