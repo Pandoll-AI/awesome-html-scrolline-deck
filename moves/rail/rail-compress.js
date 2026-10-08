@@ -64,6 +64,13 @@ export default {
         tl.to(node, { scaleX: 1, duration: d * 0.65, ease: ctx.ease('inout') }, d * 0.2);
       });
     }
+    // 압축되는 동안 사건 점이 레일 위에 촘촘히 보인다(오른쪽 끝 = 지금). 제목·날짜는 배율이 거의 풀린 뒤에.
+    const events = usable(ctx, 'event'),
+      labels = [...titles.filter((_, index) => !minor.includes(index)), ...usable(ctx, 'date')];
+    ctx.initial(events, { autoAlpha: 0 });
+    ctx.initial(labels, { autoAlpha: 0 });
+    tl.to(events, { autoAlpha: 1, y: 0, duration: d * 0.15, ease: ctx.ease('out') }, d * 0.18);
+    tl.to(labels, { autoAlpha: 1, duration: d * 0.15, ease: ctx.ease('out') }, d * 0.78);
     const counter = usable(ctx, 'counter');
     if (counter.length) tl.set(counter, { autoAlpha: 1 }, d * 0.3);
     ctx.initial(label, { y: px(ctx, 16), autoAlpha: 0 });
