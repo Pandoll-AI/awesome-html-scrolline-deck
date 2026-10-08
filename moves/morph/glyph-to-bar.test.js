@@ -2,22 +2,28 @@ import { expect, it } from 'vitest';
 import { createHarness } from '../../engine/testing.js';
 import { checkMove } from '../_shared/contract-check.js';
 import move from './glyph-to-bar.js';
-const scenario = {
+
+export const scenario = {
   beats: [
-    { id: 'a', type: 'video', data: { value: 42 } },
-    { id: 'b', type: 'chart', data: {} },
+    { id: 'a', type: 'video', data: { parts: { caption: 1, media: 1 } } },
+    { id: 'b', type: 'chart', data: { orient: 'h', unit: '%', categories: ['v', 'k'], highlight: { index: 0 }, series: [{ values: [160, 70] }], parts: { plot: 1, title: 1 } } },
   ],
   rects: {
-    'a.frame': { x: 0, y: 0, w: 800, h: 450 },
-    'a.caption': { x: 0, y: 460, w: 100, h: 30 },
-    'b.mark#0': { x: 900, y: 300, w: 60, h: 400 },
-    'b.mark#1': { x: 1000, y: 350, w: 60, h: 350 },
-    'b.axis': { x: 100, y: 700, w: 1000, h: 2 },
-    'b.title': { x: 100, y: 50, w: 300, h: 40 },
+    'a.frame': { x: 0, y: 0, w: 1920, h: 1080 },
+    'b.mark#0': { x: 260, y: 340, w: 1300, h: 44 },
+    'b.mark#1': { x: 260, y: 400, w: 560, h: 44 },
   },
-  run: { role: 'link', from: 'a', beat: 'b' },
+  prepare: (h) => h.beats.get('b').part('mark').forEach((m, i) => Object.assign(m.dataset, { index: String(i), series: '0' })),
+  run: { role: 'link', from: 'a', beat: 'b', params: { toIndex: 0 } },
+  carry: null,
 };
 scenario.nodes = (_h, ctx) => [ctx.handoff.from.node, ctx.handoff.to.node];
-it('meets the chart handoff contract and ends with target inset', () => {
-  expect(checkMove(move, scenario, createHarness)).toEqual([]);
+it('meets the chart handoff contract', () => expect(checkMove(move, scenario, createHarness)).toEqual([]));
+it('clips the media down to the target bar before it cools into the bar', () => {
+  const h = createHarness(scenario);
+  scenario.prepare(h);
+  const r = h.runMove(move, scenario.run);
+  h.seek(r.timing.duration * 0.62);
+  expect(r.ctx.handoff.from.node.style.clipPath).toBe('inset(340px 360px 696px 260px)');
+  h.destroy();
 });

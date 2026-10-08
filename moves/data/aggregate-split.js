@@ -1,13 +1,36 @@
-/** Grows one aggregate bar, then distributes its segments into chart bars. */
+/** Grows one stacked total bar, then splits its segments into the chart's own bars.
+ *  합계 막대(조각마다 범주, 강조 범주가 맨 아래)가 가운데에서 자라고 합계 값이 붙는다.
+ *  조각이 제 범주 자리로 미끄러져 기준선에 내려앉으며 차트 축척으로 늘고, 실제 막대·값 표가 넘겨받는다. */
 import { colorOf } from '../_shared/color.js';
-import { gridLayout } from '../_shared/grid.js';
-import { line, svgLayer, drawOn } from '../_shared/stroke.js';
 import { px } from '../_shared/timeline.js';
+import { fmt, plotBox, tag } from './annotation-pin.js';
 
 const usable = (ctx, name) =>
-  ctx.skipParts.includes(name)
-    ? []
-    : ctx.beat.part(name).filter((node) => !(ctx.skipNodes ?? []).includes(node));
+  ctx.skipParts.includes(name) ? [] : ctx.beat.part(name).filter((node) => !ctx.skipNodes.includes(node));
+const base = (nodes) => nodes.filter((node) => (node.dataset.state ?? 'base') === 'base');
+
+/** 막대마다 값 표(강조는 크게·주홍). */
+export function valueTags(ctx, beat, { unit = beat.data.unit ?? '', hi = beat.data.highlight?.index, named = false } = {}) {
+  const values = beat.data.series[0].values,
+    marks = beat.part('mark').filter((m) => m.dataset.series === '0');
+  const horizontal = beat.data.orient === 'h';
+  return marks.map((m, i) => {
+    const r = beat.anchor('mark', beat.part('mark').indexOf(m)).rect,
+      v = values[i],
+      neg = v < 0,
+      strong = i === hi;
+    const value = `${v < 0 ? '−' : ''}${fmt(Math.abs(v), Number.isInteger(v) ? 0 : 1)}${unit}`;
+    const text = named && neg ? `${beat.data.categories[i]} ${value}` : value;
+    const top = plotBox(beat).y;
+    // 플롯 맨 위에 닿은 세로 막대는 값 표를 막대 안쪽 위에(위 dek와 겹치지 않게)
+    if (!horizontal && !neg && r.y - top < px(ctx, 44))
+      return tag(ctx, text, { x: r.x + r.w / 2, y: r.y + px(ctx, 14), align: 'center', valign: 'top', size: strong ? 34 : 26, weight: strong ? 800 : 600, color: 'bg' });
+    const at = horizontal
+      ? { x: neg ? r.x - px(ctx, 12) : r.x + r.w + px(ctx, 12), y: r.y + r.h / 2, align: neg ? 'right' : 'left', valign: 'middle' }
+      : { x: r.x + r.w / 2, y: neg ? r.y + r.h + px(ctx, 10) : r.y - px(ctx, 10), align: 'center', valign: neg ? 'top' : 'bottom' };
+    return tag(ctx, text, { ...at, size: strong ? 34 : 26, weight: strong ? 800 : 600, color: strong ? 'accent' : 'fg' });
+  });
+}
 
 export default {
   id: 'aggregate-split',
@@ -17,121 +40,73 @@ export default {
   sources: ['aggregate-split-merge', 'stacked-grouped-transition'],
   reduce: 'fade',
   params: {
-    duration: { type: 'number', default: 1.6, min: 0.8, max: 2.6, doc: '전체 길이(u)' },
-    totalLabel: { type: 'boolean', default: true, doc: 'totalLabel(안무 설명의 같은 이름)' },
+    duration: { type: 'number', default: 2.4, min: 0.8, max: 4, doc: '전체 길이(u)' },
+    totalLabel: { type: 'boolean', default: true, doc: '합계 값 표' },
   },
   timing: (params) => ({ duration: params.duration, stops: [] }),
   build(tl, ctx, params) {
-    const d = params.duration;
-    const plot = ctx.beat.anchor('plot').rect;
-    const marks = usable(ctx, 'mark');
-    const values = (ctx.beat.data.series?.[0]?.values ?? marks.map((_, i) => i + 1)).map(Number);
-    const total = values.reduce((sum, value) => sum + value, 0) || 1;
-    const max = Math.max(total, ...values, 1);
-    const aggregateH = (total / max) * plot.h;
-    const barW = Math.min(72, plot.w / Math.max(3, values.length * 2));
-    const left = plot.x + plot.w / 2 - barW / 2;
-    const svg = svgLayer(ctx);
-    const aggregate = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-    aggregate.setAttribute('x', String(left));
-    aggregate.setAttribute('y', String(plot.y + plot.h - aggregateH));
-    aggregate.setAttribute('width', String(barW));
-    aggregate.setAttribute('height', String(aggregateH));
-    aggregate.setAttribute('fill', colorOf(ctx, 'fg'));
-    svg.append(aggregate);
-    const cells = gridLayout({
-      n: values.length,
-      cols: Math.max(1, values.length),
-      cell: values.length > 1 ? plot.w / (values.length - 1) : 0,
-      origin: { x: plot.x, y: plot.y },
-    });
-    let cursor = plot.y + plot.h - aggregateH;
-    const pieces = values.map((value, index) => {
-      const height = (value / total) * aggregateH;
-      const piece = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-      piece.setAttribute('x', String(left));
-      piece.setAttribute('y', String(cursor));
-      piece.setAttribute('width', String(barW));
-      piece.setAttribute('height', String(height));
-      piece.setAttribute(
-        'fill',
-        index === values.length - 1 ? colorOf(ctx, 'accent') : colorOf(ctx, 'fg-muted'),
-      );
-      svg.append(piece);
-      cursor += height;
-      return { piece, height, x: cells[index].x - barW / 2, y: plot.y + plot.h - (value / max) * plot.h };
-    });
-    const boundaries = pieces
-      .slice(0, -1)
-      .map((item) =>
-        line(
-          svg,
-          left,
-          Number(item.piece.getAttribute('y')) + item.height,
-          left + barW,
-          Number(item.piece.getAttribute('y')) + item.height,
-          { stroke: colorOf(ctx, 'bg'), 'stroke-width': 2 },
-        ),
-      );
-    ctx.initial(aggregate, { scaleY: 0, transformOrigin: 'center bottom' });
-    ctx.initial(
-      pieces.map((item) => item.piece),
-      { autoAlpha: 0 },
-    );
-    ctx.initial(boundaries, { autoAlpha: 0 });
-    ctx.initial(marks, { autoAlpha: 0 });
-    tl.to(aggregate, { scaleY: 1, duration: d * 0.3, ease: ctx.ease('out') }, 0);
-    if (params.totalLabel) {
-      const label = document.createElement('span');
-      label.textContent = new Intl.NumberFormat('ko').format(total);
-      Object.assign(label.style, {
+    const d = params.duration,
+      beat = ctx.beat,
+      box = plotBox(beat),
+      marks = usable(ctx, 'mark').filter((m) => m.dataset.series === '0'),
+      values = beat.data.series[0].values,
+      total = values.reduce((s, v) => s + Math.max(0, v), 0) || 1,
+      hi = beat.data.highlight?.index ?? 0;
+    const rects = marks.map((m) => beat.anchor('mark', beat.part('mark').indexOf(m)).rect);
+    const w = rects[0]?.w ?? px(ctx, 120),
+      cx = box.x + box.w / 2;
+    // 쌓는 순서: 강조 범주가 맨 아래, 나머지는 원래 순서
+    const order = [hi, ...values.map((_, i) => i).filter((i) => i !== hi)];
+    let y = box.y + box.h;
+    const pieces = order.map((i) => {
+      const h = (values[i] / total) * box.h;
+      y -= h;
+      const node = document.createElement('i');
+      Object.assign(node.style, {
         position: 'absolute',
-        left: `${left}px`,
-        top: `${plot.y + plot.h - aggregateH - 28}px`,
-        color: colorOf(ctx, 'fg'),
+        left: `${cx - w / 2}px`,
+        top: `${y}px`,
+        width: `${w}px`,
+        height: `${h}px`,
+        backgroundColor: colorOf(ctx, i === hi ? 'accent' : 'fg'),
+        boxShadow: `inset 0 ${px(ctx, 3)}px 0 ${colorOf(ctx, 'bg')}`,
       });
-      ctx.overlay.append(label);
-      ctx.initial(label, { autoAlpha: 0 });
-      tl.to(label, { autoAlpha: 1, duration: d * 0.15, ease: ctx.ease('out') }, d * 0.15);
-    }
-    tl.to(
-      pieces.map((item) => item.piece),
-      { autoAlpha: 1, duration: 0.001 },
-      d * 0.25,
-    );
-    boundaries.forEach((boundary) => {
-      tl.to(boundary, { autoAlpha: 1, duration: 0.001 }, d * 0.25);
-      drawOn(tl, boundary, { at: d * 0.25, duration: d * 0.25, ease: ctx.ease('out') });
+      ctx.overlay.append(node);
+      return { i, node, y, h };
     });
-    pieces.forEach((item, index) =>
-      tl.to(
-        item.piece,
-        {
-          attr: { x: item.x, y: item.y, height: (values[index] / max) * plot.h },
-          duration: d * 0.4,
-          ease: ctx.ease('inout'),
-        },
-        d * 0.45,
-      ),
-    );
-    tl.to(marks, { autoAlpha: 1, duration: d * 0.12, ease: ctx.ease('out') }, d * 0.78);
-    tl.to(
-      pieces.map((item) => item.piece),
-      { autoAlpha: 0, duration: d * 0.12, ease: ctx.ease('in') },
-      d * 0.78,
-    );
-    const text = ['title', 'dek', 'note'].flatMap((name) => usable(ctx, name));
-    ctx.initial(text, { autoAlpha: 0, y: px(ctx, 12) });
-    tl.to(text, { autoAlpha: 1, y: 0, duration: d * 0.25, ease: ctx.ease('out') }, d * 0.75);
-    const highlight = ctx.beat.data.highlight;
-    if (highlight) {
-      const node = marks.find(
-        (mark) =>
-          mark.dataset.index === String(highlight.index) &&
-          mark.dataset.series === String(highlight.series ?? 0),
-      );
-      if (node)
-        tl.to(node, { fill: colorOf(ctx, 'accent'), duration: d * 0.15, ease: ctx.ease('out') }, d * 0.85);
+    const stackTop = pieces.at(-1).y;
+    ctx.initial(pieces.map((p) => p.node), { clipPath: 'inset(100% 0% 0% 0%)', autoAlpha: 1 });
+    tl.to(pieces.map((p) => p.node), { clipPath: 'inset(0% 0% 0% 0%)', duration: d * 0.12, ease: ctx.ease('settle'), stagger: d * 0.05 }, d * 0.02);
+    const axis = [...usable(ctx, 'axis'), ...usable(ctx, 'baseline')];
+    ctx.initial(axis, { autoAlpha: 0 });
+    tl.to(axis, { autoAlpha: 1, duration: d * 0.1, ease: ctx.ease('out') }, 0);
+    if (params.totalLabel) {
+      const label = tag(ctx, `${fmt(total)}${beat.data.unit ?? ''}`, { x: cx, y: stackTop - px(ctx, 14), align: 'center', valign: 'bottom', size: 40, weight: 800, color: 'fg' });
+      ctx.initial(label, { autoAlpha: 0 });
+      tl.to(label, { autoAlpha: 1, duration: d * 0.08, ease: ctx.ease('out') }, d * 0.2);
+      tl.to(label, { autoAlpha: 0, duration: d * 0.08, ease: ctx.ease('in') }, d * 0.4);
     }
+    // 조각 → 제 자리 막대(축척도 차트 것으로)
+    pieces.forEach((p, k) => {
+      const r = rects[p.i];
+      if (!r) return;
+      tl.to(
+        p.node,
+        { left: r.x, top: r.y, width: r.w, height: r.h, duration: d * 0.3, ease: ctx.ease('inout') },
+        d * (0.42 + 0.06 * k),
+      );
+    });
+    ctx.initial(marks, { autoAlpha: 0 });
+    tl.set(marks, { autoAlpha: 1 }, d * 0.9);
+    tl.set(pieces.map((p) => p.node), { autoAlpha: 0 }, d * 0.9);
+    const labels = usable(ctx, 'label');
+    ctx.initial(labels, { autoAlpha: 0 });
+    tl.to(labels, { autoAlpha: 1, duration: d * 0.12, ease: ctx.ease('out') }, d * 0.7);
+    const tags = valueTags(ctx, beat);
+    ctx.initial(tags, { autoAlpha: 0, y: px(ctx, 8) });
+    tl.to(tags, { autoAlpha: 1, y: 0, duration: d * 0.1, ease: ctx.ease('settle'), stagger: d * 0.02 }, d * 0.82);
+    const text = ['title', 'dek', 'unit', 'note', 'source'].flatMap((name) => base(usable(ctx, name)));
+    ctx.initial(text, { autoAlpha: 0, yPercent: 30 });
+    tl.to(text, { autoAlpha: 1, yPercent: 0, duration: d * 0.16, ease: ctx.ease('settle') }, d * 0.05);
   },
 };
