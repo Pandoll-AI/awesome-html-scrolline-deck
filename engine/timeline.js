@@ -242,23 +242,44 @@ function fontForMask(beat, rect) {
   const weight = style?.getPropertyValue('--sl-weight-display').trim() || style?.fontWeight || '700';
   return { family, weight, size: Math.max(1, Math.min(rect.h, rect.w) || 1) };
 }
-function maskUrl(beat, text, options = {}) {
+/**
+ * ctx.textMask: 컨셉 display 글꼴로 글자 모양 mask URL. 글자 폭은 rect.w × 0.92, 잉크 높이는 rect.h × 0.8을 넘지 않게
+ * (짧은 낱말 「AI」가 폭만 맞춰 프레임 위아래로 넘치던 문제). 브라우저에서는 canvas에 그려 PNG로 낸다 — SVG data URL
+ * 이미지는 문서 웹폰트(Pretendard 등)를 못 봐 시스템 글꼴로 바뀌었다. canvas가 없으면(테스트 DOM) C13 textMask SVG.
+ */
+export function maskUrl(beat, text, options = {}) {
   const rect = options.rect ?? beat.anchor('media').rect;
   const { family, weight, size } = fontForMask(beat, rect);
+  const align = options.align ?? 'center';
   let fontSize = size;
   const canvas = globalThis.document?.createElement?.('canvas');
   const context = canvas?.getContext?.('2d');
-  if (context) {
+  if (context?.measureText) {
     context.font = `${weight} ${fontSize}px ${family}`;
-    const width = context.measureText(text).width;
-    if (width > 0) fontSize *= (rect.w * 0.92) / width;
+    const m = context.measureText(text);
+    const ink = (m.actualBoundingBoxAscent ?? 0) + (m.actualBoundingBoxDescent ?? 0) || fontSize * 0.75;
+    if (m.width > 0) fontSize *= Math.min((rect.w * 0.92) / m.width, (rect.h * 0.8) / ink);
   }
-  return textMask(text, {
-    font: `${weight} ${fontSize}px ${family}`,
-    width: rect.w,
-    height: rect.h,
-    align: options.align ?? 'center',
-  });
+  const font = `${weight} ${fontSize}px ${family}`;
+  if (context?.fillText && typeof canvas.toDataURL === 'function' && rect.w > 0 && rect.h > 0) {
+    const dpr = Math.min(2, globalThis.devicePixelRatio || 1);
+    canvas.width = Math.round(rect.w * dpr);
+    canvas.height = Math.round(rect.h * dpr);
+    context.setTransform?.(dpr, 0, 0, dpr, 0, 0);
+    context.clearRect(0, 0, rect.w, rect.h);
+    context.font = font;
+    context.fillStyle = 'white';
+    context.textAlign = align === 'center' ? 'center' : 'left';
+    // 잉크 상자 가운데를 rect 가운데에 둔다(middle baseline은 글꼴마다 위로 치우침).
+    context.textBaseline = 'alphabetic';
+    const m = context.measureText(text);
+    const ascent = m.actualBoundingBoxAscent ?? fontSize * 0.72;
+    const descent = m.actualBoundingBoxDescent ?? 0;
+    context.fillText(text, align === 'center' ? rect.w / 2 : 0, rect.h / 2 + (ascent - descent) / 2);
+    const url = canvas.toDataURL('image/png');
+    if (url.startsWith('data:image/png')) return url;
+  }
+  return textMask(text, { font, width: rect.w, height: rect.h, align });
 }
 const COLOR_NAMES = ['bg', 'fg', 'fg-muted', 'accent', 'accent-2', 'rule', 'scrim'];
 function colorsFor(root) {

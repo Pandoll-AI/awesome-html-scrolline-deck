@@ -577,6 +577,7 @@ FrameSeq = { canvas: HTMLCanvasElement, count: number, setProgress(p: number): v
 - `FramesManifest`(`frames.json`): `{ version: 1, fps, count, width, height, pattern: 'f_%04d.webp', tiers: { "1920": "1920/", "960": "960/" }, poster: 'poster.webp' }`. 프레임 경로 = manifest 폴더 + tiers[tier] + pattern(1-base).
 - tier 선택: `viewport.w × dpr ≥ 1400` → 가장 큰 tier, 아니면 960.
 - 로딩 순서: poster → 8장 간격(coarse) → 현재 위치 ±12장 → 나머지. 그리기 = 목표 프레임이 없으면 **가장 가까운 앞쪽 로드된 프레임**(되감기 안정).
+- **v2.2 (ctx.textMask)**: 글자 폭 ≤ rect.w × 0.92 이고 잉크 높이 ≤ rect.h × 0.8(둘 중 작은 쪽). 브라우저에서는 canvas에 문서 글꼴(웹폰트 포함)로 그려 `data:image/png` URL, canvas가 없으면 위 SVG `textMask`. 흰 글자 + 투명 배경이라 mask alpha 의미는 같다.
 - `setProgress`는 timeline tween이 쓰는 setter에서만 부름(`driveValue`·`scrubTo`, 스크럽 결정론). **v2.2**: manifest 로드 전 `setProgress`·`setFrame`은 기억했다가 도착 뒤 그 프레임을 그린다.
 
 ```ts

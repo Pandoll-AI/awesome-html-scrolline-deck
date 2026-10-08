@@ -394,7 +394,11 @@ async function runChrome(opts, outDir) {
     const exited = new Promise((r) => chrome.once('exit', r));
     chrome.kill('SIGKILL');
     await exited;
-    rmSync(profile, { recursive: true, force: true, maxRetries: 3 });
+    // Chrome's helper processes can still be flushing the cache after the kill; a leftover temp profile
+    // must not fail a finished run.
+    try {
+      rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+    } catch {}
   }
 }
 
