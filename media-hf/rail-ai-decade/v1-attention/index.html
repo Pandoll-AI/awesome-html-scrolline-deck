@@ -17,11 +17,12 @@
       .arc-layer { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
       .arc { fill: none; stroke: #8a5a1f; stroke-linecap: round; opacity: 0; vector-effect: non-scaling-stroke; }
       .tokens { position: absolute; inset: 0; z-index: 1; }
-      .token { position: absolute; color: #17140f; font-family: 'Hahmlet', 'Noto Serif KR', serif; font-size: 105px; font-weight: 600; line-height: 1; letter-spacing: -.055em; white-space: nowrap; transform: translate(-50%, -50%); }
-      .t0 { left: 8%; top: 29%; } .t1 { left: 25%; top: 29%; } .t2 { left: 43%; top: 29%; }
-      .t3 { left: 55%; top: 29%; } .t4 { left: 70%; top: 29%; } .t5 { left: 89%; top: 29%; }
-      .t6 { left: 11%; top: 70%; } .t7 { left: 32%; top: 70%; } .t8 { left: 48%; top: 70%; }
-      .t9 { left: 61%; top: 70%; } .t10 { left: 77%; top: 70%; } .t11 { left: 91%; top: 70%; }
+      .token { position: absolute; color: #17140f; font-family: 'Hahmlet', 'Noto Serif KR', serif; font-size: 105px; font-weight: 600; line-height: 1; letter-spacing: -.035em; white-space: nowrap; transform: translate(-50%, -50%); }
+      /* Twelve semantic tokens remain: two seams are shown as hairlines, never as broken words. */
+      .token-boundary { display: inline-block; position: relative; width: 0; height: .68em; margin: 0; vertical-align: -.055em; border-left: 1px solid rgba(138, 90, 31, .23); }
+      .t0 { left: 8%; top: 29%; } .t1 { left: 25%; top: 29%; } .t2 { left: 44%; top: 29%; }
+      .t3 { left: 60%; top: 29%; } .t4 { left: 76%; top: 29%; } .t5 { left: 91%; top: 29%; }
+      .t6 { left: 17%; top: 70%; } .t7 { left: 38%; top: 70%; } .t8 { left: 58%; top: 70%; } .t9 { left: 82%; top: 70%; }
     </style>
   </head>
   <body>
@@ -29,26 +30,26 @@
       <div class="paper-grain" aria-hidden="true"></div>
       <svg class="arc-layer" viewBox="0 0 1920 1080" aria-hidden="true">
         <!-- Query 1: the -->
-        <path class="arc q1 a" d="M154 313 C314 120 663 120 826 313" />
-        <path class="arc q1 b" d="M154 313 C416 510 863 540 1056 756" />
-        <path class="arc q1 c" d="M154 313 C495 222 1318 190 1709 313" />
+        <path class="arc q1 a" d="M154 313 C334 120 686 120 845 313" />
+        <path class="arc q1 b" d="M154 313 C416 510 863 540 1114 756" />
+        <path class="arc q1 c" d="M154 313 C495 222 1360 190 1747 313" />
         <!-- Query 2: because -->
-        <path class="arc q2 a" d="M211 756 C363 480 656 516 826 313" />
-        <path class="arc q2 b" d="M211 756 C508 931 989 917 1171 756" />
-        <path class="arc q2 c" d="M211 756 C495 922 1255 883 1478 756" />
+        <path class="arc q2 a" d="M326 756 C474 480 696 516 845 313" />
+        <path class="arc q2 b" d="M326 756 C600 931 914 917 1114 756" />
+        <path class="arc q2 c" d="M326 756 C620 922 1324 883 1574 756" />
         <!-- Query 3: it — the classic coreference arc is deliberately heaviest -->
-        <path class="arc q3 core" d="M922 756 C797 18 456 18 480 313" />
-        <path class="arc q3 b" d="M922 756 C1005 567 1170 504 1344 313" />
-        <path class="arc q3 c" d="M922 756 C1114 927 1514 921 1747 756" />
-        <path class="arc q3 d" d="M922 756 C867 551 814 492 730 313" />
+        <path class="arc q3 core" d="M730 756 C736 18 456 18 480 313" />
+        <path class="arc q3 b" d="M730 756 C950 567 1268 504 1460 313" />
+        <path class="arc q3 c" d="M730 756 C1018 927 1380 921 1574 756" />
+        <path class="arc q3 d" d="M730 756 C790 551 830 492 845 313" />
         <!-- Query 4: tired -->
-        <path class="arc q4 a" d="M1478 756 C1301 561 1174 504 1056 313" />
-        <path class="arc q4 b" d="M1478 756 C1240 932 744 928 614 756" />
-        <path class="arc q4 c" d="M1478 756 C1554 554 1632 496 1709 313" />
+        <path class="arc q4 a" d="M1574 756 C1395 561 1260 504 1152 313" />
+        <path class="arc q4 b" d="M1574 756 C1240 932 840 928 730 756" />
+        <path class="arc q4 c" d="M1574 756 C1630 554 1680 496 1747 313" />
       </svg>
       <div class="tokens" aria-label="the animal didn't cross the street because it was tired.">
-        <span class="token t0">the</span><span class="token t1">animal</span><span class="token t2">didn</span><span class="token t3">'t</span><span class="token t4">cross</span><span class="token t5">the</span>
-        <span class="token t6">street</span><span class="token t7">because</span><span class="token t8">it</span><span class="token t9">was</span><span class="token t10">tired</span><span class="token t11">.</span>
+        <span class="token t0">the</span><span class="token t1">animal</span><span class="token t2">didn<i class="token-boundary" aria-hidden="true"></i>'t</span><span class="token t3">cross</span><span class="token t4">the</span><span class="token t5">street</span>
+        <span class="token t6">because</span><span class="token t7">it</span><span class="token t8">was</span><span class="token t9">tired<i class="token-boundary" aria-hidden="true"></i>.</span>
       </div>
     </div>
     <script>
