@@ -3,10 +3,27 @@
  * 규칙: default export = MoveDef 배열, id 알파벳 순, 이 폴더 밖 import 금지(./<id>.js만). 목록 정본 = plan/MOVES.md §3.
  */
 import glyphRise from './glyph-rise.js';
+import halfSplit from './half-split.js';
 import lineMaskRise from './line-mask-rise.js';
 import mapLabelSettle from './map-label-settle.js';
+import phraseFold from './phrase-fold.js';
 import pushBuild from './push-build.js';
+import scrambleOut from './scramble-out.js';
+import scrambleSwap from './scramble-swap.js';
+import sweepOut from './sweep-out.js';
 import trackingClose from './tracking-close.js';
 import wordSlam from './word-slam.js';
 
-export default [glyphRise, lineMaskRise, mapLabelSettle, pushBuild, trackingClose, wordSlam];
+export default [
+  glyphRise,
+  halfSplit,
+  lineMaskRise,
+  mapLabelSettle,
+  phraseFold,
+  pushBuild,
+  scrambleOut,
+  scrambleSwap,
+  sweepOut,
+  trackingClose,
+  wordSlam,
+];
