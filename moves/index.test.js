@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import registry from './index.js';
 import { readFileSync } from 'node:fs';
+import path from 'node:path';
 
-const catalog = readFileSync(new URL('../plan/moves.catalog.jsonl', import.meta.url), 'utf8');
+// vitest는 레포 루트에서 돈다(happy-dom 환경이라 import.meta.url이 file: 스킴이 아님).
+const catalog = readFileSync(path.join(process.cwd(), 'plan/moves.catalog.jsonl'), 'utf8');
 
 const catalogIds = catalog
   .split('\n')
