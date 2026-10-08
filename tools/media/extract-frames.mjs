@@ -69,6 +69,10 @@ export function extract({ input, outDir, options }) {
       String(options.quality),
       '-start_number',
       '1',
+      '-f',
+      'image2',
+      '-c:v',
+      'libwebp',
       resolve(dir, 'f_%04d.webp'),
     ]);
     if (result.status !== 0) throw new Error(result.stderr || 'ffmpeg frame extraction failed');

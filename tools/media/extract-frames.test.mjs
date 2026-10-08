@@ -72,7 +72,9 @@ describe('extract-frames arguments', () => {
       ).toBe(0);
       const manifest = JSON.parse(readFileSync(join(out, 'frames.json'), 'utf8'));
       expect(manifest).toMatchObject({ version: 1, fps: 2, pattern: 'f_%04d.webp', poster: 'poster.webp' });
-      expect(manifest.count).toBeGreaterThan(0);
+      // 2초 × 2fps = 4장. 1장이면 ffmpeg가 애니메이션 webp 한 파일로 묶은 것.
+      expect(manifest.count).toBeGreaterThanOrEqual(4);
+      expect(existsSync(join(out, '64', 'f_0004.webp'))).toBe(true);
       expect(existsSync(join(out, '64', 'f_0001.webp'))).toBe(true);
     } finally {
       rmSync(root, { recursive: true, force: true });
