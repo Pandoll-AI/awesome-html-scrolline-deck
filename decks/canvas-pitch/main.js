@@ -3,6 +3,7 @@ import '../../engine/engine.css';
 import moves from '../../moves/index.js';
 import concept from '../../concepts/canvas/index.js';
 import '../../concepts/canvas/tokens.css';
+import '../../concepts/canvas/layout.css';
 import deck from './deck.yaml';
 import ground from './sequences/ground.js';
 import atlas from './sequences/atlas.js';

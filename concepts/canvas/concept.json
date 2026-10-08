@@ -57,7 +57,14 @@
       "arc-flight",
       "establish-crane",
       "atlas-pullback"
-    ]
+    ],
+    "params": {
+      "recede": {
+        "to": 0.22,
+        "scaleTo": 0.985,
+        "duration": 0.9
+      }
+    }
   },
   "defaults": {
     "enter": "focus-pull",
@@ -86,8 +93,8 @@
       "y": 0.5
     },
     "lower-third": {
-      "x": 0.08,
-      "y": 0.78
+      "x": 0.0625,
+      "y": 0.95
     }
   },
   "tokens": {

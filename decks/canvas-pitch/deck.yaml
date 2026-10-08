@@ -41,7 +41,7 @@ beats:
         - { id: ask,      name: "투자 요청", x: 0.0, y: 2.2 }
       route: [start, problem, solution, product, data, market, traction, team, ask]
       cartouche:
-        at: { x: 0.06, y: 0.8 }
+        at: { x: 0.72, y: 0.1 }
         lines: ["서릿길 시드 투자 제안", "2026년 10월", "가상 회사 표본"]
 
   # ── 출발: 오프닝 크레인, 지도 조각에서 솟아올라 회사 이름에 선다 ──
@@ -63,7 +63,8 @@ beats:
   - id: b-problem
     type: text
     text: "상자를 열기 전까지, 배송 중 온도는 아무도 모릅니다"
-    emphasis: ["배송 중 온도"]
+    lines: ["상자를 열기 전까지,", "배송 중 온도는 아무도 모릅니다"]
+    emphasis: ["배송", "중", "온도"]
     size: l
     place: { world: { x: 1.5, y: 0.5, z: 80 } }
     camera: { move: arc-flight, params: { duration: 2.0 } }
@@ -92,7 +93,7 @@ beats:
     type: text
     text: "태그 한 장이 배송 경로 전체의 온도를 기억합니다"
     lines: ["태그 한 장이", "배송 경로 전체의 온도를 기억합니다"]
-    emphasis: ["태그 한 장"]
+    emphasis: ["태그", "한", "장이"]
     size: l
     place: { world: { x: 3.0, y: 0.15, z: 80 } }
     camera: { move: arc-flight, params: { duration: 2.0 } }
@@ -137,7 +138,7 @@ beats:
     type: text
     text: "기록이 쌓일수록 경로마다 위험 지도가 생깁니다"
     lines: ["기록이 쌓일수록", "경로마다 위험 지도가 생깁니다"]
-    emphasis: ["위험 지도"]
+    emphasis: ["위험", "지도가"]
     size: l
     place: { world: { x: 4.8, y: 2.1, z: 80 } }
     camera: { move: arc-flight, params: { duration: 1.7 } }
@@ -237,7 +238,8 @@ beats:
     type: sequence
     use: atlas
     place: { world: { x: -0.6, y: -0.6, z: 0, s: 1 } }
-    camera: { move: atlas-pullback, params: { duration: 3.2, bounds: { x0: -0.6, y0: -0.6, x1: 6.0, y1: 4.6 }, tilt: 6 } }
+    camera: { move: atlas-pullback, params: { duration: 3.2, bounds: { x0: -0.6, y0: -0.6, x1: 6.0, y1: 4.6 }, tilt: 6, offsetY: 0.1 } }
+    exit: { move: "engine:none" }
     persist: true
     exportHold: 3.0
     data:

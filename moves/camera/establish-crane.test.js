@@ -12,14 +12,25 @@ const scenario = {
   },
   concept: { eases: { inout: 'power2.inOut', out: 'power3.out' } },
 };
-it('cranes from its tilted start to a level target', () => {
+const read = (h, ctx, prop) => Number(ctx.gsap.getProperty(h.stage.camera, prop));
+
+it('cranes from its low tilted start to a level target', () => {
   expect(checkMove(move, scenario, createHarness)).toEqual([]);
   const h = createHarness(scenario),
     result = h.runMove(move, scenario.run);
   h.seek(0);
-  expect(Number(result.ctx.gsap.getProperty(h.stage.camera, 'rx'))).toBe(10);
+  expect(read(h, result.ctx, 'rotationX')).toBe(10);
+  expect(read(h, result.ctx, 'scale')).toBeCloseTo(1.6);
   h.seek(result.timing.duration);
-  expect(Number(result.ctx.gsap.getProperty(h.stage.camera, 'rx'))).toBe(0);
-  expect(Number(result.ctx.gsap.getProperty(h.stage.camera, 'scale'))).toBe(1);
+  expect(read(h, result.ctx, 'rotationX')).toBe(0);
+  expect(read(h, result.ctx, 'scale')).toBe(1);
+  expect(read(h, result.ctx, 'x')).toBeCloseTo(960 - 1.5 * 1920);
+  h.destroy();
+});
+it('reduced motion rises without tilting', () => {
+  const h = createHarness({ ...scenario, reduce: true }),
+    result = h.runMove(move, scenario.run);
+  h.seek(result.timing.duration * 0.2);
+  expect(read(h, result.ctx, 'rotationX')).toBe(0);
   h.destroy();
 });

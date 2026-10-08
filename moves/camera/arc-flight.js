@@ -1,29 +1,66 @@
-/** Map-to-map camera flight with a brief bank and depth parallax. */
-import { clamp } from '../_shared/timeline.js';
+/** Map-to-map camera flight: take off (altitude), bank toward the heading, descend level onto the tile. */
 
-const targetFor = (ctx, place) => {
+/**
+ * Canvas camera = a look-at point on the world plane (cx, cy in screen units), a scale and two tilts.
+ * The pivot (transform-origin) is the look-at point, so the point stays centred while the scale and
+ * the tilts change — a pan/zoom path that never swings, and a bank that turns about the screen centre.
+ */
+export function lookAtVars(viewport, { cx, cy, s, rx = 0, ry = 0 }) {
+  const ox = cx * viewport.w,
+    oy = cy * viewport.h;
+  return {
+    x: viewport.w / 2 - ox,
+    y: viewport.h / 2 - oy,
+    scale: s,
+    rotationX: rx,
+    rotationY: ry,
+    transformOrigin: `${ox}px ${oy}px`,
+  };
+}
+
+/** Camera target of a world place: tile centre, scale 1/s (engine cameraTarget convention). */
+export function tileTarget(place, fallback = { cx: 0.5, cy: 0.5, s: 1 }) {
   const world = place?.world;
-  if (!world) return ctx.camera ?? { x: 0.5, y: 0.5, s: 1, rx: 0, ry: 0 };
+  if (!world) return fallback;
   const s = world.s ?? 1;
-  return { x: world.x + s * 0.5, y: world.y + s * 0.5, s: 1 / s, rx: 0, ry: 0 };
-};
-const flat = (vars) =>
-  Object.fromEntries(
-    Object.entries(vars).filter(([key]) => !['rotationX', 'rotationY', 'rx', 'ry'].includes(key)),
-  );
-const cameraVars = (ctx, target) => {
-  const vars = ctx.stage.cameraVars(target);
-  if (!Object.hasOwn(vars, 's')) return vars;
-  const { s, ...rest } = vars;
-  return { ...rest, scale: s };
-};
-const mix = (from, to, amount) =>
-  Object.fromEntries(
-    Object.keys(to).map((key) => [
-      key,
-      typeof to[key] === 'number' ? from[key] + (to[key] - from[key]) * amount : to[key],
-    ]),
-  );
+  return { cx: world.x + 0.5 * s, cy: world.y + 0.5 * s, s: 1 / s };
+}
+
+/** Near layers (data-depth ≥ 0.9, the haze) that only camera moves may push. */
+export const nearLayers = (ctx) =>
+  [...ctx.stage.root.querySelectorAll('[data-depth]')].filter((node) => Number(node.dataset.depth) >= 0.9);
+
+/**
+ * The camera path is sampled from state(p) into short linear fromTo segments on the camera (and the near
+ * layers). Every segment carries both ends, so any seek order lands on the same frame, and nothing relies
+ * on callbacks (seek suppresses them).
+ */
+export function driveCamera(tl, ctx, duration, state, steps = 24) {
+  const camera = ctx.stage.camera,
+    near = nearLayers(ctx),
+    d = duration / steps;
+  for (let k = 0; k < steps; k += 1) {
+    const a = state(k / steps),
+      b = state((k + 1) / steps);
+    tl.fromTo(
+      camera,
+      lookAtVars(ctx.viewport, a),
+      { ...lookAtVars(ctx.viewport, b), duration: d, ease: 'none', immediateRender: false },
+      k * d,
+    );
+    if (near.length)
+      tl.fromTo(
+        near,
+        { x: a.hazeX ?? 0, y: a.hazeY ?? 0 },
+        { x: b.hazeX ?? 0, y: b.hazeY ?? 0, duration: d, ease: 'none', immediateRender: false },
+        k * d,
+      );
+  }
+}
+
+export const lerp = (a, b, t) => a + (b - a) * t;
+/** Scale interpolated in log space so a zoom reads at a constant rate. */
+export const lerpScale = (a, b, t) => a * (b / a) ** t;
 
 export default {
   id: 'arc-flight',
@@ -34,75 +71,42 @@ export default {
   reduce: 'self',
   params: {
     duration: { type: 'number', default: 1.8, min: 0.6, max: 4, doc: '전체 길이(u)' },
-    altitude: { type: 'number', default: 0.32, min: 0, max: 0.6, doc: 'altitude(안무 설명의 같은 이름)' },
-    bank: { type: 'number', default: 5, min: 0, max: 8, doc: 'bank(안무 설명의 같은 이름)' },
-    parallax: { type: 'number', default: 0.35, min: 0, max: 1, doc: 'parallax(안무 설명의 같은 이름)' },
-    settle: { type: 'number', default: 0.12, min: 0, max: 0.3, doc: 'settle(안무 설명의 같은 이름)' },
+    altitude: { type: 'number', default: 0.32, min: 0, max: 0.6, doc: '거리 1화면당 고도(배율 감소 비율)' },
+    bank: { type: 'number', default: 5, min: 0, max: 8, doc: '진행 방향 기울기 최대(°, 정지점에서는 0)' },
+    parallax: { type: 'number', default: 0.35, min: 0, max: 1, doc: 'haze 층이 비행 중 밀리는 양(화면 폭 비율)' },
+    settle: { type: 'number', default: 0.12, min: 0, max: 0.3, doc: '끝에서 기울기가 먼저 풀리는 구간 비율' },
     ease: { type: 'ease', default: 'flight', doc: '컨셉 ease alias' },
   },
   timing(params) {
     return { duration: params.duration, stops: [] };
   },
   build(tl, ctx, params) {
-    const target = ctx.camera ?? targetFor(ctx, ctx.beat.place);
-    const origin = ctx.prev?.place?.world ? targetFor(ctx, ctx.prev.place) : target;
-    const distance = Math.hypot(target.x - origin.x, target.y - origin.y);
-    const glide = distance < 0.6;
-    const start = cameraVars(ctx, origin);
-    const end = cameraVars(ctx, target);
-    const scaleKey = Object.hasOwn(end, 'scale') ? 'scale' : 's';
-    const rxKey = Object.hasOwn(end, 'rotationX') ? 'rotationX' : 'rx';
-    const ryKey = Object.hasOwn(end, 'rotationY') ? 'rotationY' : 'ry';
-    const d = params.duration,
-      settle = Math.min(params.settle, d * 0.12);
-    const cruise = { ...start, [scaleKey]: start[scaleKey] * (1 - (glide ? 0 : params.altitude) * distance) };
-    cruise[scaleKey] = Math.max(0.08, cruise[scaleKey]);
-    const bank = glide ? 0 : clamp(params.bank, 0, 8);
-    cruise[rxKey] = target.y - origin.y === 0 ? 0 : Math.sign(origin.y - target.y) * bank * 0.55;
-    cruise[ryKey] = target.x - origin.x === 0 ? 0 : Math.sign(target.x - origin.x) * bank;
-    if (ctx.reduce) {
-      ctx.initial(ctx.stage.camera, flat(start));
-      tl.to(ctx.stage.camera, { ...flat(end), duration: d, ease: 'none' }, 0);
-      return;
-    }
-    ctx.initial(ctx.stage.camera, start);
-    tl.to(ctx.stage.camera, { ...cruise, duration: d * 0.18, ease: ctx.ease('inout') }, 0);
-    tl.to(
-      ctx.stage.camera,
-      {
-        ...cruise,
-        x: mix(start, end, 0.92).x,
-        y: mix(start, end, 0.92).y,
-        duration: d * 0.54,
-        ease: ctx.ease(params.ease),
-      },
-      d * 0.18,
-    );
-    const near = mix(cruise, end, 0.995);
-    near[rxKey] = 0;
-    near[ryKey] = 0;
-    tl.to(ctx.stage.camera, { ...near, duration: d * 0.16, ease: ctx.ease('out') }, d * 0.72);
-    tl.to(
-      ctx.stage.camera,
-      { ...end, duration: settle || d * 0.12, ease: 'power3.out' },
-      d - (settle || d * 0.12),
-    );
-    const layers = [...ctx.stage.root.querySelectorAll('[data-depth]')];
-    for (const layer of layers) {
-      const depth = Number(layer.dataset.depth) || 0;
-      const amount =
-        (ctx.tokens.depthFar ?? 0.35) + depth * ((ctx.tokens.depthNear ?? 1) - (ctx.tokens.depthFar ?? 0.35));
-      ctx.initial(layer, { x: 0, y: 0 });
-      tl.to(
-        layer,
-        {
-          x: (end.x - start.x) * params.parallax * amount,
-          y: (end.y - start.y) * params.parallax * amount,
-          duration: d * 0.54,
-          ease: ctx.ease(params.ease),
-        },
-        d * 0.18,
-      );
-    }
+    const to = tileTarget(ctx.beat.place, tileTarget(ctx.prev?.place));
+    const from = tileTarget(ctx.prev?.place, to);
+    const dx = to.cx - from.cx,
+      dy = to.cy - from.cy,
+      distance = Math.hypot(dx, dy);
+    const glide = distance < (ctx.tokens.glideBelow ?? 0.6) || ctx.reduce;
+    const ease = ctx.gsap.parseEase(ctx.ease(params.ease)) ?? ((t) => t);
+    const lift = glide ? 0 : Math.min(0.62, params.altitude * distance);
+    const bank = glide ? 0 : Math.min(params.bank, ctx.tokens.bankMax ?? 8);
+    const level = 1 - params.settle;
+    const shift = glide ? 0 : params.parallax * (ctx.tokens.hazeShift ?? 0.35) * ctx.viewport.w;
+    driveCamera(tl, ctx, params.duration, (p) => {
+      const e = ease(p);
+      // altitude: a smooth hump, highest a little before the middle (take-off is quicker than landing)
+      const hump = Math.sin(Math.PI * p ** 0.85);
+      // bank only while cruising; level before the landing settle so the stop is always face-on
+      const tilt = p >= level ? 0 : Math.sin(Math.PI * (p / level));
+      return {
+        cx: lerp(from.cx, to.cx, e),
+        cy: lerp(from.cy, to.cy, e),
+        s: lerpScale(from.s, to.s, e) * (1 - lift * hump),
+        rx: distance ? (-dy / distance) * bank * 0.55 * tilt : 0,
+        ry: distance ? (dx / distance) * bank * tilt : 0,
+        hazeX: distance ? (-dx / distance) * shift * hump : 0,
+        hazeY: distance ? (-dy / distance) * shift * hump : 0,
+      };
+    });
   },
 };

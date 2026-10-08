@@ -4,7 +4,10 @@ import { checkMove } from '../_shared/contract-check.js';
 import move from './atlas-pullback.js';
 
 const scenario = {
-  beats: [{ id: 'b', type: 'text', data: {}, place: { world: { x: 2, y: 1, s: 1 } } }],
+  beats: [
+    { id: 'a', type: 'text', data: {}, place: { world: { x: 0, y: 2.2, s: 1 } } },
+    { id: 'b', type: 'text', data: {}, place: { world: { x: -0.6, y: -0.6, s: 1 } } },
+  ],
   run: {
     role: 'camera',
     beat: 'b',
@@ -12,13 +15,20 @@ const scenario = {
   },
   concept: { eases: { inout: 'power2.inOut', out: 'power3.out' } },
 };
-it('fits the declared atlas bounds and settles level', () => {
+const read = (h, ctx, prop) => Number(ctx.gsap.getProperty(h.stage.camera, prop));
+
+it('starts on the previous tile, tilts once, fits the bounds level', () => {
   expect(checkMove(move, scenario, createHarness)).toEqual([]);
   const h = createHarness(scenario),
     result = h.runMove(move, scenario.run);
+  h.seek(0);
+  expect(read(h, result.ctx, 'scale')).toBeCloseTo(1);
+  expect(read(h, result.ctx, 'x')).toBeCloseTo(960 - 0.5 * 1920);
+  h.seek(result.timing.duration * 0.42);
+  expect(read(h, result.ctx, 'rotationX')).toBeGreaterThan(4);
   h.seek(result.timing.duration);
-  expect(Number(result.ctx.gsap.getProperty(h.stage.camera, 'scale'))).toBeCloseTo((1 / 6.6) * 0.94);
-  expect(Number(result.ctx.gsap.getProperty(h.stage.camera, 'rx'))).toBe(0);
-  expect(Number(result.ctx.gsap.getProperty(h.stage.camera, 'ry'))).toBe(0);
+  expect(read(h, result.ctx, 'scale')).toBeCloseTo((1 / 6.6) * 0.94);
+  expect(read(h, result.ctx, 'rotationX')).toBe(0);
+  expect(read(h, result.ctx, 'rotationY')).toBe(0);
   h.destroy();
 });
