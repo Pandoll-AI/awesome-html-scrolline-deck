@@ -182,7 +182,8 @@ export function probeSource(deckId) {
       texts: shown.length,
       overlaps,
       clipped,
-      minFont: fonts.length ? Math.round(Math.min(...fonts) * 10) / 10 : null,
+      // 1920 기준 px로 환산(Aside 창 폭이 달라도 「너무 작은 글자」 기준이 같게)
+      minFont: fonts.length ? Math.round((Math.min(...fonts) * 1920) / innerWidth * 10) / 10 : null,
       textSample: shown.slice().sort((a, b) => b.font - a.font).slice(0, 6).map((t) => ({ text: t.text, font: Math.round(t.font), rect: round(t.r), op: Math.round(t.op * 100) / 100 })),
     };
   }
@@ -237,8 +238,10 @@ function runAside(opts) {
   if (!existsSync(ASIDE)) throw new Error(`Aside CLI not found: ${ASIDE}`);
   const code = `{ const smokeTab = await openTab(${JSON.stringify(deckUrl(opts))});
 try {
+  // openTab can return while the tab is still about:blank (origin "null"); wait for the deck URL.
+  for (let i = 0; i < 60 && !String(await smokeTab.evaluate(() => location.href).catch(() => '')).startsWith('http'); i += 1) await sleep(250);
   await smokeTab.evaluate(${JSON.stringify(probeSource(opts.deck))});
-  const smokeBoot = await smokeTab.evaluate(() => window.__smoke.boot());
+  const smokeBoot = await smokeTab.evaluate(() => window.__smoke.boot(15000));
   const smokeOut = { ...smokeBoot, stops: [] };
   if (!smokeBoot.bootError) {
     for (let i = 0; i < smokeBoot.stops.length; i += 1) smokeOut.stops.push(await smokeTab.evaluate((n) => window.__smoke.at(n), i));
