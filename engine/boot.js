@@ -2,7 +2,7 @@
 import { EVENTS, RESIZE, VERSION } from './constants.js';
 import { createA11y, prefersReducedMotion } from './a11y.js';
 import { validateDeck } from './deck-schema.js';
-import { buildExportTimeline, exportPath, toExportSeconds } from './export.js';
+import { buildExportTimeline, exportHolds, exportPath, toExportSeconds } from './export.js';
 import { frameSequence, preloadImages, videoClip } from './media.js';
 import { createPresenter } from './presenter.js';
 import { createScrollDriver } from './scroll.js';
@@ -264,7 +264,7 @@ export async function boot(opts) {
     // Keep removal private while preserving the public, contract-defined handle shape.
     removeResize = () => window.removeEventListener('resize', onResize);
   } else {
-    const path = exportPath(map, deck.export);
+    const path = exportPath(map, deck.export, exportHolds(deck, map));
     bindExportClips(built.beats, path);
     await preloadExportMedia(built.beats);
     const wrapper = buildExportTimeline(built.tl, path, gsap);

@@ -21,6 +21,7 @@ vi.mock('./presenter.js', () => ({ createPresenter: mocks.createPresenter }));
 vi.mock('./a11y.js', () => ({ createA11y: mocks.createA11y, prefersReducedMotion: () => false }));
 vi.mock('./export.js', () => ({
   exportPath: mocks.exportPath,
+  exportHolds: () => ({}),
   buildExportTimeline: mocks.buildExport,
   toExportSeconds: mocks.toExportSeconds,
 }));
