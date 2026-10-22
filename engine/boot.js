@@ -212,6 +212,13 @@ export async function boot(opts) {
     return built;
   };
 
+  // Export binds window.__timelines to this build's master; a later fonts
+  // rebuild would leave that wrapper tweening detached DOM.  Wait for fonts
+  // first and build once.
+  if (mode === 'export') {
+    if (document.fonts?.ready) await document.fonts.ready;
+    fontsRebuilt = true;
+  }
   await buildDeck();
 
   const rebuild = async (reason = 'resize') => {

@@ -55,7 +55,7 @@ async function main() {
   const entry = builtEntry(buildDir);
   const assets = path.join(ROOT, 'decks', deckId, 'assets');
   if (existsSync(assets)) cpSync(assets, path.join(buildDir, 'assets'), { recursive: true });
-  setCompositionRoot(entry, pathInfo.duration);
+  setCompositionRoot(entry, report.path.duration);
   run('npx', ['hyperframes', 'lint', buildDir]);
   if (parsed.buildOnly) return console.log(JSON.stringify({ ...report, entry }, null, 2));
   run('npx', ['hyperframes', 'render', buildDir, '--fps', String(fps), '--output', out]);
