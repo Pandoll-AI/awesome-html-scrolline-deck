@@ -120,7 +120,10 @@ describe('boot', () => {
     expect(window.__deck.tl).toBe(first.tl);
     await handle.rebuild('fonts');
     expect(window.__deck.tl).toBe(second.tl);
+    expect(first.destroy).toHaveBeenCalledOnce();
     handle.destroy();
+    handle.destroy();
+    expect(second.destroy).toHaveBeenCalledOnce();
   });
 
   // 문서 대조로 찾은 결함: C12 URL 파라미터 ?t·?stop·?debug=1이 구현돼 있지 않았다(?motion=reduce만).
@@ -184,6 +187,7 @@ describe('boot', () => {
   it('builds before waiting for fonts, then wraps only the final build', async () => {
     const sequence = [];
     const first = built();
+    first.destroy.mockImplementation(() => sequence.push('destroy-1'));
     const final = built();
     const fontsReady = deferred();
     const fontsRequested = deferred();
@@ -229,7 +233,7 @@ describe('boot', () => {
     fontsReady.resolve();
     const handle = await pending;
     expect(mocks.build).toHaveBeenCalledTimes(2);
-    expect(sequence).toEqual(['build-1', 'fonts-ready', 'clear', 'build-2']);
+    expect(sequence).toEqual(['build-1', 'fonts-ready', 'destroy-1', 'clear', 'build-2']);
     expect(stage.clear).toHaveBeenCalledOnce();
     expect(first.destroy).toHaveBeenCalledOnce();
     expect(handle.built).toBe(final);
@@ -240,6 +244,65 @@ describe('boot', () => {
     fontsReady.resolve();
     await Promise.resolve();
     expect(mocks.build).toHaveBeenCalledTimes(2);
+    handle.destroy();
+  });
+
+  it('rebuilds once when live fonts settle', async () => {
+    const fontsReady = deferred();
+    const fontsRequested = deferred();
+    Object.defineProperty(document, 'fonts', {
+      configurable: true,
+      get() {
+        fontsRequested.resolve();
+        return { ready: fontsReady.promise };
+      },
+    });
+    const rebuilt = new Promise((resolve) =>
+      window.addEventListener('scrolline:rebuild', resolve, { once: true }),
+    );
+
+    const handle = await boot({ host: document.querySelector('#app'), deck, concept, moves, assetBase: '/' });
+    await fontsRequested.promise;
+    expect(mocks.build).toHaveBeenCalledOnce();
+
+    fontsReady.resolve();
+    await rebuilt;
+    expect(mocks.build).toHaveBeenCalledTimes(2);
+    handle.destroy();
+  });
+
+  it('does not rebuild when live fonts settle after disposal', async () => {
+    const fontsReady = deferred();
+    const fontsRequested = deferred();
+    Object.defineProperty(document, 'fonts', {
+      configurable: true,
+      get() {
+        fontsRequested.resolve();
+        return { ready: fontsReady.promise };
+      },
+    });
+    const handle = await boot({ host: document.querySelector('#app'), deck, concept, moves, assetBase: '/' });
+    await fontsRequested.promise;
+    handle.destroy();
+
+    fontsReady.resolve();
+    await fontsReady.promise;
+    await Promise.resolve();
+    expect(mocks.build).toHaveBeenCalledOnce();
+  });
+
+  it('clears the export font timeout when fonts are already ready', async () => {
+    stubFonts(Promise.resolve());
+    const handle = await boot({
+      host: document.querySelector('#app'),
+      deck,
+      concept,
+      moves,
+      assetBase: '/',
+      mode: 'export',
+    });
+
+    expect(vi.getTimerCount()).toBe(0);
     handle.destroy();
   });
 

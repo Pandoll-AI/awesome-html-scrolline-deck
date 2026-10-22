@@ -205,8 +205,14 @@ export async function boot(opts) {
   const sources = sourceIndex(deck.sources);
   const plugins = registeredPlugins();
 
+  const destroyBuilt = () => {
+    if (!built) return;
+    const previous = built;
+    built = undefined;
+    previous.destroy?.();
+  };
+
   const buildDeck = async () => {
-    built?.destroy?.();
     built = await build(map, {
       stage,
       gsap,
@@ -235,6 +241,7 @@ export async function boot(opts) {
     // rebuild after fonts settle (or the bound expires) before making a wrapper.
     await buildDeck();
     await waitForExportFonts();
+    destroyBuilt();
     stage.clear();
     await buildDeck();
   } else {
@@ -247,6 +254,7 @@ export async function boot(opts) {
     driver?.detach?.();
     presenter?.destroy?.();
     a11y?.destroy?.();
+    destroyBuilt();
     stage.clear();
     viewport = viewportFor(mode);
     stage.viewport = viewport;
@@ -349,6 +357,7 @@ export async function boot(opts) {
     },
     rebuild,
     destroy() {
+      if (disposed) return;
       disposed = true;
       clearTimeout(resizeTimer);
       removeResize();
@@ -356,7 +365,7 @@ export async function boot(opts) {
       driver?.detach?.();
       presenter?.destroy?.();
       a11y?.destroy?.();
-      built?.destroy?.();
+      destroyBuilt();
       track?.remove();
       stage.root?.remove();
       if (window.__deck === api) delete window.__deck;
