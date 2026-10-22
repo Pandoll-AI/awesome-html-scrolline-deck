@@ -18,6 +18,24 @@ import { MorphSVGPlugin } from 'gsap/MorphSVGPlugin';
 import { SplitText } from 'gsap/SplitText';
 
 const eventTarget = () => (typeof window === 'undefined' ? null : window);
+const EXPORT_FONTS_TIMEOUT_MS = 8_000;
+
+async function waitForExportFonts() {
+  const ready = document.fonts?.ready;
+  if (!ready) return;
+
+  let timer;
+  try {
+    await Promise.race([
+      Promise.resolve(ready).catch(() => {}),
+      new Promise((resolve) => {
+        timer = setTimeout(resolve, EXPORT_FONTS_TIMEOUT_MS);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 function emit(name, detail) {
   const target = eventTarget();
@@ -212,14 +230,16 @@ export async function boot(opts) {
     return built;
   };
 
-  // Export binds window.__timelines to this build's master; a later fonts
-  // rebuild would leave that wrapper tweening detached DOM.  Wait for fonts
-  // first and build once.
   if (mode === 'export') {
-    if (document.fonts?.ready) await document.fonts.ready;
-    fontsRebuilt = true;
+    // Build once to put text in the DOM so its font requests can start. Then
+    // rebuild after fonts settle (or the bound expires) before making a wrapper.
+    await buildDeck();
+    await waitForExportFonts();
+    stage.clear();
+    await buildDeck();
+  } else {
+    await buildDeck();
   }
-  await buildDeck();
 
   const rebuild = async (reason = 'resize') => {
     if (disposed) return;
@@ -306,13 +326,15 @@ export async function boot(opts) {
   }
   emit(EVENTS.ready, { map, mode });
 
-  // Fonts can change measured rects once.  Do not delay readiness for it.
-  document.fonts?.ready?.then(() => {
-    if (!fontsRebuilt && !disposed) {
-      fontsRebuilt = true;
-      void rebuild('fonts');
-    }
-  });
+  // Live fonts can change measured rects once. Do not delay readiness for it.
+  if (mode === 'live') {
+    document.fonts?.ready?.then(() => {
+      if (!fontsRebuilt && !disposed) {
+        fontsRebuilt = true;
+        void rebuild('fonts');
+      }
+    });
+  }
 
   return {
     map,
